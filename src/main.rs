@@ -1,4 +1,6 @@
-use axum::{
+use futures_util::stream::{self, Stream};
+use serde::{Deserialize, Serialize};
+use shuttle_axum::axum::{
     extract::State,
     response::{
         sse::{Event, KeepAlive, Sse},
@@ -7,8 +9,6 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use futures_util::stream::{self, Stream};
-use serde::{Deserialize, Serialize};
 use std::{convert::Infallible, sync::Arc, time::Duration};
 use tokio::{
     sync::{broadcast, RwLock},
@@ -28,18 +28,26 @@ struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         let (tx, _) = broadcast::channel(256);
+
+        // Initialize with 1000 simple events
+        let mut items = Vec::new();
+        for i in 1..=1000 {
+            items.push(format!("Event #{}", i));
+        }
+
         Self {
-            items: Arc::new(RwLock::new(vec!["First item".into(), "Second item".into()])),
+            items: Arc::new(RwLock::new(items)),
             tx,
         }
     }
 }
 
+/// A single change event sent to subscribers
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "payload")]
 enum Delta {
-    // For this demo we only append, but you can add Update/Remove etc.
-    Append(String),
+    // For this demo we only Create, but you can add Update/Remove etc.
+    Create(String),
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,23 +55,24 @@ struct NewItem {
     text: String,
 }
 
-#[tokio::main]
-async fn main() {
+// #[tokio::main]
+#[shuttle_runtime::main]
+async fn main() -> shuttle_axum::ShuttleAxum {
     let state = AppState::default();
 
-    // Optional: emit a demo delta every 15s so you see live updates immediately
+    // Optional: emit a demo event every 15s so you see live updates immediately
     let demo = state.clone();
     tokio::spawn(async move {
-        let mut i = 3;
+        let mut counter = 1001;
         loop {
             sleep(Duration::from_secs(15)).await;
-            let text = format!("Auto item #{i}");
+            let text = format!("Event #{}", counter);
             {
                 let mut items = demo.items.write().await;
                 items.push(text.clone());
             }
-            let _ = demo.tx.send(Delta::Append(text));
-            i += 1;
+            let _ = demo.tx.send(Delta::Create(text));
+            counter += 1;
         }
     });
 
@@ -74,11 +83,12 @@ async fn main() {
         .route("/items", post(add_item)) // append new item (POST JSON {text})
         .with_state(state);
 
-    let addr = "0.0.0.0:3000";
-    println!("→ http://{addr}");
-    axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
-        .await
-        .unwrap();
+    Ok(app.into())
+    // let addr = "0.0.0.0:3000";
+    // println!("→ http://{addr}");
+    // axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
+    //     .await
+    //     .unwrap();
 }
 
 async fn sse_handler(
@@ -105,8 +115,8 @@ async fn sse_handler(
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
-async fn index() -> Html<String> {
-    Html(tokio::fs::read_to_string("src/index.html").await.unwrap())
+async fn index() -> Html<&'static str> {
+    Html(include_str!("index.html"))
 }
 
 async fn get_all(State(state): State<AppState>) -> Json<Vec<String>> {
@@ -121,6 +131,6 @@ async fn add_item(
         let mut items = state.items.write().await;
         items.push(text.clone());
     }
-    let _ = state.tx.send(Delta::Append(text));
+    let _ = state.tx.send(Delta::Create(text));
     Json("ok")
 }
