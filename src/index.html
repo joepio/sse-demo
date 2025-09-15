@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="utf-8" />
-        <title>SSE Snapshot + Deltas</title>
+        <title>SSE CloudEvents + Issue Patching</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <style>
             body {
@@ -36,6 +36,82 @@
                 box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                 animation: fadeIn 0.3s ease-in;
             }
+            @keyframes shake {
+                0%,
+                100% {
+                    transform: translateX(0);
+                }
+                10%,
+                30%,
+                50%,
+                70%,
+                90% {
+                    transform: translateX(-3px);
+                }
+                20%,
+                40%,
+                60%,
+                80% {
+                    transform: translateX(3px);
+                }
+            }
+            .shine {
+                animation: shine 1s ease-in-out;
+                box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.8);
+            }
+            @keyframes shine {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.8);
+                }
+                50% {
+                    box-shadow: 0 0 0 6px rgba(0, 123, 255, 0.4);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+                }
+            }
+            .issue-appear {
+                animation: appear 0.5s ease-out forwards;
+            }
+            @keyframes appear {
+                0% {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                    max-height: 0;
+                    margin-bottom: 0;
+                    padding-top: 0;
+                    padding-bottom: 0;
+                }
+                100% {
+                    opacity: 1;
+                    transform: translateY(0);
+                    max-height: 500px;
+                    margin-bottom: 1rem;
+                    padding-top: 1rem;
+                    padding-bottom: 1rem;
+                }
+            }
+            .issue-disappear {
+                animation: disappear 0.4s ease-in forwards;
+            }
+            @keyframes disappear {
+                0% {
+                    opacity: 1;
+                    transform: translateY(0);
+                    max-height: 500px;
+                    margin-bottom: 1rem;
+                    padding-top: 1rem;
+                    padding-bottom: 1rem;
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                    max-height: 0;
+                    margin-bottom: 0;
+                    padding-top: 0;
+                    padding-bottom: 0;
+                }
+            }
             @keyframes fadeIn {
                 from {
                     opacity: 0;
@@ -66,34 +142,171 @@
         </style>
     </head>
     <body>
-        <h1>SSE: snapshot + deltas</h1>
+        <h1>SSE CloudEvents with Issue Patching</h1>
+        <p style="margin-bottom: 1rem; color: #666">
+            Real-time CloudEvents stream showing immutable events. Use the Issue
+            Patcher to modify business objects via JSON Merge Patch.
+        </p>
         <div class="status" id="status">connecting…</div>
-        <div id="chat-container">
-            <ul id="items"></ul>
+
+        <div
+            style="
+                margin-top: 2rem;
+                padding: 1rem;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+            "
+        >
+            <h3>Issue Patcher</h3>
+            <form id="patch-form">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+                    <input
+                        id="issue-id"
+                        placeholder="Issue ID (e.g., 123)"
+                        required
+                    />
+                    <input
+                        id="patch-title"
+                        placeholder="New title (optional)"
+                    />
+                    <select id="patch-status">
+                        <option value="">-- Keep status --</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+                    <input
+                        id="patch-assignee"
+                        placeholder="Assignee (or leave empty to remove)"
+                    />
+                    <input
+                        id="patch-description"
+                        placeholder="New description (optional)"
+                    />
+                </div>
+                <button type="submit">Patch Issue</button>
+            </form>
+            <div
+                id="patch-result"
+                style="
+                    margin-top: 1rem;
+                    padding: 0.5rem;
+                    border-radius: 4px;
+                    display: none;
+                "
+            ></div>
         </div>
 
-        <form id="form">
-            <input id="text" placeholder="Add item…" required />
-            <button type="submit">Add</button>
-        </form>
+        <div style="margin-top: 2rem">
+            <h3>Current Issues (Built from Events)</h3>
+            <div
+                id="issues-container"
+                style="
+                    margin-top: 1rem;
+                    padding: 1rem;
+                    background-color: #f5f5f5;
+                    border-radius: 8px;
+                "
+            >
+                <div id="issues-list"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 2rem">
+            <h3>Create New Issue</h3>
+            <form
+                id="create-issue-form"
+                style="
+                    margin-bottom: 2rem;
+                    padding: 1rem;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                "
+            >
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+                    <input
+                        id="issue-title"
+                        placeholder="Issue title"
+                        required
+                    />
+                    <input
+                        id="issue-description"
+                        placeholder="Description (optional)"
+                    />
+                </div>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem">
+                    <select id="issue-priority">
+                        <option value="">Priority (optional)</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <input
+                        id="issue-assignee"
+                        placeholder="Assignee email (optional)"
+                    />
+                </div>
+                <button type="submit">Create Issue</button>
+            </form>
+
+            <h3>Live CloudEvents Stream</h3>
+            <p style="margin-bottom: 1rem; color: #666; font-size: 0.9rem">
+                Immutable event log - new events appear in real-time via SSE
+            </p>
+            <div id="chat-container">
+                <ul id="items"></ul>
+            </div>
+        </div>
 
         <script>
             const itemsEl = document.getElementById("items");
             const statusEl = document.getElementById("status");
 
             // local state (authoritative view rendered in DOM)
-            let items = [];
+            let events = [];
+            let issuesState = {};
 
             function render() {
                 itemsEl.innerHTML = "";
-                for (const t of items) {
-                    const li = document.createElement("li");
-                    li.textContent = t;
+
+                // Add snapshot header
+                if (events.length > 0) {
+                    const snapshotHeader = document.createElement("li");
+                    snapshotHeader.innerHTML = `
+                        <div style="
+                            background: #e9ecef;
+                            border-radius: 4px;
+                            padding: 0.5rem;
+                            margin-bottom: 0.5rem;
+                            font-weight: bold;
+                            color: #495057;
+                            text-align: center;
+                        ">
+                            📸 Snapshot: ${events.length} existing CloudEvents
+                        </div>
+                    `;
+                    itemsEl.appendChild(snapshotHeader);
+                }
+
+                for (const cloudEvent of events) {
+                    // Use the full CloudEvent renderer for snapshot events too
+                    const li = renderCloudEvent(cloudEvent);
+                    li.style.opacity = "0.8"; // Make snapshot events slightly faded
                     itemsEl.appendChild(li);
                 }
+
                 // Auto-scroll to bottom like a chat log
                 const chatContainer = document.getElementById("chat-container");
                 chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            function renderCloudEvent(cloudEvent) {
+                const li = document.createElement("li");
+
+                li.innerHTML = `<pre>${JSON.stringify(cloudEvent, null, 2)}</pre>`;
+                return li;
             }
 
             // Connect SSE
@@ -111,19 +324,48 @@
 
                 // 1) Receive full snapshot first
                 ev.addEventListener("snapshot", (e) => {
-                    items = JSON.parse(e.data);
+                    events = JSON.parse(e.data);
+
+                    // Process events to build initial issues state
+                    for (const event of events) {
+                        updateIssuesState(event);
+                    }
+
+                    // Render the issues list from built state
+                    renderIssuesList();
+
+                    // Render the events snapshot
                     render();
+
+                    // Add separator for new live events
+                    const separator = document.createElement("li");
+                    separator.innerHTML = `
+                        <div style="
+                            background: #007bff;
+                            color: white;
+                            border-radius: 4px;
+                            padding: 0.5rem;
+                            margin: 1rem 0;
+                            font-weight: bold;
+                            text-align: center;
+                        ">
+                            🔴 Live CloudEvents Stream
+                        </div>
+                    `;
+                    itemsEl.appendChild(separator);
                 });
 
                 // 2) Apply deltas
                 ev.addEventListener("delta", (e) => {
-                    const msg = JSON.parse(e.data);
-                    switch (msg.type) {
-                        case "Create":
-                            items.push(msg.payload);
-                            // For chat-like experience, add new item with animation
-                            const li = document.createElement("li");
-                            li.textContent = msg.payload;
+                    const cloudEvent = JSON.parse(e.data);
+
+                    // Handle different CloudEvent types
+                    switch (cloudEvent.type) {
+                        case "com.example.issue.create":
+                        case "com.example.issue.patch":
+                        case "com.example.issue.delete":
+                            // Display any issue-related CloudEvent with full JSON
+                            const li = renderCloudEvent(cloudEvent);
                             itemsEl.appendChild(li);
 
                             // Auto-scroll to show new message
@@ -131,31 +373,382 @@
                                 document.getElementById("chat-container");
                             chatContainer.scrollTop =
                                 chatContainer.scrollHeight;
+
+                            // Also refresh issues list for patch/delete events
+                            // Update local issues state
+                            updateIssuesState(cloudEvent);
+                            renderIssuesList();
+
+                            // Shake the affected issue card
+                            if (cloudEvent.type === "com.example.issue.patch") {
+                                const issueId = cloudEvent.subject;
+                                setTimeout(() => {
+                                    const issueCards =
+                                        document.querySelectorAll(
+                                            "[data-issue-id]",
+                                        );
+                                    issueCards.forEach((card) => {
+                                        if (
+                                            card.getAttribute(
+                                                "data-issue-id",
+                                            ) === issueId
+                                        ) {
+                                            card.classList.add("shine");
+                                            setTimeout(() => {
+                                                card.classList.remove("shine");
+                                            }, 1000);
+                                        }
+                                    });
+                                }, 100);
+                            }
                             break;
-                        // Add Update/Remove handling here if you extend the protocol
+
+                        // Add other CloudEvent type handling here
                     }
                 });
             }
             connect();
 
-            // Add new item (POST to server; all clients receive delta)
+            // Create new issue form handler
             document
-                .getElementById("form")
+                .getElementById("create-issue-form")
                 .addEventListener("submit", async (e) => {
                     e.preventDefault();
-                    const text = document.getElementById("text").value.trim();
-                    if (!text) return;
+                    const title = document
+                        .getElementById("issue-title")
+                        .value.trim();
+                    if (!title) return;
+
+                    const issueId = crypto.randomUUID();
+                    const issueData = {
+                        id: issueId,
+                        title: title,
+                        status: "open",
+                        created_at: new Date().toISOString(),
+                    };
+
+                    const description = document
+                        .getElementById("issue-description")
+                        .value.trim();
+                    if (description) issueData.description = description;
+
+                    const priority =
+                        document.getElementById("issue-priority").value;
+                    if (priority) issueData.priority = priority;
+
+                    const assignee = document
+                        .getElementById("issue-assignee")
+                        .value.trim();
+                    if (assignee) issueData.assignee = assignee;
+
+                    // Create CloudEvent
+                    const cloudEvent = {
+                        specversion: "1.0",
+                        id: crypto.randomUUID(),
+                        source: "/issues",
+                        subject: issueId,
+                        type: "com.example.issue.create",
+                        time: new Date().toISOString(),
+                        datacontenttype: "application/json",
+                        data: issueData,
+                    };
+
                     try {
-                        await fetch("/items", {
+                        const response = await fetch("/events", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ text }),
+                            body: JSON.stringify(cloudEvent),
                         });
-                        document.getElementById("text").value = "";
+
+                        if (response.ok) {
+                            // Update local state immediately for responsive UI
+                            updateIssuesState(cloudEvent);
+                            renderIssuesList();
+                            document
+                                .getElementById("create-issue-form")
+                                .reset();
+                        } else {
+                            alert("Failed to create issue");
+                        }
                     } catch (err) {
-                        alert("Failed to add: " + err);
+                        alert("Failed to create issue: " + err);
                     }
                 });
+
+            // Patch issue form handler
+            document
+                .getElementById("patch-form")
+                .addEventListener("submit", async (e) => {
+                    e.preventDefault();
+
+                    const issueId = document
+                        .getElementById("issue-id")
+                        .value.trim();
+                    if (!issueId) {
+                        showPatchResult("Please enter an issue ID", "error");
+                        return;
+                    }
+
+                    // Check if issue exists in our state
+                    if (!issuesState[issueId]) {
+                        showPatchResult("Issue ID not found", "error");
+                        return;
+                    }
+
+                    // Build merge patch object
+                    const mergePatch = {};
+
+                    const title = document
+                        .getElementById("patch-title")
+                        .value.trim();
+                    if (title) mergePatch.title = title;
+
+                    const status =
+                        document.getElementById("patch-status").value;
+                    if (status) mergePatch.status = status;
+
+                    const assignee = document
+                        .getElementById("patch-assignee")
+                        .value.trim();
+                    if (assignee === "") {
+                        mergePatch.assignee = null; // Remove assignee
+                    } else if (assignee) {
+                        mergePatch.assignee = assignee;
+                    }
+
+                    const description = document
+                        .getElementById("patch-description")
+                        .value.trim();
+                    if (description) mergePatch.description = description;
+
+                    if (Object.keys(mergePatch).length === 0) {
+                        showPatchResult("No changes specified", "error");
+                        return;
+                    }
+
+                    // Create CloudEvent for patch
+                    const cloudEvent = {
+                        specversion: "1.0",
+                        id: crypto.randomUUID(),
+                        source: "/issues",
+                        subject: issueId,
+                        type: "com.example.issue.patch",
+                        time: new Date().toISOString(),
+                        datacontenttype: "application/merge-patch+json",
+                        data: mergePatch,
+                    };
+
+                    try {
+                        const response = await fetch("/events", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(cloudEvent),
+                        });
+
+                        if (response.ok) {
+                            showPatchResult(
+                                `Issue ${issueId} patched successfully!`,
+                                "success",
+                            );
+                            // Clear form
+                            document.getElementById("patch-form").reset();
+                        } else {
+                            showPatchResult("Failed to patch issue", "error");
+                        }
+                    } catch (err) {
+                        showPatchResult("Failed to patch: " + err, "error");
+                    }
+                });
+
+            // Show patch result message
+            function showPatchResult(message, type) {
+                const resultDiv = document.getElementById("patch-result");
+                resultDiv.textContent = message;
+                resultDiv.style.display = "block";
+                resultDiv.style.backgroundColor =
+                    type === "success" ? "#d4edda" : "#f8d7da";
+                resultDiv.style.color =
+                    type === "success" ? "#155724" : "#721c24";
+                resultDiv.style.border =
+                    type === "success"
+                        ? "1px solid #c3e6cb"
+                        : "1px solid #f5c6cb";
+
+                setTimeout(() => {
+                    resultDiv.style.display = "none";
+                }, 3000);
+            }
+
+            // Update issues state based on CloudEvent
+            function updateIssuesState(cloudEvent) {
+                if (!cloudEvent || !cloudEvent.type) return;
+
+                switch (cloudEvent.type) {
+                    case "com.example.issue.create":
+                        if (cloudEvent.data && cloudEvent.data.id) {
+                            issuesState[cloudEvent.data.id] = cloudEvent.data;
+                        } else {
+                        }
+                        break;
+
+                    case "com.example.issue.patch":
+                        if (cloudEvent.subject && cloudEvent.data) {
+                            const issueId = cloudEvent.subject;
+
+                            if (issuesState[issueId]) {
+                                // Apply JSON Merge Patch
+                                const issue = issuesState[issueId];
+                                for (const [key, value] of Object.entries(
+                                    cloudEvent.data,
+                                )) {
+                                    if (value === null) {
+                                        delete issue[key];
+                                    } else {
+                                        issue[key] = value;
+                                    }
+                                }
+                            } else {
+                            }
+                        } else {
+                        }
+                        break;
+
+                    case "com.example.issue.delete":
+                        if (cloudEvent.subject) {
+                            // Animate removal before deleting from state
+                            const issueToDelete = document.querySelector(
+                                `[data-issue-id="${cloudEvent.subject}"]`,
+                            );
+                            if (issueToDelete) {
+                                issueToDelete.classList.add("issue-disappear");
+                                setTimeout(() => {
+                                    delete issuesState[cloudEvent.subject];
+                                    renderIssuesList();
+                                }, 400); // Match animation duration
+                            } else {
+                                delete issuesState[cloudEvent.subject];
+                            }
+                        } else {
+                        }
+                        break;
+                }
+            }
+
+            // Render issues list from local state
+            function renderIssuesList() {
+                const issuesList = document.getElementById("issues-list");
+                const existingIssues = new Set(
+                    Array.from(issuesList.children).map((el) =>
+                        el.getAttribute("data-issue-id"),
+                    ),
+                );
+
+                const issues = Object.entries(issuesState);
+                const currentIssueIds = new Set(issues.map(([id]) => id));
+
+                // Remove issues that no longer exist (but not ones being animated out)
+                Array.from(issuesList.children).forEach((child) => {
+                    const id = child.getAttribute("data-issue-id");
+                    if (
+                        !currentIssueIds.has(id) &&
+                        !child.classList.contains("issue-disappear")
+                    ) {
+                        child.remove();
+                    }
+                });
+
+                for (const [id, issue] of issues) {
+                    let issueDiv = document.querySelector(
+                        `[data-issue-id="${id}"]`,
+                    );
+                    const isNew = !issueDiv;
+
+                    if (isNew) {
+                        issueDiv = document.createElement("div");
+                        issueDiv.style.cssText =
+                            "margin-bottom: 1rem; padding: 1rem; background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);";
+                        issueDiv.setAttribute("data-issue-id", id);
+                    }
+
+                    issueDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                            <h4 style="margin: 0; color: #333;">${issue.title || "No title"}</h4>
+                            <span style="font-size: 0.8rem; color: #999; background: #f8f9fa; padding: 2px 6px; border-radius: 3px; font-family: monospace;">#${id}</span>
+                        </div>
+                        <p style="margin: 0 0 0.5rem 0; color: #666;">${issue.description || "No description"}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;">
+                            <div style="display: flex; gap: 1rem; color: #888;">
+                                <span><strong>Status:</strong> ${issue.status || "unknown"}</span>
+                                <span><strong>Assignee:</strong> ${issue.assignee || "unassigned"}</span>
+                            </div>
+                            <button
+                                onclick="deleteIssue('${id}')"
+                                style="
+                                    background: #dc3545;
+                                    color: white;
+                                    border: none;
+                                    padding: 0.25rem 0.5rem;
+                                    border-radius: 4px;
+                                    cursor: pointer;
+                                    font-size: 0.8rem;
+                                "
+                            >Delete</button>
+                        </div>
+                    `;
+                    if (isNew) {
+                        issuesList.appendChild(issueDiv);
+                        // Add appear animation for new issues
+                        issueDiv.classList.add("issue-appear");
+                    } else if (!issueDiv.parentNode) {
+                        issuesList.appendChild(issueDiv);
+                    }
+                }
+
+                if (issues.length === 0) {
+                    issuesList.innerHTML =
+                        "<p style='color: #888; font-style: italic;'>No issues found</p>";
+                }
+            }
+
+            // Delete issue function (called from button)
+            window.deleteIssue = async function (issueId) {
+                if (
+                    !confirm(
+                        `Are you sure you want to delete issue #${issueId}?`,
+                    )
+                ) {
+                    return;
+                }
+
+                // Create CloudEvent for deletion
+                const cloudEvent = {
+                    specversion: "1.0",
+                    id: crypto.randomUUID(),
+                    source: "/issues",
+                    subject: issueId,
+                    type: "com.example.issue.delete",
+                    time: new Date().toISOString(),
+                    datacontenttype: "application/json",
+                    data: {
+                        id: issueId,
+                        reason: "manually deleted",
+                    },
+                };
+
+                try {
+                    const response = await fetch("/events", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(cloudEvent),
+                    });
+
+                    if (!response.ok) {
+                        alert("Failed to delete issue");
+                    }
+                } catch (err) {
+                    alert("Failed to delete issue: " + err);
+                }
+            };
         </script>
     </body>
 </html>

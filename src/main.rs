@@ -1,5 +1,9 @@
+mod issues;
+
+use chrono;
 use futures_util::stream::{self, Stream};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use shuttle_axum::axum::{
     extract::State,
     response::{
@@ -16,79 +20,134 @@ use tokio::{
 };
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
+use uuid;
 
 #[derive(Clone)]
 struct AppState {
-    // Our entire list (the “source of truth”)
-    items: Arc<RwLock<Vec<String>>>,
+    // Our entire list (the "source of truth")
+    events: Arc<RwLock<Vec<Value>>>,
+    // Issue storage
+    issues: Arc<RwLock<std::collections::HashMap<String, Value>>>,
     // Broadcast deltas to all subscribers
-    tx: broadcast::Sender<Delta>,
+    tx: broadcast::Sender<CloudEvent>,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         let (tx, _) = broadcast::channel(256);
 
-        // Initialize with 1000 simple events
-        let mut items = Vec::new();
-        for i in 1..=1000 {
-            items.push(format!("Event #{}", i));
-        }
+        // Generate initial issues and events using the issues module
+        let (events, issues) = issues::generate_initial_data();
 
         Self {
-            items: Arc::new(RwLock::new(items)),
+            events: Arc::new(RwLock::new(events)),
+            issues: Arc::new(RwLock::new(issues)),
             tx,
         }
     }
 }
 
-/// A single change event sent to subscribers
+/// CloudEvent following the CloudEvents specification v1.0
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "payload")]
-enum Delta {
-    // For this demo we only Create, but you can add Update/Remove etc.
-    Create(String),
+pub struct CloudEvent {
+    /// The version of the CloudEvents specification
+    pub specversion: String,
+    /// Identifies the event
+    pub id: String,
+    /// Identifies the context in which an event happened
+    pub source: String,
+    /// Identifies the subject of the event in the context of the event producer
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    /// The type of event related to the originating occurrence
+    #[serde(rename = "type")]
+    pub event_type: String,
+    /// Timestamp of when the occurrence happened
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+    /// Content type of the data value
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub datacontenttype: Option<String>,
+    /// The event payload
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
 }
 
-#[derive(Debug, Deserialize)]
-struct NewItem {
-    text: String,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct IncomingCloudEvent {
+    specversion: String,
+    id: String,
+    source: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    subject: Option<String>,
+    #[serde(rename = "type")]
+    event_type: String,
+    time: Option<String>,
+    datacontenttype: Option<String>,
+    data: Option<Value>,
 }
 
-// #[tokio::main]
+#[cfg(not(feature = "local"))]
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
+    let app = create_app().await;
+    Ok(app.into())
+}
+
+#[cfg(feature = "local")]
+#[tokio::main]
+async fn main() {
+    let app = create_app().await;
+    let addr = "0.0.0.0:3000";
+    println!("→ http://{addr}");
+    shuttle_axum::axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
+        .await
+        .unwrap();
+}
+
+async fn create_app() -> Router {
     let state = AppState::default();
 
-    // Optional: emit a demo event every 15s so you see live updates immediately
+    // Optional: emit demo events every 20s that randomly update existing issues
     let demo = state.clone();
     tokio::spawn(async move {
-        let mut counter = 1001;
         loop {
-            sleep(Duration::from_secs(15)).await;
-            let text = format!("Event #{}", counter);
-            {
-                let mut items = demo.items.write().await;
-                items.push(text.clone());
+            sleep(Duration::from_secs(2)).await;
+
+            // Get current issues for random selection
+            let current_issues = {
+                let issues = demo.issues.read().await;
+                issues.clone()
+            };
+
+            // Generate a random demo event
+            if let Some(demo_event_json) = issues::generate_demo_event(&current_issues) {
+                // Convert JSON to our CloudEvent struct
+                if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
+                    // Process the event using the same handle_event logic
+                    process_cloud_event(&demo.issues, &demo_event_json).await;
+
+                    // Add to events list
+                    {
+                        let mut events = demo.events.write().await;
+                        events.push(demo_event_json);
+                    }
+
+                    let _ = demo.tx.send(cloud_event);
+                }
             }
-            let _ = demo.tx.send(Delta::Create(text));
-            counter += 1;
         }
     });
 
     let app = Router::new()
         .route("/", get(index))
         .route("/events", get(sse_handler))
-        .route("/items", get(get_all)) // convenient REST snapshot
-        .route("/items", post(add_item)) // append new item (POST JSON {text})
+        .route("/events", post(handle_event)) // single endpoint for all CloudEvents
+        .route("/cloudevents", get(get_all)) // convenient REST snapshot
+        .route("/issues", get(get_all_issues)) // get all issues
         .with_state(state);
 
-    Ok(app.into())
-    // let addr = "0.0.0.0:3000";
-    // println!("→ http://{addr}");
-    // axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
-    //     .await
-    //     .unwrap();
+    app
 }
 
 async fn sse_handler(
@@ -97,8 +156,8 @@ async fn sse_handler(
     let rx = state.tx.subscribe();
 
     let snapshot = {
-        let items = state.items.read().await;
-        serde_json::to_string(&*items).unwrap()
+        let events = state.events.read().await;
+        serde_json::to_string(&*events).unwrap()
     };
 
     let stream = stream::once(async move { Ok(Event::default().event("snapshot").data(snapshot)) })
@@ -119,18 +178,192 @@ async fn index() -> Html<&'static str> {
     Html(include_str!("index.html"))
 }
 
-async fn get_all(State(state): State<AppState>) -> Json<Vec<String>> {
-    Json(state.items.read().await.clone())
+async fn get_all(State(state): State<AppState>) -> Json<Vec<Value>> {
+    Json(state.events.read().await.clone())
 }
 
-async fn add_item(
+async fn get_all_issues(
     State(state): State<AppState>,
-    Json(NewItem { text }): Json<NewItem>,
-) -> Json<&'static str> {
-    {
-        let mut items = state.items.write().await;
-        items.push(text.clone());
+) -> Json<std::collections::HashMap<String, Value>> {
+    Json(state.issues.read().await.clone())
+}
+
+/// Process a CloudEvent JSON and update the issues state
+async fn process_cloud_event(
+    issues_lock: &Arc<RwLock<std::collections::HashMap<String, Value>>>,
+    event_json: &Value,
+) {
+    if let (Some(event_type), Some(data)) = (
+        event_json.get("type").and_then(|t| t.as_str()),
+        event_json.get("data"),
+    ) {
+        match event_type {
+            "com.example.issue.create" => {
+                if let Some(id) = data.get("id").and_then(|i| i.as_str()) {
+                    let mut issues = issues_lock.write().await;
+                    issues.insert(id.to_string(), data.clone());
+                }
+            }
+            "com.example.issue.patch" => {
+                if let Some(source) = event_json.get("source").and_then(|s| s.as_str()) {
+                    if let Some(issue_id) = source.strip_prefix("/issues/") {
+                        let mut issues = issues_lock.write().await;
+                        if let Some(existing_issue) = issues.get_mut(issue_id) {
+                            issues::apply_merge_patch(existing_issue, data);
+                        } else {
+                            // Create new issue if it doesn't exist
+                            let mut new_issue = serde_json::json!({"id": issue_id});
+                            issues::apply_merge_patch(&mut new_issue, data);
+                            issues.insert(issue_id.to_string(), new_issue);
+                        }
+                    }
+                }
+            }
+            "com.example.issue.delete" => {
+                if let Some(id) = data.get("id").and_then(|i| i.as_str()) {
+                    let mut issues = issues_lock.write().await;
+                    issues.remove(id);
+                }
+            }
+            _ => {}
+        }
     }
-    let _ = state.tx.send(Delta::Create(text));
+}
+
+async fn handle_event(
+    State(state): State<AppState>,
+    Json(incoming_event): Json<IncomingCloudEvent>,
+) -> Json<&'static str> {
+    // Convert to JSON for processing
+    let event_json = serde_json::to_value(&incoming_event).unwrap();
+
+    // Process the event
+    process_cloud_event(&state.issues, &event_json).await;
+
+    // Convert incoming event to our CloudEvent format
+    let cloud_event = CloudEvent {
+        specversion: incoming_event.specversion,
+        id: incoming_event.id,
+        source: incoming_event.source,
+        subject: incoming_event.subject,
+        event_type: incoming_event.event_type,
+        time: incoming_event.time,
+        datacontenttype: incoming_event.datacontenttype,
+        data: incoming_event.data,
+    };
+
+    // Add to events list
+    {
+        let mut events = state.events.write().await;
+        events.push(event_json);
+    }
+
+    // Broadcast the event
+    let _ = state.tx.send(cloud_event);
     Json("ok")
+}
+
+/// Example function demonstrating CloudEvent creation
+pub fn create_example_cloudevent() -> CloudEvent {
+    // Create a sample issue for demo purposes
+    let mut sample_issues = std::collections::HashMap::new();
+    sample_issues.insert(
+        "123".to_string(),
+        serde_json::json!({
+            "id": "123",
+            "title": "Sample issue",
+            "status": "open"
+        }),
+    );
+
+    // Use issues module to create CloudEvent
+    if let Some(event_json) = issues::generate_demo_event(&sample_issues) {
+        if let Some(cloud_event) = issues::json_to_cloudevent(&event_json) {
+            return cloud_event;
+        }
+    }
+
+    // Fallback CloudEvent (should rarely be reached)
+    CloudEvent {
+        subject: Some("123".to_string()),
+        specversion: "1.0".to_string(),
+        id: uuid::Uuid::now_v7().to_string(),
+        source: "server".to_string(),
+        event_type: "com.example.issue.patch".to_string(),
+        time: Some(chrono::Utc::now().to_rfc3339()),
+        datacontenttype: Some("application/merge-patch+json".to_string()),
+        data: Some(serde_json::json!({"status": "closed"})),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_cloudevent_creation() {
+        let event = create_example_cloudevent();
+
+        assert_eq!(event.specversion, "1.0");
+        assert!(event.source.starts_with("/issues/"));
+        assert!(matches!(
+            event.event_type.as_str(),
+            "com.example.issue.create" | "com.example.issue.patch" | "com.example.issue.delete"
+        ));
+        assert!(event.datacontenttype.is_some());
+        assert!(event.data.is_some());
+    }
+
+    #[test]
+    fn test_cloudevent_serialization() {
+        let event = create_example_cloudevent();
+        let json = serde_json::to_string_pretty(&event).unwrap();
+
+        // Verify it contains expected fields
+        assert!(json.contains("\"specversion\": \"1.0\""));
+        assert!(json.contains("\"/issues/"));
+        assert!(json.contains("\"type\": \"com.example.issue."));
+        assert!(json.contains("\"datacontenttype\":"));
+
+        println!("CloudEvent JSON:\n{}", json);
+    }
+
+    #[test]
+    fn test_issue_create_cloudevent() {
+        // Test using the issues module instead
+        let (events, _) = issues::generate_initial_data();
+        let create_events: Vec<_> = events
+            .iter()
+            .filter(|e| e["type"] == "com.example.issue.create")
+            .collect();
+
+        assert!(!create_events.is_empty());
+
+        let event = &create_events[0];
+        assert_eq!(event["specversion"], "1.0");
+        assert!(event["source"].as_str().unwrap().starts_with("/issues/"));
+        assert_eq!(event["type"], "com.example.issue.create");
+        assert_eq!(event["datacontenttype"], "application/json");
+        assert!(event["data"]["title"].is_string());
+        assert!(event["data"]["id"].is_string());
+    }
+
+    #[test]
+    fn test_issue_merge_patch_cloudevent() {
+        // Test using the issues module instead
+        let (events, _) = issues::generate_initial_data();
+        let patch_events: Vec<_> = events
+            .iter()
+            .filter(|e| e["type"] == "com.example.issue.patch")
+            .collect();
+
+        assert!(!patch_events.is_empty());
+
+        let event = &patch_events[0];
+        assert_eq!(event["specversion"], "1.0");
+        assert!(event["source"].as_str().unwrap().starts_with("/issues/"));
+        assert_eq!(event["type"], "com.example.issue.patch");
+        assert_eq!(event["datacontenttype"], "application/merge-patch+json");
+        assert!(event["data"].is_object());
+    }
 }
