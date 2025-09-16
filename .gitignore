@@ -1,4 +1,10 @@
+# Build artefacts
 target
 /target
 .shuttle*
+
+# Secrets
 Secrets*.toml
+
+# Logs
+server.log
