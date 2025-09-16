@@ -1,6 +1,6 @@
 # SSE Demo: Issue Tracking with Event Sourcing
 
-Real-time issue tracking system showcasing Server-Sent Events (SSE) with CloudEvents specification and event sourcing, built with Rust (Axum/Tokio) and vanilla JavaScript.
+Real-time issue tracking system showcasing Server-Sent Events (SSE) with CloudEvents specification and event sourcing, built with Rust (Axum/Tokio) backend and React + Vite frontend.
 
 - **Real-time Updates**: Live issue updates powered by Server-Sent Events
 - **Event Sourcing**: Complete issue state is reconstructed from immutable CloudEvents combined with JSON Merge Patch
@@ -8,6 +8,7 @@ Real-time issue tracking system showcasing Server-Sent Events (SSE) with CloudEv
 - **State Reconstruction**: Current issues are built by replaying all events
 - **Snapshot + Deltas**: Frontend receives full history, then live updates
 - **Time Travel**: Complete audit trail of all changes
+- **Modern Frontend**: React + TypeScript + Vite with custom hooks for SSE
 
 ## ☁️ CloudEvents
 
@@ -133,17 +134,68 @@ curl http://localhost:3000/cloudevents
 
 ## 🏃 Development
 
-### Local Development (Port 3000)
+### Quick Start
+
+**Option 1: Build and run production mode**
 ```bash
-cargo run --features local
+# Build everything (React frontend + Rust backend)
+./build.sh
+
+# Run with built React app served by Rust
+cargo run
 ```
 
-### Shuttle Local Development (Port 8000)
+**Option 2: Development mode with hot reloading**
+```bash
+# Terminal 1: Start Rust backend
+cargo run --features local
+
+# Terminal 2: Start React dev server (in another terminal)
+cd frontend
+npm run dev
+```
+
+### Development Modes
+
+**Production Mode (Port 3000)**
+- React app is built and served by Rust backend
+- Single server serving both API and static files
+```bash
+cargo run  # serves at http://localhost:3000
+```
+
+**Development Mode (Dual servers)**
+- Rust backend serves API only (Port 3000)
+- Vite dev server serves React app with hot reload (Port 5173)
+- Vite proxies API requests to Rust backend
+```bash
+cargo run --features local     # API at http://localhost:3000
+cd frontend && npm run dev      # React at http://localhost:5173
+```
+
+**Shuttle Local Development (Port 8000)**
 ```bash
 shuttle run
 ```
 
-Open the respective localhost URL to see the web interface with real-time CloudEvents.
+### Building
+
+**Build React Frontend**
+```bash
+cd frontend
+npm install
+npm run build  # outputs to ../dist/
+```
+
+**Build Rust Backend**
+```bash
+cargo build --release
+```
+
+**Build Everything**
+```bash
+./build.sh  # Automated build script
+```
 
 ### Live Demo Data
 
@@ -156,8 +208,44 @@ The app automatically generates random demo events every 20 seconds, including:
 
 ## 🌐 Deployment
 
-Deploy to Shuttle:
+### Shuttle Deployment
 
+1. Build the React frontend:
+```bash
+cd frontend && npm run build && cd ..
+```
+
+2. Deploy to Shuttle:
 ```bash
 shuttle deploy
 ```
+
+### Manual Deployment
+
+1. Build everything:
+```bash
+./build.sh
+```
+
+2. Deploy the binary and `dist/` folder to your server
+
+## 🛠️ Architecture
+
+### Backend (Rust)
+- **Framework**: Axum with Tokio async runtime
+- **Features**: Server-Sent Events, CloudEvents processing, JSON Merge Patch
+- **API Endpoints**: `/events` (SSE + POST), `/issues`, `/cloudevents`
+- **Static Files**: Serves built React app in production mode
+
+### Frontend (React + TypeScript)
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite 7 with hot module reloading
+- **SSE Integration**: Custom React hooks for real-time event handling
+- **State Management**: React hooks with local state and optimistic updates
+- **Styling**: CSS-in-JS with responsive design and dark mode support
+
+### Development Workflow
+- **Hot Reloading**: Vite dev server with instant updates
+- **Proxy Setup**: API requests automatically proxied from React dev server to Rust backend
+- **Type Safety**: Full TypeScript coverage with CloudEvents interfaces
+- **Production Build**: Single binary serving optimized React bundle

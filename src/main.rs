@@ -4,12 +4,11 @@ use chrono;
 use futures_util::stream::{self, Stream};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+#[cfg(feature = "local")]
+use shuttle_axum::axum::response::Html;
 use shuttle_axum::axum::{
     extract::State,
-    response::{
-        sse::{Event, KeepAlive, Sse},
-        Html,
-    },
+    response::sse::{Event, KeepAlive, Sse},
     routing::{get, post},
     Json, Router,
 };
@@ -20,6 +19,9 @@ use tokio::{
 };
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
+use tower_http::cors::CorsLayer;
+#[cfg(not(feature = "local"))]
+use tower_http::services::{ServeDir, ServeFile};
 use uuid;
 
 #[derive(Clone)]
@@ -139,13 +141,26 @@ async fn create_app() -> Router {
         }
     });
 
-    let app = Router::new()
-        .route("/", get(index))
+    let mut app = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/cloudevents", get(get_all)) // convenient REST snapshot
         .route("/issues", get(get_all_issues)) // get all issues
-        .with_state(state);
+        .with_state(state)
+        .layer(CorsLayer::permissive());
+
+    // In production, serve React build files
+    #[cfg(not(feature = "local"))]
+    {
+        app =
+            app.fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
+    }
+
+    // In development, serve the old HTML file for backwards compatibility
+    #[cfg(feature = "local")]
+    {
+        app = app.route("/", get(index));
+    }
 
     app
 }
@@ -174,8 +189,55 @@ async fn sse_handler(
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
+#[cfg(feature = "local")]
 async fn index() -> Html<&'static str> {
-    Html(include_str!("index.html"))
+    Html(
+        r#"<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Demo - Development Mode</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 2rem;
+            text-align: center;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem auto;
+            max-width: 600px;
+        }
+        .button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>SSE Demo - Development Mode</h1>
+    <div class="info">
+        <h2>🚧 You're running in development mode</h2>
+        <p>For the full React experience, please start the React dev server:</p>
+        <code>cd frontend && npm run dev</code>
+        <br><br>
+        <p>Then visit: <strong>http://localhost:5173</strong></p>
+        <br>
+        <a href="http://localhost:5173" class="button">Go to React App →</a>
+        <br><br>
+        <p>API endpoints are available at:</p>
+        <a href="/issues" class="button">View Issues</a>
+        <a href="/cloudevents" class="button">View CloudEvents</a>
+    </div>
+</body>
+</html>"#,
+    )
 }
 
 async fn get_all(State(state): State<AppState>) -> Json<Vec<Value>> {
