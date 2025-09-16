@@ -13,6 +13,12 @@ This document summarizes the cleanup performed after converting the SSE Demo fro
 - **`src/js/`** - Empty JavaScript directory
   - No longer needed with React components
 
+### Refactored Components
+- **`PatchIssueForm.tsx`** - Issue-specific inline form (~250 lines)
+  - Replaced by generic CloudEventJsonEditor architecture
+- **`IssueJsonEditor.tsx`** - Issue-specific JSON editor (~290 lines)
+  - Refactored into generic CloudEventJsonEditor + specialized IssueEditor
+
 ### Temporary Files  
 - **`server.log`** - Temporary server log file
   - Added to .gitignore to prevent future commits
@@ -59,17 +65,23 @@ src/
 └── main.rs             (~300 lines)
 ```
 
-### After Cleanup
+### After Cleanup & Refactoring
 ```
 src/
 ├── issues.rs           (~400 lines, unchanged)
 └── main.rs             (~280 lines, cleaned up)
 
 frontend/               (new React app)
-├── src/components/     (~800 lines total)
+├── src/components/     (~1200 lines total)
+│   ├── CloudEventJsonEditor.tsx (~330 lines, generic)
+│   ├── IssueEditor.tsx          (~56 lines, specialized)
+│   ├── MessageEditor.tsx        (~67 lines, example)
+│   ├── DocumentEditor.tsx       (~69 lines, example)
+│   ├── Modal.tsx               (~183 lines, reusable)
+│   └── [other components]      (~500+ lines)
 ├── src/hooks/          (~200 lines)
-├── src/types.ts        (~60 lines)
-└── src/App.tsx         (~160 lines)
+├── src/types.ts        (~120 lines, extended)
+└── src/App.tsx         (~140 lines, simplified)
 ```
 
 ## ✅ Benefits of Cleanup
@@ -83,6 +95,8 @@ frontend/               (new React app)
 - **Type safety** - TypeScript interfaces replace inline JavaScript objects
 - **Component isolation** - Each component has its own concerns
 - **Modern patterns** - React hooks instead of vanilla DOM manipulation
+- **Generic architecture** - One JSON editor works for all entity types
+- **Extensible design** - Easy to add new entity types (Message, Document, etc.)
 
 ### Improved Developer Experience
 - **No more file switching** - Related code lives in the same component
@@ -97,12 +111,14 @@ The new development mode index page (shown when accessing http://localhost:3000 
 
 ## 🎯 Migration Success
 
-The cleanup successfully removed **~950 lines of legacy frontend code** while preserving all functionality through modern React components. The new architecture provides:
+The cleanup successfully removed **~950 lines of legacy frontend code** and refactored **~540 lines of issue-specific code** into a **generic, reusable architecture** while preserving all functionality. The new architecture provides:
 
 1. **Better separation of concerns**
 2. **Type safety with TypeScript**  
 3. **Modern development workflow**
 4. **Improved maintainability**
 5. **Enhanced user experience**
+6. **Generic JSON editing** - Same editor works for Issues, Messages, Documents, etc.
+7. **Extensible design** - Easy to add new entity types with minimal code
 
-All original SSE functionality works identically, but now with modern tooling and better developer experience.
+All original SSE functionality works identically, but now with a modern, scalable architecture that supports multiple entity types through a single, powerful JSON editor.

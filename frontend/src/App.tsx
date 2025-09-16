@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useSSE } from "./hooks/useSSE";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
-import PatchIssueForm from "./components/PatchIssueForm";
+
 import IssuesList from "./components/IssuesList";
 import CloudEventsStream from "./components/CloudEventsStream";
 import type { CloudEvent } from "./types";
@@ -72,17 +72,6 @@ const App: React.FC = () => {
     await sendEvent(cloudEvent);
   };
 
-  const handleIssueUpdate = (issueId: string) => {
-    // Optional: Auto-fill the patch form with the selected issue ID
-    const patchForm = document.querySelector(
-      'input[name="issueId"]',
-    ) as HTMLInputElement;
-    if (patchForm) {
-      patchForm.value = issueId;
-      patchForm.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-  };
-
   return (
     <div className="app">
       <header style={{ marginBottom: "2rem" }}>
@@ -95,14 +84,11 @@ const App: React.FC = () => {
       </header>
 
       <main>
-        {/* Issue Patcher */}
-        <PatchIssueForm issues={issues} onPatchIssue={handlePatchIssue} />
-
         {/* Current Issues Display */}
         <IssuesList
           issues={issues}
           onDeleteIssue={handleDeleteIssue}
-          onIssueUpdate={handleIssueUpdate}
+          onPatchIssue={handlePatchIssue}
         />
 
         {/* Create New Issue Form */}

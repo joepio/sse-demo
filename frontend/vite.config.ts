@@ -1,21 +1,23 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const serverUrl = "http://localhost:8000";
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
       "/events": {
-        target: "http://localhost:3000",
+        target: serverUrl,
         changeOrigin: true,
       },
       "/issues": {
-        target: "http://localhost:3000",
+        target: serverUrl,
         changeOrigin: true,
       },
       "/cloudevents": {
-        target: "http://localhost:3000",
+        target: serverUrl,
         changeOrigin: true,
       },
     },

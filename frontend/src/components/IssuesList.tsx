@@ -1,21 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { Issue } from "../types";
+import type { Issue, CloudEvent } from "../types";
+import ResourceEditor from "./ResourceEditor";
 
 interface IssuesListProps {
   issues: Record<string, Issue>;
   onDeleteIssue: (issueId: string) => Promise<void>;
-  onIssueUpdate?: (issueId: string) => void;
+  onPatchIssue: (event: CloudEvent) => Promise<void>;
 }
 
 const IssuesList: React.FC<IssuesListProps> = ({
   issues,
   onDeleteIssue,
-  onIssueUpdate,
+  onPatchIssue,
 }) => {
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
   const [deletingIssues, setDeletingIssues] = useState<Set<string>>(new Set());
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const prevIssuesRef = useRef<Record<string, Issue>>({});
 
   // Track which issues are new for animation
@@ -63,10 +66,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
     }
   };
 
-  const handleIssueClick = (issueId: string) => {
-    if (onIssueUpdate) {
-      onIssueUpdate(issueId);
-    }
+  const handleIssueClick = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditorClose = () => {
+    setIsEditorOpen(false);
+    setSelectedIssue(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -170,11 +177,18 @@ const IssuesList: React.FC<IssuesListProps> = ({
           border-radius: 6px;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           cursor: pointer;
-          transition: box-shadow 0.2s ease;
+          transition: all 0.2s ease;
+          border: 1px solid transparent;
         }
 
         .issue-card:hover {
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          border-color: #007bff;
+          transform: translateY(-1px);
+        }
+
+        .issue-card:active {
+          transform: translateY(0);
         }
       `}</style>
 
@@ -201,10 +215,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     animatingIssues.has(id) ? "issue-appear" : ""
                   } ${deletingIssues.has(id) ? "issue-disappear" : ""}`}
                   data-issue-id={id}
-                  onClick={() => handleIssueClick(id)}
+                  onClick={() => handleIssueClick(issue)}
                   style={{
                     opacity: deletingIssues.has(id) ? 0.5 : 1,
                   }}
+                  title="Click to edit this issue"
                 >
                   <div
                     style={{
@@ -220,8 +235,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
                         color: "#333",
                         flex: 1,
                         marginRight: "1rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
                       }}
                     >
+                      <span>📝</span>
                       {issue.title || "No title"}
                     </h4>
                     <span
@@ -320,6 +339,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </div>
         </div>
       </div>
+
+      <ResourceEditor<Issue>
+        isOpen={isEditorOpen}
+        onClose={handleEditorClose}
+        resource={selectedIssue}
+        resourceType="issue"
+        onSave={onPatchIssue}
+        readOnlyFields={["id", "created_at"]}
+      />
     </>
   );
 };
