@@ -55,24 +55,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const handleDeleteIssue = async (issueId: string) => {
-    const cloudEvent: CloudEvent = {
-      specversion: "1.0",
-      id: crypto.randomUUID(),
-      source: "/issues",
-      subject: issueId,
-      type: "com.example.issue.delete",
-      time: new Date().toISOString(),
-      datacontenttype: "application/json",
-      data: {
-        id: issueId,
-        reason: "manually deleted",
-      },
-    };
-
-    await sendEvent(cloudEvent);
-  };
-
   return (
     <div className="app">
       <header style={{ marginBottom: "2rem" }}>
@@ -86,11 +68,7 @@ const HomePage: React.FC = () => {
 
       <main>
         {/* Current Issues Display */}
-        <IssuesList
-          issues={issues}
-          onDeleteIssue={handleDeleteIssue}
-          onPatchIssue={handlePatchIssue}
-        />
+        <IssuesList issues={issues} onPatchIssue={handlePatchIssue} />
 
         {/* Create New Issue Form */}
         <CreateIssueForm onCreateIssue={handleCreateIssue} />

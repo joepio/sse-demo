@@ -402,7 +402,6 @@ const GitHubTimeline: React.FC = () => {
         resource={issue}
         resourceType="issue"
         onSave={handlePatchIssue}
-        readOnlyFields={["id", "created_at"]}
       />
     </div>
   );

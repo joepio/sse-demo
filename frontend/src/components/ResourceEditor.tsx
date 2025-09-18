@@ -8,7 +8,6 @@ interface ResourceEditorProps<T extends BaseEntity = BaseEntity> {
   resource: T | null;
   resourceType: string;
   onSave: (event: CloudEvent) => Promise<void>;
-  readOnlyFields?: string[];
 }
 
 const ResourceEditor = <T extends BaseEntity>({
@@ -17,7 +16,6 @@ const ResourceEditor = <T extends BaseEntity>({
   resource,
   resourceType,
   onSave,
-  readOnlyFields = ["id", "created_at"],
 }: ResourceEditorProps<T>) => {
   const [jsonText, setJsonText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

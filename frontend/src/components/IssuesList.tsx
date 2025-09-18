@@ -5,19 +5,14 @@ import ResourceEditor from "./ResourceEditor";
 
 interface IssuesListProps {
   issues: Record<string, Issue>;
-  onDeleteIssue: (issueId: string) => Promise<void>;
   onPatchIssue: (event: CloudEvent) => Promise<void>;
 }
 
-const IssuesList: React.FC<IssuesListProps> = ({
-  issues,
-  onDeleteIssue,
-  onPatchIssue,
-}) => {
+const IssuesList: React.FC<IssuesListProps> = ({ issues, onPatchIssue }) => {
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
-  const [deletingIssues, setDeletingIssues] = useState<Set<string>>(new Set());
+
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const prevIssuesRef = useRef<Record<string, Issue>>({});
@@ -49,26 +44,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
     prevIssuesRef.current = issues;
   }, [issues]);
-
-  const handleDeleteIssue = async (issueId: string) => {
-    if (!window.confirm(`Are you sure you want to delete issue #${issueId}?`)) {
-      return;
-    }
-
-    setDeletingIssues((prev) => new Set([...prev, issueId]));
-
-    try {
-      await onDeleteIssue(issueId);
-    } catch (error) {
-      console.error("Failed to delete issue:", error);
-      setDeletingIssues((prev) => {
-        const updated = new Set(prev);
-        updated.delete(issueId);
-        return updated;
-      });
-      alert("Failed to delete issue");
-    }
-  };
 
   const handleIssueClick = (
     issue: Issue,
@@ -227,7 +202,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   key={id}
                   className={`issue-card ${
                     animatingIssues.has(id) ? "issue-appear" : ""
-                  } ${deletingIssues.has(id) ? "issue-disappear" : ""}`}
+                  }`}
                   data-issue-id={id}
                   onClick={(e) => handleIssueClick(issue, e)}
                   onKeyDown={(e) => {
@@ -237,9 +212,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   }}
                   role="button"
                   tabIndex={0}
-                  style={{
-                    opacity: deletingIssues.has(id) ? 0.5 : 1,
-                  }}
                   title="Click to view issue timeline"
                 >
                   <div
@@ -368,7 +340,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
         resource={selectedIssue}
         resourceType="issue"
         onSave={onPatchIssue}
-        readOnlyFields={["id", "created_at"]}
       />
     </>
   );

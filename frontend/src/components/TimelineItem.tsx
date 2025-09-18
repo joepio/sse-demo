@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Modal from "./Modal";
 import type {
   TimelineEvent,
@@ -29,7 +29,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     };
   };
 
-  const getRelativeTime = (date: Date) => {
+  const getRelativeTime = (date: Date): string => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -99,28 +99,25 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     const data = (event.data || {}) as TimelineItemData;
 
     switch (itemType) {
-      case "comment":
+      case "comment": {
         // Handle nested item_data structure for timeline comments
-        const commentData = data.item_data || data;
-        const content = commentData.content || data.content;
-        const mentions = commentData.mentions || data.mentions;
-        const editedAt = commentData.edited_at || data.edited_at;
+        const commentData = (data.item_data || data) as Record<string, unknown>;
+        const content =
+          commentData.content || (data as Record<string, unknown>).content;
+        const mentions =
+          commentData.mentions || (data as Record<string, unknown>).mentions;
 
         return (
           <div className="timeline-content-comment">
-            <p>{content || "No content"}</p>
-            {mentions && mentions.length > 0 && (
+            <p>{typeof content === "string" ? content : "No content"}</p>
+            {Array.isArray(mentions) && mentions.length > 0 && (
               <div className="mentions">
-                <small>Mentions: {mentions.join(", ")}</small>
+                <small>Mentions: {mentions.map(String).join(", ")}</small>
               </div>
-            )}
-            {editedAt && (
-              <small className="edited-indicator">
-                Edited {getRelativeTime(new Date(editedAt))}
-              </small>
             )}
           </div>
         );
+      }
 
       case "status_change":
         return (
@@ -153,8 +150,8 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
             </div>
             <div className="llm-meta">
               <small>
-                Model: {data.model || "unknown"}
-                {data.confidence &&
+                Model: {String(data.model) || "unknown"}
+                {typeof data.confidence === "number" &&
                   ` • Confidence: ${Math.round(data.confidence * 100)}%`}
               </small>
             </div>
@@ -165,8 +162,10 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
         return (
           <div className="timeline-content-deployment">
             <p>
-              Deployed version <strong>{data.version || "unknown"}</strong>
-              {data.environment && ` to ${data.environment}`}
+              Deployed version{" "}
+              <strong>{String(data.version) || "unknown"}</strong>
+              {typeof data.environment === "string" &&
+                ` to ${data.environment}`}
             </p>
             {data.commit_hash && (
               <div className="commit-info">
@@ -196,13 +195,13 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
                 {(() => {
                   const priority = data.priority;
                   return typeof priority === "string" && priority
-                    ? ` • Priority: ${priority}`
+                    ? ` • Priority: ${String(priority)}`
                     : "";
                 })()}
                 {(() => {
                   const assignee = data.assignee;
                   return typeof assignee === "string" && assignee
-                    ? ` • Assigned to: ${assignee}`
+                    ? ` • Assigned to: ${String(assignee)}`
                     : "";
                 })()}
               </small>
@@ -210,17 +209,17 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
           </div>
         );
 
-      case "issue_updated":
+      case "issue_updated": {
         // Generate a clean summary of changes
         const changeKeys = Object.entries(data)
           .filter(
-            ([key, value]) =>
+            ([key]) =>
               key !== "item_type" &&
               key !== "item_id" &&
               key !== "actor" &&
               key !== "timestamp",
           )
-          .map(([key, value]) => key);
+          .map(([key]) => key);
 
         let changeText: string;
         if (changeKeys.length === 0) {
@@ -243,6 +242,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
             <p>{changeText}</p>
           </div>
         );
+      }
 
       case "issue_deleted":
         return (
@@ -274,13 +274,13 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     // Generate a clean summary of changes
     const changeKeys = Object.entries((event.data || {}) as TimelineItemData)
       .filter(
-        ([key, value]) =>
+        ([key]) =>
           key !== "item_type" &&
           key !== "item_id" &&
           key !== "actor" &&
           key !== "timestamp",
       )
-      .map(([key, value]) => key);
+      .map(([key]) => key);
 
     let changeText: string;
     if (changeKeys.length === 0) {
@@ -317,14 +317,15 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
                   )}{" "}
                   {changeText}
                 </span>
-                <time
+                <button
+                  type="button"
                   className="timestamp"
-                  dateTime={event.timestamp}
                   title={`${timeInfo.date} at ${timeInfo.time}`}
                   onClick={() => setShowEventModal(true)}
+                  style={{ background: "none", border: "none", padding: 0 }}
                 >
                   {timeInfo.relative}
-                </time>
+                </button>
               </div>
             </div>
           </div>
@@ -386,35 +387,42 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
               {event.actor && event.actor !== "system" && (
                 <span className="actor">{event.actor}</span>
               )}
-              <time
+              <button
+                type="button"
                 className="timestamp"
-                dateTime={event.timestamp}
                 title={`${timeInfo.date} at ${timeInfo.time}`}
                 onClick={() => setShowEventModal(true)}
+                style={{ background: "none", border: "none", padding: 0 }}
               >
                 {timeInfo.relative}
-              </time>
+              </button>
             </div>
           </div>
         )}
         {!title && (
-          <div
+          <button
+            type="button"
             className="timeline-header-minimal"
             onClick={() => setShowEventModal(true)}
+            style={{
+              cursor: "pointer",
+              background: "none",
+              border: "none",
+              width: "100%",
+            }}
           >
             <div className="timeline-meta">
               {event.actor && event.actor !== "system" && (
                 <span className="actor">{event.actor}</span>
               )}
-              <time
+              <span
                 className="timestamp"
-                dateTime={event.timestamp}
                 title={`${timeInfo.date} at ${timeInfo.time}`}
               >
                 {timeInfo.relative}
-              </time>
+              </span>
             </div>
-          </div>
+          </button>
         )}
 
         <div className="timeline-content">{renderEventContent()}</div>
