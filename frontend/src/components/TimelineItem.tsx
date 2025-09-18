@@ -212,7 +212,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 
       case "issue_updated":
         // Generate a clean summary of changes
-        const changes = Object.entries(data)
+        const changeKeys = Object.entries(data)
           .filter(
             ([key, value]) =>
               key !== "item_type" &&
@@ -220,26 +220,27 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
               key !== "actor" &&
               key !== "timestamp",
           )
-          .map(([key, value]) => {
-            if (key === "assignee") {
-              if (value === null) return `removed assignee`;
-              return `assigned to ${value}`;
-            }
-            if (key === "status") {
-              return `status changed to ${value}`;
-            }
-            if (key === "priority") {
-              return `priority changed to ${value}`;
-            }
-            if (key === "title") {
-              return `title changed to "${value}"`;
-            }
-            return `${key} changed to ${JSON.stringify(value)}`;
-          });
+          .map(([key, value]) => key);
 
+        let changeText: string;
+        if (changeKeys.length === 0) {
+          changeText = "updated issue";
+        } else if (changeKeys.length === 1) {
+          const key = changeKeys[0];
+          const value = Object.entries(data).find(([k]) => k === key)?.[1];
+          let valueText = String(value);
+          if (valueText.length > 30) {
+            valueText = valueText.substring(0, 30) + "...";
+          }
+          changeText = `${key} updated to "${valueText}"`;
+        } else if (changeKeys.length === 2) {
+          changeText = `${changeKeys[0]} and ${changeKeys[1]} updated`;
+        } else {
+          changeText = `${changeKeys.length} fields updated`;
+        }
         return (
           <div className="timeline-content-issue-updated">
-            <p>{changes.length > 0 ? changes.join(", ") : "Issue updated"}</p>
+            <p>{changeText}</p>
           </div>
         );
 
@@ -270,7 +271,8 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 
   // For issue updates, render as a compact single line
   if (itemType === "issue_updated") {
-    const changes = Object.entries((event.data || {}) as TimelineItemData)
+    // Generate a clean summary of changes
+    const changeKeys = Object.entries((event.data || {}) as TimelineItemData)
       .filter(
         ([key, value]) =>
           key !== "item_type" &&
@@ -278,25 +280,26 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
           key !== "actor" &&
           key !== "timestamp",
       )
-      .map(([key, value]) => {
-        if (key === "assignee") {
-          if (value === null) return "removed assignee";
-          return `assigned to ${value}`;
-        }
-        if (key === "status") {
-          return `status changed to ${value}`;
-        }
-        if (key === "priority") {
-          return `priority changed to ${value}`;
-        }
-        if (key === "title") {
-          return `title changed to "${value}"`;
-        }
-        return `${key} changed to ${JSON.stringify(value)}`;
-      });
+      .map(([key, value]) => key);
 
-    const changeText =
-      changes.length > 0 ? changes.join(", ") : "updated issue";
+    let changeText: string;
+    if (changeKeys.length === 0) {
+      changeText = "updated issue";
+    } else if (changeKeys.length === 1) {
+      const key = changeKeys[0];
+      const value = Object.entries((event.data || {}) as TimelineItemData).find(
+        ([k]) => k === key,
+      )?.[1];
+      let valueText = String(value);
+      if (valueText.length > 30) {
+        valueText = valueText.substring(0, 30) + "...";
+      }
+      changeText = `${key} updated to "${valueText}"`;
+    } else if (changeKeys.length === 2) {
+      changeText = `${changeKeys[0]} and ${changeKeys[1]} updated`;
+    } else {
+      changeText = `${changeKeys.length} fields updated`;
+    }
 
     return (
       <>

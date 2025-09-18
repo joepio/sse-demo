@@ -1,8 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSSE } from "../hooks/useSSE";
-import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
+import type {
+  CloudEvent,
+  TimelineEvent,
+  TimelineItemType,
+  Issue,
+} from "../types";
 import TimelineItem from "./TimelineItem";
+import ResourceEditor from "./ResourceEditor";
 import "./GitHubTimeline.css";
 
 const GitHubTimeline: React.FC = () => {
@@ -13,6 +19,8 @@ const GitHubTimeline: React.FC = () => {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [commentSuccess, setCommentSuccess] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const issue = issueId ? issues[issueId] : null;
 
@@ -130,8 +138,53 @@ const GitHubTimeline: React.FC = () => {
   };
 
   const handleEditIssue = () => {
-    // Navigate back to main page and trigger edit - in a real app you might have a dedicated edit route
-    navigate(`/?edit=${issueId}`);
+    setIsEditorOpen(true);
+  };
+
+  const handleEditorClose = () => {
+    setIsEditorOpen(false);
+  };
+
+  const handlePatchIssue = async (event: CloudEvent) => {
+    await sendEvent(event);
+    setIsEditorOpen(false);
+  };
+
+  const handleDeleteIssue = async () => {
+    if (
+      !issueId ||
+      !window.confirm(`Are you sure you want to delete issue #${issueId}?`)
+    ) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      const deleteEvent: CloudEvent = {
+        specversion: "1.0",
+        id: crypto.randomUUID(),
+        source: `/issues/${issueId}`,
+        subject: issueId,
+        type: "com.example.issue.delete",
+        time: new Date().toISOString(),
+        datacontenttype: "application/json",
+        data: {
+          id: issueId,
+          reason: "Deleted from timeline view",
+        },
+      };
+
+      await sendEvent(deleteEvent);
+
+      // Navigate back to main page after successful deletion
+      navigate("/");
+    } catch (error) {
+      console.error("Failed to delete issue:", error);
+      alert("Failed to delete issue");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -253,6 +306,14 @@ const GitHubTimeline: React.FC = () => {
               >
                 Edit Issue
               </button>
+              <button
+                type="button"
+                className="btn btn-delete"
+                onClick={handleDeleteIssue}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Delete Issue"}
+              </button>
             </div>
           </div>
         </div>
@@ -334,6 +395,15 @@ const GitHubTimeline: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ResourceEditor<Issue>
+        isOpen={isEditorOpen}
+        onClose={handleEditorClose}
+        resource={issue}
+        resourceType="issue"
+        onSave={handlePatchIssue}
+        readOnlyFields={["id", "created_at"]}
+      />
     </div>
   );
 };

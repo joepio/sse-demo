@@ -208,6 +208,17 @@
     background: #1a7f37;
 }
 
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background: #c82333;
+    border-color: #bd2130;
+}
+
 .btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;

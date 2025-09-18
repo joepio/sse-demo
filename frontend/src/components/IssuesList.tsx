@@ -74,15 +74,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
     issue: Issue,
     event: React.MouseEvent | React.KeyboardEvent,
   ) => {
-    // Check if the click was on the timeline button
-    if ((event.target as HTMLElement).closest(".timeline-button")) {
-      navigate(`/issue/${issue.id}`);
+    // Check if the click was on the edit button
+    if ((event.target as HTMLElement).closest(".edit-button")) {
+      setSelectedIssue(issue);
+      setIsEditorOpen(true);
       return;
     }
 
-    // Otherwise, open the editor as before
-    setSelectedIssue(issue);
-    setIsEditorOpen(true);
+    // Default behavior: navigate to timeline
+    navigate(`/issue/${issue.id}`);
   };
 
   const handleEditorClose = () => {
@@ -240,7 +240,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                   style={{
                     opacity: deletingIssues.has(id) ? 0.5 : 1,
                   }}
-                  title="Click to edit this issue"
+                  title="Click to view issue timeline"
                 >
                   <div
                     style={{
@@ -335,13 +335,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                       <button
                         type="button"
-                        className="timeline-button"
+                        className="edit-button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/issue/${id}`);
+                          setSelectedIssue(issue);
+                          setIsEditorOpen(true);
                         }}
                         style={{
-                          background: "#007bff",
+                          background: "#6c757d",
                           color: "white",
                           border: "none",
                           padding: "0.25rem 0.5rem",
@@ -350,29 +351,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
                           fontSize: "0.8rem",
                         }}
                       >
-                        📅 Timeline
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteIssue(id);
-                        }}
-                        disabled={deletingIssues.has(id)}
-                        style={{
-                          background: "#dc3545",
-                          color: "white",
-                          border: "none",
-                          padding: "0.25rem 0.5rem",
-                          borderRadius: "4px",
-                          cursor: deletingIssues.has(id)
-                            ? "not-allowed"
-                            : "pointer",
-                          fontSize: "0.8rem",
-                          opacity: deletingIssues.has(id) ? 0.6 : 1,
-                        }}
-                      >
-                        {deletingIssues.has(id) ? "Deleting..." : "Delete"}
+                        ✏️ Edit
                       </button>
                     </div>
                   </div>
