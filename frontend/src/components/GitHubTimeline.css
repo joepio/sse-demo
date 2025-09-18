@@ -1,8 +1,8 @@
-/* GitHub-style Timeline Styles */
+/* GitHub-style Timeline Styles using CSS theme variables */
 
 .github-timeline {
     min-height: 100vh;
-    background: #ffffff;
+    background-color: var(--bg-primary);
     font-family:
         -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica,
         Arial, sans-serif;
@@ -10,8 +10,8 @@
 
 /* Header */
 .github-timeline-header {
-    background: #f6f8fa;
-    border-bottom: 1px solid #d1d9e0;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
     padding: 1rem 2rem;
     position: sticky;
     top: 0;
@@ -26,7 +26,7 @@
 }
 
 .breadcrumb-link {
-    color: #0969da;
+    color: var(--link-primary);
     text-decoration: none;
     font-weight: 500;
 }
@@ -36,11 +36,11 @@
 }
 
 .breadcrumb-separator {
-    color: #656d76;
+    color: var(--text-tertiary);
 }
 
 .breadcrumb-current {
-    color: #24292f;
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -68,15 +68,15 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #0969da;
-    color: white;
+    background-color: var(--link-primary);
+    color: var(--text-inverse);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
     font-size: 0.875rem;
-    border: 2px solid #ffffff;
-    box-shadow: 0 0 0 1px #d1d9e0;
+    border: 2px solid var(--bg-primary);
+    box-shadow: 0 0 0 1px var(--border-primary);
 }
 
 .github-timeline-item-content {
@@ -90,8 +90,8 @@
 }
 
 .github-timeline-issue .github-timeline-item-content {
-    background: #f6f8fa;
-    border: 1px solid #d1d9e0;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
     border-radius: 12px;
     padding: 2rem;
 }
@@ -103,7 +103,7 @@
 .issue-title {
     font-size: 2rem;
     font-weight: 600;
-    color: #24292f;
+    color: var(--text-primary);
     margin: 0 0 0.75rem 0;
     line-height: 1.25;
     display: flex;
@@ -113,7 +113,7 @@
 
 .issue-number {
     font-size: 1.25rem;
-    color: #656d76;
+    color: var(--text-tertiary);
     font-weight: 400;
 }
 
@@ -131,7 +131,7 @@
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: white;
+    color: var(--text-inverse);
     text-transform: capitalize;
 }
 
@@ -148,7 +148,7 @@
 .issue-description p {
     font-size: 1rem;
     line-height: 1.5;
-    color: #24292f;
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -161,11 +161,11 @@
 
 .issue-detail {
     font-size: 0.875rem;
-    color: #656d76;
+    color: var(--text-tertiary);
 }
 
 .issue-detail strong {
-    color: #24292f;
+    color: var(--text-primary);
 }
 
 .issue-actions {
@@ -183,40 +183,40 @@
     font-weight: 500;
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--animation-duration-fast) ease;
     border: 1px solid transparent;
 }
 
 .btn-edit {
-    background: #f6f8fa;
-    color: #24292f;
-    border-color: #d1d9e0;
+    background-color: var(--button-secondary-bg);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
 }
 
 .btn-edit:hover {
-    background: #f3f4f6;
-    border-color: #afb8c1;
+    background-color: var(--button-secondary-hover);
+    border-color: var(--border-hover);
 }
 
 .btn-primary {
-    background: #1f883d;
-    color: white;
-    border-color: #1f883d;
+    background-color: var(--button-primary-bg);
+    color: var(--text-inverse);
+    border-color: var(--button-primary-bg);
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #1a7f37;
+    background-color: var(--button-primary-hover);
 }
 
 .btn-delete {
-    background: #dc3545;
-    color: white;
-    border-color: #dc3545;
+    background-color: var(--button-danger-bg);
+    color: var(--text-inverse);
+    border-color: var(--button-danger-bg);
 }
 
 .btn-delete:hover:not(:disabled) {
-    background: #c82333;
-    border-color: #bd2130;
+    background-color: var(--button-danger-hover);
+    border-color: var(--button-danger-hover);
 }
 
 .btn:disabled {
@@ -236,7 +236,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #d1d9e0;
+    background-color: var(--border-primary);
     z-index: 1;
 }
 
@@ -257,13 +257,13 @@
 }
 
 .github-timeline-events .timeline-body {
-    background: white;
-    border: 1px solid #d1d9e0;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
     padding: 0;
     margin-left: 0;
     position: relative;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .github-timeline-events .timeline-body::before,
@@ -272,31 +272,29 @@
 }
 
 .github-timeline-events .timeline-header {
-    border-bottom: 1px solid #d1d9e0;
+    border-bottom: 1px solid var(--border-primary);
     padding: 1rem 1.5rem 0.75rem 1.5rem;
     margin-bottom: 0;
-    background: #f6f8fa;
+    background-color: var(--bg-tertiary);
     border-radius: 8px 8px 0 0;
 }
 
 .github-timeline-events .timeline-header-minimal {
-    padding: 1rem 1.5rem 0.75rem 1.5rem;
-    margin-bottom: 0;
-    background: #f6f8fa;
+    background-color: var(--bg-tertiary);
     border-radius: 8px 8px 0 0;
-    border-bottom: 1px solid #d1d9e0;
+    border-bottom: 1px solid var(--border-primary);
     cursor: pointer;
-    transition: background-color 0.15s ease;
+    transition: background-color var(--animation-duration-fast) ease;
 }
 
 .github-timeline-events .timeline-header-minimal:hover {
-    background: #f0f3f6;
+    background-color: var(--bg-hover);
 }
 
 .github-timeline-events .timeline-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #24292f;
+    color: var(--text-primary);
 }
 
 .github-timeline-events .timeline-meta {
@@ -308,20 +306,20 @@
 }
 
 .github-timeline-events .actor {
-    color: #0969da;
+    color: var(--link-primary);
     font-weight: 600;
 }
 
 .github-timeline-events .timestamp {
-    color: #656d76;
+    color: var(--text-tertiary);
     cursor: pointer;
     text-decoration: none;
-    transition: color 0.15s ease;
+    transition: color var(--animation-duration-fast) ease;
     margin-left: auto;
 }
 
 .github-timeline-events .timestamp:hover {
-    color: #0969da;
+    color: var(--link-primary);
     text-decoration: underline;
 }
 
@@ -338,7 +336,7 @@
     margin: 0 0 1rem 0;
     font-size: 0.875rem;
     line-height: 1.6;
-    color: #24292f;
+    color: var(--text-primary);
 }
 
 .github-timeline-events .timeline-content-comment p:last-child {
@@ -347,15 +345,15 @@
 
 /* Timeline footer */
 .github-timeline-events .timeline-footer {
-    background: #f6f8fa;
+    background-color: var(--bg-tertiary);
     padding: 0.75rem 1.5rem;
-    border-top: 1px solid #d1d9e0;
+    border-top: 1px solid var(--border-primary);
     border-radius: 0 0 8px 8px;
     margin-top: 0;
 }
 
 .github-timeline-events .event-id {
-    color: #656d76;
+    color: var(--text-tertiary);
     font-size: 0.75rem;
 }
 
@@ -366,23 +364,23 @@
 }
 
 .comment-form {
-    background: white;
-    border: 1px solid #d1d9e0;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
     overflow: hidden;
 }
 
 .comment-form-header {
-    background: #f6f8fa;
+    background-color: var(--bg-tertiary);
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #d1d9e0;
+    border-bottom: 1px solid var(--border-primary);
 }
 
 .comment-form-header h3 {
     margin: 0;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #24292f;
+    color: var(--text-primary);
 }
 
 .comment-textarea {
@@ -395,18 +393,18 @@
     font-family: inherit;
     font-size: 0.875rem;
     line-height: 1.5;
-    background: white;
-    color: #24292f;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .comment-textarea::placeholder {
-    color: #656d76;
+    color: var(--text-tertiary);
 }
 
 .comment-form-footer {
     padding: 0.75rem 1rem;
-    background: #f6f8fa;
-    border-top: 1px solid #d1d9e0;
+    background-color: var(--bg-tertiary);
+    border-top: 1px solid var(--border-primary);
 }
 
 .comment-form-actions {
@@ -425,15 +423,15 @@
 }
 
 .comment-error {
-    background: #ffeaea;
-    border-left-color: #d73a49;
-    color: #d73a49;
+    background-color: var(--bg-error);
+    border-left-color: var(--text-error);
+    color: var(--text-error);
 }
 
 .comment-success {
-    background: #e6ffed;
-    border-left-color: #28a745;
-    color: #28a745;
+    background-color: var(--bg-success);
+    border-left-color: var(--text-success);
+    color: var(--text-success);
 }
 
 /* Error and loading states */
@@ -451,13 +449,13 @@
 .github-timeline-error h1,
 .github-timeline-loading h1 {
     font-size: 2rem;
-    color: #24292f;
+    color: var(--text-primary);
     margin-bottom: 1rem;
 }
 
 .github-timeline-error a,
 .github-timeline-loading a {
-    color: #0969da;
+    color: var(--link-primary);
     text-decoration: none;
     font-weight: 500;
 }
@@ -534,167 +532,5 @@
 
     .github-timeline-events .timeline-footer {
         padding: 0.75rem 1rem;
-    }
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    .github-timeline {
-        background: #0d1117;
-        color: #f0f6fc;
-    }
-
-    .github-timeline-header {
-        background: #161b22;
-        border-bottom-color: #30363d;
-    }
-
-    .breadcrumb-link {
-        color: #58a6ff;
-    }
-
-    .breadcrumb-current {
-        color: #f0f6fc;
-    }
-
-    .breadcrumb-separator {
-        color: #8b949e;
-    }
-
-    .github-timeline-issue .github-timeline-item-content {
-        background: #161b22;
-        border-color: #30363d;
-    }
-
-    .issue-title {
-        color: #f0f6fc;
-    }
-
-    .issue-number {
-        color: #8b949e;
-    }
-
-    .issue-description p {
-        color: #f0f6fc;
-    }
-
-    .issue-detail {
-        color: #8b949e;
-    }
-
-    .issue-detail strong {
-        color: #f0f6fc;
-    }
-
-    .btn-edit {
-        background: #21262d;
-        color: #f0f6fc;
-        border-color: #30363d;
-    }
-
-    .btn-edit:hover {
-        background: #30363d;
-        border-color: #8b949e;
-    }
-
-    .github-timeline-events::before {
-        background: #30363d;
-    }
-
-    .github-timeline-events .timeline-body {
-        background: #0d1117;
-        border-color: #30363d;
-    }
-
-    .github-timeline-events .timeline-header {
-        background: #161b22;
-        border-bottom-color: #30363d;
-    }
-
-    .github-timeline-events .timeline-content-comment p {
-        color: #f0f6fc;
-    }
-
-    .github-timeline-events .timeline-footer {
-        background: #161b22;
-        border-top-color: #30363d;
-    }
-
-    .github-timeline-events .event-id {
-        color: #8b949e;
-    }
-
-    .github-timeline-events .timeline-header {
-        border-bottom-color: #30363d;
-    }
-
-    .github-timeline-events .timeline-header-minimal {
-        background: #161b22;
-        border-bottom-color: #30363d;
-    }
-
-    .github-timeline-events .timeline-header-minimal:hover {
-        background: #1c2128;
-    }
-
-    .github-timeline-events .timestamp:hover {
-        color: #58a6ff;
-    }
-
-    .github-timeline-events .timeline-title {
-        color: #f0f6fc;
-    }
-
-    .github-timeline-events .actor {
-        color: #58a6ff;
-    }
-
-    .github-timeline-events .timestamp {
-        color: #8b949e;
-    }
-
-    .comment-form {
-        background: #0d1117;
-        border-color: #30363d;
-    }
-
-    .comment-form-header {
-        background: #161b22;
-        border-bottom-color: #30363d;
-    }
-
-    .comment-form-header h3 {
-        color: #f0f6fc;
-    }
-
-    .comment-textarea {
-        background: #0d1117;
-        color: #f0f6fc;
-    }
-
-    .comment-textarea::placeholder {
-        color: #8b949e;
-    }
-
-    .comment-form-footer {
-        background: #161b22;
-        border-top-color: #30363d;
-    }
-
-    .comment-error {
-        background: #2d1117;
-        border-left-color: #f85149;
-        color: #f85149;
-    }
-
-    .comment-success {
-        background: #0f2419;
-        border-left-color: #3fb950;
-        color: #3fb950;
-    }
-
-    .avatar {
-        background: #1f6feb;
-        box-shadow: 0 0 0 1px #30363d;
     }
 }

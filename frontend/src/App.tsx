@@ -1,43 +1,62 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useSSE } from "./hooks/useSSE";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
-import IssuesList from "./components/IssuesList";
-import CloudEventsStream from "./components/CloudEventsStream";
 import GitHubTimeline from "./components/GitHubTimeline";
-import type { CloudEvent } from "./types";
+import ResourceEditor from "./components/ResourceEditor";
+import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 
-const HomePage: React.FC = () => {
-  const { events, issues, connectionStatus, sendEvent } = useSSE();
-  const [snapshotEvents, setSnapshotEvents] = React.useState<CloudEvent[]>([]);
-  const [liveEvents, setLiveEvents] = React.useState<CloudEvent[]>([]);
-  const [hasReceivedSnapshot, setHasReceivedSnapshot] = React.useState(false);
-  const eventsProcessedRef = useRef(0);
+const IssuesDashboard: React.FC = () => {
+  const { issues, connectionStatus, sendEvent } = useSSE();
+  const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const prevIssuesRef = useRef<Record<string, Issue>>({});
 
-  // Separate snapshot from live events
+  // Track which issues are new for animation
   useEffect(() => {
-    if (!hasReceivedSnapshot && events.length > 0) {
-      setSnapshotEvents(events);
-      setHasReceivedSnapshot(true);
-      eventsProcessedRef.current = events.length;
-    } else if (
-      hasReceivedSnapshot &&
-      events.length > eventsProcessedRef.current
-    ) {
-      const newEvents = events.slice(eventsProcessedRef.current);
-      setLiveEvents((prev) => [...prev, ...newEvents]);
-      eventsProcessedRef.current = events.length;
+    const currentIssueIds = new Set(Object.keys(issues));
+    const prevIssueIds = new Set(Object.keys(prevIssuesRef.current));
+
+    const newIssues = new Set(
+      [...currentIssueIds].filter((id) => !prevIssueIds.has(id)),
+    );
+
+    if (newIssues.size > 0) {
+      setAnimatingIssues((prev) => new Set([...prev, ...newIssues]));
+
+      // Remove animation class after animation completes
+      setTimeout(() => {
+        setAnimatingIssues((prev) => {
+          const updated = new Set(prev);
+          newIssues.forEach((id) => {
+            updated.delete(id);
+          });
+          return updated;
+        });
+      }, 500);
     }
-  }, [events, hasReceivedSnapshot]);
+
+    prevIssuesRef.current = issues;
+  }, [issues]);
 
   const handleCreateIssue = async (event: CloudEvent) => {
     await sendEvent(event);
   };
 
+  const handleEditIssue = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setIsEditorOpen(true);
+  };
+
   const handlePatchIssue = async (event: CloudEvent) => {
     await sendEvent(event);
+    setIsEditorOpen(false);
+    setSelectedIssue(null);
 
     // Trigger shine effect on the updated issue
     if (event.subject) {
@@ -55,87 +74,198 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const handleEditorClose = () => {
+    setIsEditorOpen(false);
+    setSelectedIssue(null);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "open":
+        return "var(--status-open)";
+      case "in_progress":
+        return "var(--status-progress)";
+      case "closed":
+        return "var(--status-closed)";
+      default:
+        return "var(--text-secondary)";
+    }
+  };
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case "high":
+        return "var(--priority-high)";
+      case "medium":
+        return "var(--priority-medium)";
+      case "low":
+        return "var(--priority-low)";
+      default:
+        return "var(--text-secondary)";
+    }
+  };
+
+  const issueEntries = Object.entries(issues);
+
   return (
-    <div className="app">
-      <header style={{ marginBottom: "2rem" }}>
-        <h1>SSE CloudEvents with Issue Patching</h1>
-        <p style={{ marginBottom: "1rem", color: "#666" }}>
-          Real-time CloudEvents stream showing immutable events. Use the Issue
-          Patcher to modify business objects via JSON Merge Patch.
-        </p>
+    <div className="github-timeline">
+      {/* Header */}
+      <div className="github-timeline-header">
+        <div className="breadcrumb">
+          <span className="breadcrumb-current">Issues Dashboard</span>
+        </div>
         <ConnectionStatus status={connectionStatus} />
-      </header>
+      </div>
 
-      <main>
-        {/* Current Issues Display */}
-        <IssuesList issues={issues} onPatchIssue={handlePatchIssue} />
-
-        {/* Create New Issue Form */}
-        <CreateIssueForm onCreateIssue={handleCreateIssue} />
-
-        {/* CloudEvents Stream - Snapshot */}
-        {snapshotEvents.length > 0 && (
-          <div style={{ marginTop: "2rem" }}>
-            <h3>Historical CloudEvents (Snapshot)</h3>
-            <p
-              style={{
-                marginBottom: "1rem",
-                color: "#666",
-                fontSize: "0.9rem",
-              }}
-            >
-              Initial state loaded from server - these events built the current
-              issues state
-            </p>
-            <CloudEventsStream
-              events={snapshotEvents}
-              isSnapshot={true}
-              showHeader={false}
-            />
+      {/* Main content */}
+      <div className="github-timeline-content">
+        {/* Create Issue Form */}
+        <div className="github-timeline-item">
+          <div className="github-timeline-item-avatar">
+            <div className="avatar">+</div>
           </div>
-        )}
-
-        {/* CloudEvents Stream - Live */}
-        {(liveEvents.length > 0 || hasReceivedSnapshot) && (
-          <div style={{ marginTop: "2rem" }}>
-            <div
-              style={{
-                background: "#007bff",
-                color: "white",
-                borderRadius: "4px",
-                padding: "0.5rem",
-                margin: "1rem 0",
-                fontWeight: "bold",
-                textAlign: "center",
-              }}
-            >
-              🔴 Live CloudEvents Stream
+          <div className="github-timeline-item-content">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Create New Issue</h2>
+                <p className="card-subtitle">
+                  Add a new issue to track work or bugs
+                </p>
+              </div>
+              <CreateIssueForm onCreateIssue={handleCreateIssue} />
             </div>
-            <p
-              style={{
-                marginBottom: "1rem",
-                color: "#666",
-                fontSize: "0.9rem",
-              }}
-            >
-              New events appear in real-time via Server-Sent Events
-            </p>
-            <CloudEventsStream
-              events={liveEvents}
-              isSnapshot={false}
-              showHeader={false}
-            />
           </div>
-        )}
+        </div>
 
-        {!hasReceivedSnapshot && (
-          <div
-            style={{ marginTop: "2rem", textAlign: "center", color: "#666" }}
-          >
-            <p>Loading initial data...</p>
+        {/* Issues List */}
+        <div className="github-timeline-item">
+          <div className="github-timeline-item-avatar">
+            <div className="avatar">📋</div>
           </div>
-        )}
-      </main>
+          <div className="github-timeline-item-content">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Current Issues</h2>
+                <p className="card-subtitle">
+                  {issueEntries.length} issue
+                  {issueEntries.length !== 1 ? "s" : ""} built from events
+                </p>
+              </div>
+
+              <div className="card-body">
+                {issueEntries.length === 0 ? (
+                  <div className="loading-message">
+                    <p>No issues found. Create your first issue above.</p>
+                  </div>
+                ) : (
+                  <div className="issues-grid">
+                    {issueEntries.map(([id, issue]) => (
+                      <div
+                        key={id}
+                        className={`issue-card ${animatingIssues.has(id) ? "new" : ""}`}
+                        data-issue-id={id}
+                      >
+                        <div className="issue-card-header">
+                          <h3 className="issue-card-title">
+                            <a href={`/issue/${id}`} className="issue-link">
+                              {issue.title || "Untitled Issue"}
+                            </a>
+                            <span className="issue-number">#{id}</span>
+                          </h3>
+
+                          <div className="issue-card-actions">
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleEditIssue(issue)}
+                              title="Edit issue"
+                            >
+                              ✏️ Edit
+                            </button>
+                          </div>
+                        </div>
+
+                        <p className="issue-card-description">
+                          {issue.description || "No description provided."}
+                        </p>
+
+                        <div className="issue-card-meta">
+                          <div className="issue-meta-item">
+                            <span className="meta-label">Status:</span>
+                            <span
+                              className="badge badge-status"
+                              style={{
+                                backgroundColor: getStatusColor(issue.status),
+                              }}
+                            >
+                              {issue.status === "in_progress"
+                                ? "In Progress"
+                                : issue.status}
+                            </span>
+                          </div>
+
+                          <div className="issue-meta-item">
+                            <span className="meta-label">Assignee:</span>
+                            <span className="meta-value">
+                              {issue.assignee || "Unassigned"}
+                            </span>
+                          </div>
+
+                          {issue.priority && (
+                            <div className="issue-meta-item">
+                              <span className="meta-label">Priority:</span>
+                              <span
+                                className="meta-value priority"
+                                style={{
+                                  color: getPriorityColor(issue.priority),
+                                }}
+                              >
+                                {issue.priority}
+                              </span>
+                            </div>
+                          )}
+
+                          {issue.created_at && (
+                            <div className="issue-meta-item">
+                              <span className="meta-label">Created:</span>
+                              <span className="meta-value">
+                                {new Date(
+                                  issue.created_at,
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Events Indicator */}
+        <div className="github-timeline-item">
+          <div className="github-timeline-item-avatar">
+            <div className="avatar">🔴</div>
+          </div>
+          <div className="github-timeline-item-content">
+            <div className="live-indicator">
+              <span>🔴</span>
+              Live CloudEvents Stream - New events appear in real-time
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ResourceEditor<Issue>
+        isOpen={isEditorOpen}
+        onClose={handleEditorClose}
+        resource={selectedIssue}
+        resourceType="issue"
+        onSave={handlePatchIssue}
+      />
     </div>
   );
 };
@@ -144,7 +274,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<IssuesDashboard />} />
         <Route path="/issue/:issueId" element={<GitHubTimeline />} />
       </Routes>
     </Router>
