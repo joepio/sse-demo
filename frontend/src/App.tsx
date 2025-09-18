@@ -1,14 +1,15 @@
 import React, { useEffect, useRef } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useSSE } from "./hooks/useSSE";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
-
 import IssuesList from "./components/IssuesList";
 import CloudEventsStream from "./components/CloudEventsStream";
+import GitHubTimeline from "./components/GitHubTimeline";
 import type { CloudEvent } from "./types";
 import "./App.css";
 
-const App: React.FC = () => {
+const HomePage: React.FC = () => {
   const { events, issues, connectionStatus, sendEvent } = useSSE();
   const [snapshotEvents, setSnapshotEvents] = React.useState<CloudEvent[]>([]);
   const [liveEvents, setLiveEvents] = React.useState<CloudEvent[]>([]);
@@ -158,6 +159,17 @@ const App: React.FC = () => {
         )}
       </main>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/issue/:issueId" element={<GitHubTimeline />} />
+      </Routes>
+    </Router>
   );
 };
 

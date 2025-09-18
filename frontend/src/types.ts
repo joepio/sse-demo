@@ -6,7 +6,7 @@ export interface CloudEvent {
   type: string;
   time?: string;
   datacontenttype?: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface Issue extends Record<string, unknown> {
@@ -46,7 +46,7 @@ export interface IssueCreateData {
 }
 
 export interface IssuePatchData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface IssueDeleteData {
@@ -109,3 +109,51 @@ export type EntityTypeMap = {
 };
 
 export type EntityType = keyof EntityTypeMap;
+
+// Timeline types
+export interface TimelineEvent {
+  id: string;
+  type: "created" | "updated" | "deleted";
+  timestamp: string;
+  actor?: string;
+  data: unknown;
+  originalEvent: CloudEvent;
+}
+
+export interface TimelineItemData {
+  // For comments
+  content?: string;
+  parent_id?: string | null;
+  mentions?: string[];
+  edited_at?: string;
+
+  // For status changes
+  field?: string;
+  old_value?: unknown;
+  new_value?: unknown;
+  reason?: string;
+
+  // For LLM analysis
+  prompt?: string;
+  response?: string;
+  model?: string;
+  confidence?: number;
+
+  // For deployments
+  version?: string;
+  environment?: string;
+  commit_hash?: string;
+
+  // Generic fields
+  [key: string]: unknown;
+}
+
+export type TimelineItemType =
+  | "comment"
+  | "status_change"
+  | "llm_analysis"
+  | "deployment"
+  | "system_event"
+  | "issue_created"
+  | "issue_updated"
+  | "issue_deleted";

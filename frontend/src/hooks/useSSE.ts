@@ -57,8 +57,15 @@ export const useSSE = (): UseSSEResult => {
 
         switch (cloudEvent.type) {
           case "com.example.issue.create":
-            if (cloudEvent.data && cloudEvent.data.id) {
-              newIssues[cloudEvent.data.id] = cloudEvent.data;
+            if (
+              cloudEvent.data &&
+              typeof cloudEvent.data === "object" &&
+              cloudEvent.data !== null
+            ) {
+              const data = cloudEvent.data as Record<string, unknown>;
+              if (data.id && typeof data.id === "string") {
+                newIssues[data.id] = data as Issue;
+              }
             }
             break;
 
@@ -152,8 +159,15 @@ export const useSSE = (): UseSSEResult => {
           for (const event of snapshotEvents) {
             switch (event.type) {
               case "com.example.issue.create":
-                if (event.data && event.data.id) {
-                  initialIssues[event.data.id] = event.data;
+                if (
+                  event.data &&
+                  typeof event.data === "object" &&
+                  event.data !== null
+                ) {
+                  const data = event.data as Record<string, unknown>;
+                  if (data.id && typeof data.id === "string") {
+                    initialIssues[data.id] = data as Issue;
+                  }
                 }
                 break;
 

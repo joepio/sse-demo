@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   isOpen: boolean;
@@ -37,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <>
       <style>{`
         .modal-overlay {
@@ -178,6 +179,8 @@ const Modal: React.FC<ModalProps> = ({
       </div>
     </>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default Modal;

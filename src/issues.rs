@@ -116,7 +116,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         events.push(patch_event);
 
         // Apply patch to issues state
-        if let Some(existing_issue) = issues.get_mut(*issue_id) {
+        if let Some(existing_issue) = issues.get_mut(&issue_id.to_string()) {
             apply_merge_patch(existing_issue, patch_data);
         }
     }
@@ -132,8 +132,108 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         delete_event["time"] = json!(delete_time.to_rfc3339());
 
         events.push(delete_event);
-        issues.remove(*issue_id);
+        issues.remove(&issue_id.to_string());
     }
+
+    // Add sample timeline events according to EVENT_DESIGN.md
+    let timeline_operations = [
+        (
+            "1",
+            "comment",
+            "comment-1001",
+            "alice@example.com",
+            json!({
+                "content": "I'm investigating this authentication issue. Will check the session timeout settings.",
+                "parent_id": null,
+                "mentions": ["@bob"]
+            }),
+            70,
+        ),
+        (
+            "2",
+            "status_change",
+            "status-1002",
+            "bob@example.com",
+            json!({
+                "field": "status",
+                "old_value": "open",
+                "new_value": "in_progress",
+                "reason": "Starting investigation"
+            }),
+            75,
+        ),
+        (
+            "1",
+            "llm_analysis",
+            "llm-1003",
+            "system@example.com",
+            json!({
+                "prompt": "Analyze this authentication issue and provide recommendations",
+                "response": "This appears to be related to session timeout configuration. The authentication system is likely expiring sessions too quickly, causing users to be logged out unexpectedly.",
+                "model": "gpt-4",
+                "confidence": 0.87
+            }),
+            80,
+        ),
+        (
+            "2",
+            "comment",
+            "comment-1004",
+            "alice@example.com",
+            json!({
+                "content": "Found the issue! The session timeout was set to 5 minutes instead of 30 minutes.",
+                "parent_id": null,
+                "mentions": []
+            }),
+            85,
+        ),
+    ];
+
+    for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
+        timeline_operations.iter().enumerate()
+    {
+        let timeline_event = json!({
+            "specversion": "1.0",
+            "id": Uuid::now_v7().to_string(),
+            "source": format!("/timeline/items/{}", item_id),
+            "subject": issue_id,
+            "type": "https://api.example.com/events/timeline/item/created/v1",
+            "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
+            "datacontenttype": "application/json",
+            "data": {
+                "item_type": item_type,
+                "item_id": item_id,
+                "actor": actor,
+                "timestamp": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
+                "item_data": item_data
+            }
+        });
+
+        events.push(timeline_event);
+    }
+
+    // Add a timeline update event
+    let timeline_update_event = json!({
+        "specversion": "1.0",
+        "id": Uuid::now_v7().to_string(),
+        "source": "/timeline/items/comment-1001",
+        "subject": "1",
+        "type": "https://api.example.com/events/timeline/item/updated/v1",
+        "time": (base_time + Duration::minutes(90)).to_rfc3339(),
+        "datacontenttype": "application/merge-patch+json",
+        "data": {
+            "item_type": "comment",
+            "item_id": "comment-1001",
+            "actor": "alice@example.com",
+            "timestamp": (base_time + Duration::minutes(90)).to_rfc3339(),
+            "patch": {
+                "content": "I'm investigating this authentication issue. Will check the session timeout settings. UPDATE: Found some relevant logs in the auth service.",
+                "edited_at": (base_time + Duration::minutes(90)).to_rfc3339()
+            }
+        }
+    });
+
+    events.push(timeline_update_event);
 
     (events, issues)
 }
