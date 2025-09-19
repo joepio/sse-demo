@@ -24,12 +24,15 @@ jobs:
         with:
           node-version: 22
           cache: "pnpm"
+          cache-dependency-path: "frontend/pnpm-lock.yaml"
 
       - name: Install dependencies
         run: pnpm install
+        working-directory: frontend
 
       - name: Build project
         run: pnpm build
+        working-directory: frontend
 
       - name: Deploy to Shuttle
         uses: shuttle-hq/deploy-action@v2
