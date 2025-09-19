@@ -46,7 +46,7 @@ const ResourceEditor = <T extends BaseEntity>({
 
       await onSave(cloudEvent);
       onClose();
-    } catch (err) {
+    } catch {
       alert("Ongeldige JSON of opslaan mislukt");
     } finally {
       setIsSubmitting(false);

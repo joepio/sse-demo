@@ -4,8 +4,7 @@ use chrono;
 use futures_util::stream::{self, Stream};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-#[cfg(feature = "local")]
-use shuttle_axum::axum::response::Html;
+
 use shuttle_axum::axum::{
     extract::State,
     response::sse::{Event, KeepAlive, Sse},
@@ -20,7 +19,6 @@ use tokio::{
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
 use tower_http::cors::CorsLayer;
-#[cfg(not(feature = "local"))]
 use tower_http::services::{ServeDir, ServeFile};
 use uuid;
 
@@ -149,7 +147,6 @@ async fn create_app() -> Router {
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/cloudevents", get(get_all)) // convenient REST snapshot
-        .route("/issues", get(get_all_issues)) // get all zaken
         .with_state(state)
         .layer(CorsLayer::permissive())
         .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
@@ -181,65 +178,8 @@ async fn sse_handler(
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
-#[cfg(feature = "local")]
-async fn index() -> Html<&'static str> {
-    Html(
-        r#"<!DOCTYPE html>
-<html>
-<head>
-    <title>ZaakSysteem - Ontwikkelmodus</title>
-    <style>
-        body {
-            font-family: system-ui, sans-serif;
-            margin: 2rem;
-            text-align: center;
-        }
-        .info {
-            background: #e3f2fd;
-            padding: 2rem;
-            border-radius: 8px;
-            margin: 2rem auto;
-            max-width: 600px;
-        }
-        .button {
-            display: inline-block;
-            background: #007bff;
-            color: white;
-            padding: 1rem 2rem;
-            text-decoration: none;
-            border-radius: 4px;
-            margin: 1rem;
-        }
-    </style>
-</head>
-<body>
-    <h1>SSE Demo - Development Mode</h1>
-    <div class="info">
-        <h2>🚧 You're running in development mode</h2>
-        <p>For the full React experience, please start the React dev server:</p>
-        <code>cd frontend && npm run dev</code>
-        <br><br>
-        <p>Then visit: <strong>http://localhost:5173</strong></p>
-        <br>
-        <a href="http://localhost:5173" class="button">Go to React App →</a>
-        <br><br>
-        <p>API endpoints are available at:</p>
-        <a href="/issues" class="button">View Zaken</a>
-        <a href="/cloudevents" class="button">View CloudEvents</a>
-    </div>
-</body>
-</html>"#,
-    )
-}
-
 async fn get_all(State(state): State<AppState>) -> Json<Vec<Value>> {
     Json(state.events.read().await.clone())
-}
-
-async fn get_all_issues(
-    State(state): State<AppState>,
-) -> Json<std::collections::HashMap<String, Value>> {
-    Json(state.issues.read().await.clone())
 }
 
 /// Process a CloudEvent JSON and update the zaken state
@@ -259,17 +199,15 @@ async fn process_cloud_event(
                 }
             }
             "com.example.issue.patch" => {
-                if let Some(source) = event_json.get("source").and_then(|s| s.as_str()) {
-                    if let Some(issue_id) = source.strip_prefix("/issues/") {
-                        let mut issues = issues_lock.write().await;
-                        if let Some(existing_issue) = issues.get_mut(issue_id) {
-                            issues::apply_merge_patch(existing_issue, data);
-                        } else {
-                            // Create new zaak if it doesn't exist
-                            let mut new_issue = serde_json::json!({"id": issue_id});
-                            issues::apply_merge_patch(&mut new_issue, data);
-                            issues.insert(issue_id.to_string(), new_issue);
-                        }
+                if let Some(issue_id) = event_json.get("subject").and_then(|s| s.as_str()) {
+                    let mut issues = issues_lock.write().await;
+                    if let Some(existing_issue) = issues.get_mut(issue_id) {
+                        issues::apply_merge_patch(existing_issue, data);
+                    } else {
+                        // Create new zaak if it doesn't exist
+                        let mut new_issue = serde_json::json!({"id": issue_id});
+                        issues::apply_merge_patch(&mut new_issue, data);
+                        issues.insert(issue_id.to_string(), new_issue);
                     }
                 }
             }
@@ -359,7 +297,8 @@ mod tests {
         let event = create_example_cloudevent();
 
         assert_eq!(event.specversion, "1.0");
-        assert!(event.source.starts_with("/issues/"));
+        assert!(!event.source.is_empty());
+        assert!(event.source.contains("demo") || event.source == "server");
         assert!(matches!(
             event.event_type.as_str(),
             "com.example.issue.create" | "com.example.issue.patch" | "com.example.issue.delete"
@@ -375,7 +314,7 @@ mod tests {
 
         // Verify it contains expected fields
         assert!(json.contains("\"specversion\": \"1.0\""));
-        assert!(json.contains("\"/issues/"));
+        assert!(json.contains("\"source\":"));
         assert!(json.contains("\"type\": \"com.example.issue."));
         assert!(json.contains("\"datacontenttype\":"));
 
@@ -395,7 +334,7 @@ mod tests {
 
         let event = &create_events[0];
         assert_eq!(event["specversion"], "1.0");
-        assert!(event["source"].as_str().unwrap().starts_with("/issues/"));
+        assert!(!event["source"].as_str().unwrap().is_empty());
         assert_eq!(event["type"], "com.example.issue.create");
         assert_eq!(event["datacontenttype"], "application/json");
         assert!(event["data"]["title"].is_string());
@@ -415,7 +354,7 @@ mod tests {
 
         let event = &patch_events[0];
         assert_eq!(event["specversion"], "1.0");
-        assert!(event["source"].as_str().unwrap().starts_with("/issues/"));
+        assert!(!event["source"].as_str().unwrap().is_empty());
         assert_eq!(event["type"], "com.example.issue.patch");
         assert_eq!(event["datacontenttype"], "application/merge-patch+json");
         assert!(event["data"].is_object());
