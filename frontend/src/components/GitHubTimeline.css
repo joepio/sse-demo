@@ -35,15 +35,6 @@
     text-decoration: underline;
 }
 
-.breadcrumb-separator {
-    color: var(--text-tertiary);
-}
-
-.breadcrumb-current {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
 /* Main content */
 .github-timeline-content {
     max-width: 1200px;
@@ -109,12 +100,6 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-}
-
-.issue-number {
-    font-size: 1.25rem;
-    color: var(--text-tertiary);
-    font-weight: 400;
 }
 
 .issue-meta {
@@ -477,10 +462,6 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
-    }
-
-    .issue-number {
-        font-size: 1rem;
     }
 
     .github-timeline-issue .github-timeline-item-content {

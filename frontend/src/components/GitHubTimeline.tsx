@@ -238,10 +238,8 @@ const GitHubTimeline: React.FC = () => {
       <div className="github-timeline-header">
         <div className="breadcrumb">
           <Link to="/" className="breadcrumb-link">
-            Zaken
+            Terug naar mijn Zaken
           </Link>
-          <span className="breadcrumb-separator">•</span>
-          <span className="breadcrumb-current">#{zaakId}</span>
         </div>
       </div>
 
@@ -259,7 +257,6 @@ const GitHubTimeline: React.FC = () => {
             <div className="github-timeline-issue-header">
               <h1 className="issue-title">
                 {String(issue.title) || "Zaak zonder titel"}
-                <span className="issue-number">#{zaakId}</span>
               </h1>
 
               <div className="issue-meta">
