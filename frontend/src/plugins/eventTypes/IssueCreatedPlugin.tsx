@@ -5,7 +5,7 @@ const IssueCreatedPlugin: React.FC<EventPluginProps> = ({ data }) => {
   return (
     <div className="timeline-content-issue-created">
       <p>
-        <strong>{String(data.title) || "Issue created"}</strong>
+        <strong>{String(data.title) || "Zaak aangemaakt"}</strong>
       </p>
       {(() => {
         const description = data.description;
@@ -15,17 +15,28 @@ const IssueCreatedPlugin: React.FC<EventPluginProps> = ({ data }) => {
       })()}
       <div className="issue-meta">
         <small>
-          Status: {String(data.status) || "open"}
+          Status:{" "}
+          {String(data.status) === "open"
+            ? "Open"
+            : String(data.status) || "open"}
           {(() => {
             const priority = data.priority;
+            const priorityText =
+              priority === "high"
+                ? "Hoog"
+                : priority === "medium"
+                  ? "Gemiddeld"
+                  : priority === "low"
+                    ? "Laag"
+                    : priority;
             return typeof priority === "string" && priority
-              ? ` • Priority: ${String(priority)}`
+              ? ` • Prioriteit: ${priorityText}`
               : "";
           })()}
           {(() => {
             const assignee = data.assignee;
             return typeof assignee === "string" && assignee
-              ? ` • Assigned to: ${String(assignee)}`
+              ? ` • Toegewezen aan: ${String(assignee)}`
               : "";
           })()}
         </small>

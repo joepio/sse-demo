@@ -24,8 +24,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      date: date.toLocaleDateString("nl-NL"),
+      time: date.toLocaleTimeString("nl-NL", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       relative: getRelativeTime(date),
     };
   };
@@ -37,11 +40,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return "just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    if (minutes < 1) return "zojuist";
+    if (minutes < 60) return `${minutes}m geleden`;
+    if (hours < 24) return `${hours}u geleden`;
+    if (days < 7) return `${days}d geleden`;
+    return date.toLocaleDateString("nl-NL");
   };
 
   const getEventIcon = (
@@ -76,13 +79,13 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 
     const titles = {
       comment: "",
-      status_change: "Status Change",
-      llm_analysis: "AI Analysis",
-      deployment: "Deployment",
-      system_event: "System Event",
-      issue_created: "Issue Created",
-      issue_updated: "Issue Updated",
-      issue_deleted: "Issue Deleted",
+      status_change: "Status Wijziging",
+      llm_analysis: "AI Analyse",
+      deployment: "Uitrol",
+      system_event: "Systeem Event",
+      issue_created: "Zaak Aangemaakt",
+      issue_updated: "Zaak Bijgewerkt",
+      issue_deleted: "Zaak Verwijderd",
     };
 
     const baseTitle = titles[type] || "Event";

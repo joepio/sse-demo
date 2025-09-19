@@ -9,62 +9,67 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
     let mut issues = HashMap::new();
     let base_time = Utc::now() - Duration::hours(2);
 
-    // Create 10 initial issues using predefined templates
+    // Create 10 initial zaken using predefined templates
     let issue_templates = [
         (
-            "Login system failing",
-            "Users cannot authenticate",
-            "high",
-            Some("alice@example.com"),
-        ),
-        (
-            "Dark mode request",
-            "Add dark theme support",
+            "Nieuw paspoort aanvragen",
+            "Burger wil nieuw paspoort aanvragen",
             "medium",
-            Some("bob@example.com"),
-        ),
-        ("Database performance", "Slow query responses", "high", None),
-        (
-            "Mobile UI issues",
-            "Layout broken on mobile",
-            "medium",
-            Some("carol@example.com"),
+            Some("alice@gemeente.nl"),
         ),
         (
-            "Email notifications",
-            "Users not receiving emails",
+            "Melding overlast",
+            "Geluidsoverlast buren gemeld",
             "high",
-            Some("dave@example.com"),
+            Some("bob@gemeente.nl"),
         ),
         (
-            "Search functionality",
-            "Search returns no results",
+            "Verhuizing doorgeven",
+            "Adreswijziging registreren in BRP",
             "medium",
             None,
         ),
         (
-            "File upload bug",
-            "Cannot upload large files",
+            "Parkeervergunning aanvraag",
+            "Bewoner wil parkeervergunning voor nieuwe auto",
             "low",
-            Some("eve@example.com"),
+            Some("carol@gemeente.nl"),
         ),
         (
-            "User profile page",
-            "Profile data not saving",
+            "Kapvergunning boom",
+            "Vergunning nodig voor kappen boom in achtertuin",
             "medium",
-            Some("frank@example.com"),
+            Some("dave@gemeente.nl"),
         ),
         (
-            "API rate limiting",
-            "Need to implement rate limits",
-            "low",
+            "Uitkering aanvragen",
+            "Burger vraagt bijstandsuitkering aan",
+            "high",
             None,
         ),
         (
-            "Documentation update",
-            "API docs are outdated",
+            "Klacht over dienstverlening",
+            "Ontevreden over behandeling bij balie",
+            "medium",
+            Some("eve@gemeente.nl"),
+        ),
+        (
+            "Huwelijk voltrekken",
+            "Koppel wil trouwen op gemeentehuis",
             "low",
-            Some("grace@example.com"),
+            Some("frank@gemeente.nl"),
+        ),
+        (
+            "WOZ-bezwaar indienen",
+            "Eigenaar niet eens met WOZ-waardering",
+            "medium",
+            None,
+        ),
+        (
+            "Hondenbelasting",
+            "Registratie nieuwe hond voor hondenbelasting",
+            "low",
+            Some("grace@gemeente.nl"),
         ),
     ];
 
@@ -90,17 +95,13 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
     let patch_operations = [
         (
             "1",
-            json!({"status": "in_progress", "assignee": "alice@example.com"}),
+            json!({"status": "in_progress", "assignee": "alice@gemeente.nl"}),
         ),
         (
             "3",
-            json!({"status": "in_progress", "assignee": "bob@example.com"}),
+            json!({"status": "in_progress", "assignee": "bob@gemeente.nl"}),
         ),
         ("5", json!({"status": "closed", "resolution": "fixed"})),
-        (
-            "2",
-            json!({"priority": "high", "title": "URGENT: Dark mode request"}),
-        ),
         ("4", json!({"assignee": null, "status": "open"})),
         ("7", json!({"status": "in_progress"})),
         ("8", json!({"status": "closed", "resolution": "completed"})),
@@ -143,7 +144,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "comment-1001",
             "alice@example.com",
             json!({
-                "content": "I'm investigating this authentication issue. Will check the session timeout settings.",
+                "content": "Ik ben deze zaak aan het behandelen. Meer informatie volgt.",
                 "parent_id": null,
                 "mentions": ["@bob"]
             }),
@@ -293,9 +294,9 @@ mod tests {
     #[test]
     fn test_apply_merge_patch() {
         let mut target = json!({
-            "title": "Original",
+            "title": "Originele Zaak",
             "status": "open",
-            "assignee": "john@example.com"
+            "assignee": "john@gemeente.nl"
         });
 
         let patch = json!({
@@ -309,7 +310,7 @@ mod tests {
         assert_eq!(target["status"], "closed");
         assert_eq!(target["resolution"], "fixed");
         assert_eq!(target["assignee"], Value::Null);
-        assert_eq!(target["title"], "Original"); // unchanged
+        assert_eq!(target["title"], "Originele Zaak"); // unchanged
     }
 
     #[test]
@@ -319,7 +320,7 @@ mod tests {
             "1".to_string(),
             json!({
                 "id": "1",
-                "title": "Test Issue",
+                "title": "Test Zaak",
                 "status": "open"
             }),
         );
@@ -327,7 +328,7 @@ mod tests {
             "2".to_string(),
             json!({
                 "id": "2",
-                "title": "Another Issue",
+                "title": "Andere Zaak",
                 "status": "closed"
             }),
         );
@@ -391,22 +392,10 @@ fn generate_random_patch_event(issue_id: &str) -> Value {
         json!({"status": "in_progress"}),
         json!({"status": "closed", "resolution": "fixed"}),
         json!({"status": "open"}),
-        json!({"assignee": "demo@example.com"}),
+        json!({"assignee": "demo@gemeente.nl"}),
         json!({"assignee": null}),
         json!({"priority": "high"}),
         json!({"priority": "low"}),
-        json!({"title": "UPDATED: System maintenance required"}),
-        json!({"title": "🔥 URGENT: Critical system failure"}),
-        json!({"title": "✅ RESOLVED: All tests passing"}),
-        json!({"title": "🐛 BUG FIX: Memory leak patched"}),
-        json!({"title": "⚡ HOTFIX: Security patch deployed"}),
-        json!({"title": "🚀 FEATURE: New functionality added"}),
-        json!({"title": "📝 DOCS: Documentation updated"}),
-        json!({"title": "Login system completely broken - CRITICAL"}),
-        json!({"title": "Performance improvements needed ASAP"}),
-        json!({"title": "UI glitch affecting all users"}),
-        json!({"title": "Security vulnerability discovered"}),
-        json!({"title": "Database optimization required"}),
     ];
 
     let random_patch = &patch_operations[fastrand::usize(..patch_operations.len())];
@@ -428,19 +417,19 @@ fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
 
 fn generate_random_create_event() -> Value {
     let titles = [
-        "New bug discovered",
-        "Feature enhancement request",
-        "Performance optimization needed",
-        "UI improvement suggestion",
-        "Security vulnerability report",
+        "Nieuwe zaak ingediend",
+        "Vergunning aangevraagd",
+        "Klacht ontvangen",
+        "Bezwaarschrift ingediend",
+        "Informatieverzoek",
     ];
 
     let priorities = ["low", "medium", "high"];
     let assignees = [
         None,
-        Some("alice@example.com"),
-        Some("bob@example.com"),
-        Some("demo@example.com"),
+        Some("alice@gemeente.nl"),
+        Some("bob@gemeente.nl"),
+        Some("demo@gemeente.nl"),
     ];
 
     let issue_id = format!("live-{}", Uuid::now_v7().simple());
@@ -451,7 +440,7 @@ fn generate_random_create_event() -> Value {
     generate_create_event_with_data(
         &issue_id,
         title,
-        "Live generated issue for demo",
+        "Live gegenereerde zaak voor demo",
         priority,
         assignee,
     )

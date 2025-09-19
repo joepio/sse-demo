@@ -28,7 +28,7 @@ use uuid;
 struct AppState {
     // Our entire list (the "source of truth")
     events: Arc<RwLock<Vec<Value>>>,
-    // Issue storage
+    // Zaken storage
     issues: Arc<RwLock<std::collections::HashMap<String, Value>>>,
     // Broadcast deltas to all subscribers
     tx: broadcast::Sender<CloudEvent>,
@@ -38,7 +38,7 @@ impl Default for AppState {
     fn default() -> Self {
         let (tx, _) = broadcast::channel(256);
 
-        // Generate initial issues and events using the issues module
+        // Generate initial zaken and events using the issues module
         let (events, issues) = issues::generate_initial_data();
 
         Self {
@@ -118,13 +118,13 @@ async fn create_app() -> Router {
 
     let state = AppState::default();
 
-    // Optional: emit demo events every 20s that randomly update existing issues
+    // Optional: emit demo events every 20s that randomly update existing zaken
     let demo = state.clone();
     tokio::spawn(async move {
         loop {
             sleep(Duration::from_secs(2)).await;
 
-            // Get current issues for random selection
+            // Get current zaken for random selection
             let current_issues = {
                 let issues = demo.issues.read().await;
                 issues.clone()
@@ -153,7 +153,7 @@ async fn create_app() -> Router {
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/cloudevents", get(get_all)) // convenient REST snapshot
-        .route("/issues", get(get_all_issues)) // get all issues
+        .route("/issues", get(get_all_issues)) // get all zaken
         .with_state(state)
         .layer(CorsLayer::permissive());
 
@@ -203,7 +203,7 @@ async fn index() -> Html<&'static str> {
         r#"<!DOCTYPE html>
 <html>
 <head>
-    <title>SSE Demo - Development Mode</title>
+    <title>ZaakSysteem - Ontwikkelmodus</title>
     <style>
         body {
             font-family: system-ui, sans-serif;
@@ -240,7 +240,7 @@ async fn index() -> Html<&'static str> {
         <a href="http://localhost:5173" class="button">Go to React App →</a>
         <br><br>
         <p>API endpoints are available at:</p>
-        <a href="/issues" class="button">View Issues</a>
+        <a href="/issues" class="button">View Zaken</a>
         <a href="/cloudevents" class="button">View CloudEvents</a>
     </div>
 </body>
@@ -258,7 +258,7 @@ async fn get_all_issues(
     Json(state.issues.read().await.clone())
 }
 
-/// Process a CloudEvent JSON and update the issues state
+/// Process a CloudEvent JSON and update the zaken state
 async fn process_cloud_event(
     issues_lock: &Arc<RwLock<std::collections::HashMap<String, Value>>>,
     event_json: &Value,
@@ -281,7 +281,7 @@ async fn process_cloud_event(
                         if let Some(existing_issue) = issues.get_mut(issue_id) {
                             issues::apply_merge_patch(existing_issue, data);
                         } else {
-                            // Create new issue if it doesn't exist
+                            // Create new zaak if it doesn't exist
                             let mut new_issue = serde_json::json!({"id": issue_id});
                             issues::apply_merge_patch(&mut new_issue, data);
                             issues.insert(issue_id.to_string(), new_issue);
@@ -335,13 +335,13 @@ async fn handle_event(
 
 /// Example function demonstrating CloudEvent creation
 pub fn create_example_cloudevent() -> CloudEvent {
-    // Create a sample issue for demo purposes
+    // Create a sample zaak for demo purposes
     let mut sample_issues = std::collections::HashMap::new();
     sample_issues.insert(
         "123".to_string(),
         serde_json::json!({
             "id": "123",
-            "title": "Sample issue",
+            "title": "Voorbeeld zaak",
             "status": "open"
         }),
     );

@@ -9,7 +9,7 @@ import ResourceEditor from "./components/ResourceEditor";
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 
-const IssuesDashboard: React.FC = () => {
+const ZakenDashboard: React.FC = () => {
   const { issues, connectionStatus, sendEvent } = useSSE();
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
@@ -113,7 +113,7 @@ const IssuesDashboard: React.FC = () => {
       {/* Header */}
       <div className="github-timeline-header">
         <div className="breadcrumb">
-          <span className="breadcrumb-current">Issues Dashboard</span>
+          <span className="breadcrumb-current">ZaakSysteem Dashboard</span>
         </div>
         <ConnectionStatus status={connectionStatus} />
       </div>
@@ -128,9 +128,9 @@ const IssuesDashboard: React.FC = () => {
           <div className="github-timeline-item-content">
             <div className="card">
               <div className="card-header">
-                <h2 className="card-title">Create New Issue</h2>
+                <h2 className="card-title">Nieuwe Zaak Aanmaken</h2>
                 <p className="card-subtitle">
-                  Add a new issue to track work or bugs
+                  Maak een nieuwe zaak aan om werk bij te houden
                 </p>
               </div>
               <CreateIssueForm onCreateIssue={handleCreateIssue} />
@@ -146,17 +146,20 @@ const IssuesDashboard: React.FC = () => {
           <div className="github-timeline-item-content">
             <div className="card">
               <div className="card-header">
-                <h2 className="card-title">Current Issues</h2>
+                <h2 className="card-title">Huidige Zaken</h2>
                 <p className="card-subtitle">
-                  {issueEntries.length} issue
-                  {issueEntries.length !== 1 ? "s" : ""} built from events
+                  {issueEntries.length}{" "}
+                  {issueEntries.length !== 1 ? "zaken" : "zaak"} opgebouwd uit
+                  events
                 </p>
               </div>
 
               <div className="card-body">
                 {issueEntries.length === 0 ? (
                   <div className="loading-message">
-                    <p>No issues found. Create your first issue above.</p>
+                    <p>
+                      Geen zaken gevonden. Maak uw eerste zaak hierboven aan.
+                    </p>
                   </div>
                 ) : (
                   <div className="issues-grid">
@@ -168,8 +171,8 @@ const IssuesDashboard: React.FC = () => {
                       >
                         <div className="issue-card-header">
                           <h3 className="issue-card-title">
-                            <a href={`/issue/${id}`} className="issue-link">
-                              {issue.title || "Untitled Issue"}
+                            <a href={`/zaak/${id}`} className="issue-link">
+                              {issue.title || "Zaak zonder titel"}
                             </a>
                             <span className="issue-number">#{id}</span>
                           </h3>
@@ -179,15 +182,16 @@ const IssuesDashboard: React.FC = () => {
                               type="button"
                               className="btn btn-secondary btn-sm"
                               onClick={() => handleEditIssue(issue)}
-                              title="Edit issue"
+                              title="Zaak bewerken"
                             >
-                              ✏️ Edit
+                              ✏️ Bewerken
                             </button>
                           </div>
                         </div>
 
                         <p className="issue-card-description">
-                          {issue.description || "No description provided."}
+                          {issue.description ||
+                            "Geen beschrijving beschikbaar."}
                         </p>
 
                         <div className="issue-card-meta">
@@ -200,39 +204,49 @@ const IssuesDashboard: React.FC = () => {
                               }}
                             >
                               {issue.status === "in_progress"
-                                ? "In Progress"
-                                : issue.status}
+                                ? "In Behandeling"
+                                : issue.status === "open"
+                                  ? "Open"
+                                  : issue.status === "closed"
+                                    ? "Gesloten"
+                                    : issue.status}
                             </span>
                           </div>
 
                           <div className="issue-meta-item">
-                            <span className="meta-label">Assignee:</span>
+                            <span className="meta-label">Toegewezen aan:</span>
                             <span className="meta-value">
-                              {issue.assignee || "Unassigned"}
+                              {issue.assignee || "Niet toegewezen"}
                             </span>
                           </div>
 
                           {issue.priority && (
                             <div className="issue-meta-item">
-                              <span className="meta-label">Priority:</span>
+                              <span className="meta-label">Prioriteit:</span>
                               <span
                                 className="meta-value priority"
                                 style={{
                                   color: getPriorityColor(issue.priority),
                                 }}
                               >
-                                {issue.priority}
+                                {issue.priority === "high"
+                                  ? "Hoog"
+                                  : issue.priority === "medium"
+                                    ? "Gemiddeld"
+                                    : issue.priority === "low"
+                                      ? "Laag"
+                                      : issue.priority}
                               </span>
                             </div>
                           )}
 
                           {issue.created_at && (
                             <div className="issue-meta-item">
-                              <span className="meta-label">Created:</span>
+                              <span className="meta-label">Aangemaakt:</span>
                               <span className="meta-value">
-                                {new Date(
-                                  issue.created_at,
-                                ).toLocaleDateString()}
+                                {new Date(issue.created_at).toLocaleDateString(
+                                  "nl-NL",
+                                )}
                               </span>
                             </div>
                           )}
@@ -254,7 +268,7 @@ const IssuesDashboard: React.FC = () => {
           <div className="github-timeline-item-content">
             <div className="live-indicator">
               <span>🔴</span>
-              Live CloudEvents Stream - New events appear in real-time
+              Live CloudEvents Stream - Nieuwe events verschijnen in realtime
             </div>
           </div>
         </div>
@@ -275,8 +289,8 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<IssuesDashboard />} />
-        <Route path="/issue/:issueId" element={<GitHubTimeline />} />
+        <Route path="/" element={<ZakenDashboard />} />
+        <Route path="/zaak/:zaakId" element={<GitHubTimeline />} />
       </Routes>
     </Router>
   );

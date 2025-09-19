@@ -31,7 +31,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      setError("Title is required");
+      setError("Titel is verplicht");
       return;
     }
 
@@ -80,7 +80,9 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
         assignee: "",
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create issue");
+      setError(
+        err instanceof Error ? err.message : "Aanmaken van zaak mislukt",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,7 +90,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
 
   return (
     <div style={{ marginTop: "2rem" }}>
-      <h3>Create New Issue</h3>
+      <h3>Nieuwe Zaak Aanmaken</h3>
       <form
         onSubmit={handleSubmit}
         style={{
@@ -104,7 +106,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
             name="title"
             value={formData.title}
             onChange={handleInputChange}
-            placeholder="Issue title"
+            placeholder="Zaak titel"
             required
             disabled={isSubmitting}
             style={{
@@ -119,7 +121,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            placeholder="Description (optional)"
+            placeholder="Beschrijving (optioneel)"
             disabled={isSubmitting}
             style={{
               flex: 1,
@@ -143,17 +145,17 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
               borderRadius: "4px",
             }}
           >
-            <option value="">Priority (optional)</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="">Prioriteit (optioneel)</option>
+            <option value="low">Laag</option>
+            <option value="medium">Gemiddeld</option>
+            <option value="high">Hoog</option>
           </select>
           <input
             type="email"
             name="assignee"
             value={formData.assignee}
             onChange={handleInputChange}
-            placeholder="Assignee email (optional)"
+            placeholder="Toegewezen aan email (optioneel)"
             disabled={isSubmitting}
             style={{
               flex: 1,
@@ -193,7 +195,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
             fontSize: "1rem",
           }}
         >
-          {isSubmitting ? "Creating..." : "Create Issue"}
+          {isSubmitting ? "Aanmaken..." : "Zaak Aanmaken"}
         </button>
       </form>
     </div>

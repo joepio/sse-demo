@@ -12,7 +12,7 @@ import ResourceEditor from "./ResourceEditor";
 import "./GitHubTimeline.css";
 
 const GitHubTimeline: React.FC = () => {
-  const { issueId } = useParams<{ issueId: string }>();
+  const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
   const { events, issues, sendEvent } = useSSE();
   const [commentText, setCommentText] = useState("");
@@ -22,14 +22,14 @@ const GitHubTimeline: React.FC = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const issue = issueId ? issues[issueId] : null;
+  const issue = zaakId ? issues[zaakId] : null;
 
   // Convert CloudEvents to TimelineEvents for this specific issue
   const timelineEvents = useMemo(() => {
-    if (!issueId) return [];
+    if (!zaakId) return [];
 
     return events
-      .filter((event) => event.subject === issueId)
+      .filter((event) => event.subject === zaakId)
       .map((event): TimelineEvent => {
         const timestamp = event.time || new Date().toISOString();
         let type: "created" | "updated" | "deleted" = "created";
@@ -69,7 +69,7 @@ const GitHubTimeline: React.FC = () => {
         (a, b) =>
           new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       );
-  }, [events, issueId]);
+  }, [events, zaakId]);
 
   // Determine timeline item type from CloudEvent
   const getTimelineItemType = (event: CloudEvent): TimelineItemType => {
@@ -91,7 +91,7 @@ const GitHubTimeline: React.FC = () => {
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim() || !issueId || isSubmittingComment) return;
+    if (!commentText.trim() || !zaakId || isSubmittingComment) return;
 
     setIsSubmittingComment(true);
     setCommentError(null);
@@ -103,7 +103,7 @@ const GitHubTimeline: React.FC = () => {
         specversion: "1.0",
         id: crypto.randomUUID(),
         source: `frontend-demo-event`,
-        subject: issueId,
+        subject: zaakId,
         type: "https://api.example.com/events/timeline/item/created/v1",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
@@ -130,7 +130,7 @@ const GitHubTimeline: React.FC = () => {
     } catch (error) {
       console.error("Failed to submit comment:", error);
       setCommentError(
-        error instanceof Error ? error.message : "Failed to submit comment",
+        error instanceof Error ? error.message : "Opmerking verzenden mislukt",
       );
     } finally {
       setIsSubmittingComment(false);
@@ -152,8 +152,8 @@ const GitHubTimeline: React.FC = () => {
 
   const handleDeleteIssue = async () => {
     if (
-      !issueId ||
-      !window.confirm(`Are you sure you want to delete issue #${issueId}?`)
+      !zaakId ||
+      !window.confirm(`Weet u zeker dat u zaak #${zaakId} wilt verwijderen?`)
     ) {
       return;
     }
@@ -161,17 +161,18 @@ const GitHubTimeline: React.FC = () => {
     setIsDeleting(true);
 
     try {
+      // Create delete event
       const deleteEvent: CloudEvent = {
         specversion: "1.0",
         id: crypto.randomUUID(),
         source: "frontend-demo-event",
-        subject: issueId,
+        subject: zaakId,
         type: "com.example.issue.delete",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
         data: {
-          id: issueId,
-          reason: "Deleted from timeline view",
+          id: zaakId,
+          reason: "Verwijderd vanuit tijdlijn weergave",
         },
       };
 
@@ -181,7 +182,7 @@ const GitHubTimeline: React.FC = () => {
       navigate("/");
     } catch (error) {
       console.error("Failed to delete issue:", error);
-      alert("Failed to delete issue");
+      alert("Verwijderen van zaak mislukt");
     } finally {
       setIsDeleting(false);
     }
@@ -213,11 +214,11 @@ const GitHubTimeline: React.FC = () => {
     }
   };
 
-  if (!issueId) {
+  if (!zaakId) {
     return (
       <div className="github-timeline-error">
-        <h1>Issue not found</h1>
-        <Link to="/">← Back to Issues</Link>
+        <h1>Zaak niet gevonden</h1>
+        <Link to="/">← Terug naar Zaken</Link>
       </div>
     );
   }
@@ -225,8 +226,8 @@ const GitHubTimeline: React.FC = () => {
   if (!issue) {
     return (
       <div className="github-timeline-loading">
-        <h1>Loading issue...</h1>
-        <Link to="/">← Back to Issues</Link>
+        <h1>Zaak laden...</h1>
+        <Link to="/">← Terug naar Zaken</Link>
       </div>
     );
   }
@@ -237,16 +238,16 @@ const GitHubTimeline: React.FC = () => {
       <div className="github-timeline-header">
         <div className="breadcrumb">
           <Link to="/" className="breadcrumb-link">
-            Issues
+            Zaken
           </Link>
           <span className="breadcrumb-separator">•</span>
-          <span className="breadcrumb-current">#{issueId}</span>
+          <span className="breadcrumb-current">#{zaakId}</span>
         </div>
       </div>
 
       {/* Main content */}
       <div className="github-timeline-content">
-        {/* Issue header - the main issue as the first item */}
+        {/* Zaak header - de hoofdzaak als eerste item */}
         <div className="github-timeline-item github-timeline-issue">
           <div className="github-timeline-item-avatar">
             <div className="avatar">
@@ -257,8 +258,8 @@ const GitHubTimeline: React.FC = () => {
           <div className="github-timeline-item-content">
             <div className="github-timeline-issue-header">
               <h1 className="issue-title">
-                {String(issue.title) || "Untitled Issue"}
-                <span className="issue-number">#{issueId}</span>
+                {String(issue.title) || "Zaak zonder titel"}
+                <span className="issue-number">#{zaakId}</span>
               </h1>
 
               <div className="issue-meta">
@@ -267,33 +268,48 @@ const GitHubTimeline: React.FC = () => {
                   style={{ backgroundColor: getStatusColor(issue.status) }}
                 >
                   {issue.status === "in_progress"
-                    ? "In Progress"
-                    : issue.status}
+                    ? "In Behandeling"
+                    : issue.status === "open"
+                      ? "Open"
+                      : issue.status === "closed"
+                        ? "Gesloten"
+                        : issue.status}
                 </span>
                 {issue.priority && (
                   <span
                     className="issue-priority"
                     style={{ color: getPriorityColor(issue.priority) }}
                   >
-                    {String(issue.priority)} priority
+                    {String(issue.priority) === "high"
+                      ? "Hoge"
+                      : String(issue.priority) === "medium"
+                        ? "Gemiddelde"
+                        : String(issue.priority) === "low"
+                          ? "Lage"
+                          : String(issue.priority)}{" "}
+                    prioriteit
                   </span>
                 )}
               </div>
             </div>
 
             <div className="issue-description">
-              <p>{String(issue.description) || "No description provided."}</p>
+              <p>
+                {String(issue.description) || "Geen beschrijving beschikbaar."}
+              </p>
             </div>
 
             <div className="issue-details">
               <div className="issue-detail">
-                <strong>Assignee:</strong>{" "}
-                {String(issue.assignee) || "Unassigned"}
+                <strong>Toegewezen aan:</strong>{" "}
+                {String(issue.assignee) || "Niet toegewezen"}
               </div>
               {issue.created_at && (
                 <div className="issue-detail">
-                  <strong>Created:</strong>{" "}
-                  {new Date(String(issue.created_at)).toLocaleDateString()}
+                  <strong>Aangemaakt:</strong>{" "}
+                  {new Date(String(issue.created_at)).toLocaleDateString(
+                    "nl-NL",
+                  )}
                 </div>
               )}
             </div>
@@ -304,7 +320,7 @@ const GitHubTimeline: React.FC = () => {
                 className="btn btn-edit"
                 onClick={handleEditIssue}
               >
-                Edit Issue
+                Zaak Bewerken
               </button>
               <button
                 type="button"
@@ -312,7 +328,7 @@ const GitHubTimeline: React.FC = () => {
                 onClick={handleDeleteIssue}
                 disabled={isDeleting}
               >
-                {isDeleting ? "Deleting..." : "Delete Issue"}
+                {isDeleting ? "Verwijderen..." : "Zaak Verwijderen"}
               </button>
             </div>
           </div>
@@ -320,31 +336,26 @@ const GitHubTimeline: React.FC = () => {
 
         {/* Timeline events */}
         <div className="github-timeline-events">
-          {timelineEvents
-            .filter(
-              (event) =>
-                getTimelineItemType(event.originalEvent) !== "issue_created",
-            )
-            .map((event) => {
-              const itemType = getTimelineItemType(event.originalEvent);
-              return (
-                <div key={event.id} className="github-timeline-item">
-                  <div className="github-timeline-item-avatar">
-                    <div className="avatar">
-                      {event.actor ? event.actor.charAt(0).toUpperCase() : "?"}
-                    </div>
-                  </div>
-                  <div className="github-timeline-item-content">
-                    <TimelineItem
-                      event={event}
-                      itemType={itemType}
-                      isFirst={false}
-                      isLast={false}
-                    />
+          {timelineEvents.map((event) => {
+            const itemType = getTimelineItemType(event.originalEvent);
+            return (
+              <div key={event.id} className="github-timeline-item">
+                <div className="github-timeline-item-avatar">
+                  <div className="avatar">
+                    {event.actor ? event.actor.charAt(0).toUpperCase() : "?"}
                   </div>
                 </div>
-              );
-            })}
+                <div className="github-timeline-item-content">
+                  <TimelineItem
+                    event={event}
+                    itemType={itemType}
+                    isFirst={false}
+                    isLast={false}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Comment form */}
@@ -356,24 +367,24 @@ const GitHubTimeline: React.FC = () => {
           <div className="github-timeline-item-content">
             <form onSubmit={handleCommentSubmit} className="comment-form">
               <div className="comment-form-header">
-                <h3>Add a comment</h3>
+                <h3>Opmerking toevoegen</h3>
               </div>
 
               {commentError && (
                 <div className="comment-error">
-                  <strong>Error:</strong> {commentError}
+                  <strong>Fout:</strong> {commentError}
                 </div>
               )}
 
               {commentSuccess && (
                 <div className="comment-success">
-                  Comment submitted successfully!
+                  Opmerking succesvol verzonden!
                 </div>
               )}
 
               <textarea
                 className="comment-textarea"
-                placeholder="Leave a comment..."
+                placeholder="Voeg een opmerking toe..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 rows={4}
@@ -387,7 +398,9 @@ const GitHubTimeline: React.FC = () => {
                     className="btn btn-primary"
                     disabled={!commentText.trim() || isSubmittingComment}
                   >
-                    {isSubmittingComment ? "Submitting..." : "Comment"}
+                    {isSubmittingComment
+                      ? "Verzenden..."
+                      : "Opmerking toevoegen"}
                   </button>
                 </div>
               </div>

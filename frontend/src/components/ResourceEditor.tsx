@@ -47,7 +47,7 @@ const ResourceEditor = <T extends BaseEntity>({
       await onSave(cloudEvent);
       onClose();
     } catch (err) {
-      alert("Invalid JSON or save failed");
+      alert("Ongeldige JSON of opslaan mislukt");
     } finally {
       setIsSubmitting(false);
     }
@@ -56,7 +56,11 @@ const ResourceEditor = <T extends BaseEntity>({
   if (!resource) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Edit ${resourceType}`}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`${resourceType === "issue" ? "Zaak" : resourceType} bewerken`}
+    >
       <textarea
         value={jsonText}
         onChange={(e) => setJsonText(e.target.value)}
@@ -77,10 +81,10 @@ const ResourceEditor = <T extends BaseEntity>({
         style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}
       >
         <button onClick={onClose} disabled={isSubmitting}>
-          Cancel
+          Annuleren
         </button>
         <button onClick={handleSave} disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save"}
+          {isSubmitting ? "Opslaan..." : "Opslaan"}
         </button>
       </div>
     </Modal>
