@@ -142,7 +142,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "1",
             "comment",
             "comment-1001",
-            "alice@example.com",
+            "alice@gemeente.nl",
             json!({
                 "content": "Ik ben deze zaak aan het behandelen. Meer informatie volgt.",
                 "parent_id": null,
@@ -154,12 +154,12 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "2",
             "status_change",
             "status-1002",
-            "bob@example.com",
+            "bob@gemeente.nl",
             json!({
                 "field": "status",
                 "old_value": "open",
                 "new_value": "in_progress",
-                "reason": "Starting investigation"
+                "reason": "Start onderzoek"
             }),
             75,
         ),
@@ -180,9 +180,9 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "2",
             "comment",
             "comment-1004",
-            "alice@example.com",
+            "alice@gemeente.nl",
             json!({
-                "content": "Found the issue! The session timeout was set to 5 minutes instead of 30 minutes.",
+                "content": "De zaak is in behandeling genomen en doorgestuurd naar de juiste afdeling.",
                 "parent_id": null,
                 "mentions": []
             }),
@@ -417,11 +417,12 @@ fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
 
 fn generate_random_create_event() -> Value {
     let titles = [
-        "Nieuwe zaak ingediend",
-        "Vergunning aangevraagd",
-        "Klacht ontvangen",
-        "Bezwaarschrift ingediend",
-        "Informatieverzoek",
+        "Vergunning dakkapel",
+        "Melding geluidsoverlast",
+        "Bezwaarschrift bijstandsverzoek",
+        "WOO Informatieverzoek bomen",
+        "Parkeervergunning",
+        "Verhuizing doorgeven",
     ];
 
     let priorities = ["low", "medium", "high"];

@@ -127,7 +127,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 
     let changeText: string;
     if (changeKeys.length === 0) {
-      changeText = "updated issue";
+      changeText = "zaak bijgewerkt";
     } else if (changeKeys.length === 1) {
       const key = changeKeys[0];
       const value = Object.entries((event.data || {}) as TimelineItemData).find(
@@ -137,11 +137,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
       if (valueText.length > 30) {
         valueText = valueText.substring(0, 30) + "...";
       }
-      changeText = `${key} updated to "${valueText}"`;
+      changeText = `${key} gewijzigd naar "${valueText}"`;
     } else if (changeKeys.length === 2) {
-      changeText = `${changeKeys[0]} and ${changeKeys[1]} updated`;
+      changeText = `${changeKeys[0]} en ${changeKeys[1]} gewijzigd`;
     } else {
-      changeText = `${changeKeys.length} fields updated`;
+      changeText = `${changeKeys.length} velden gewijzigd`;
     }
 
     return (

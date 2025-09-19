@@ -89,17 +89,8 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
   };
 
   return (
-    <div style={{ marginTop: "2rem" }}>
-      <h3>Nieuwe Zaak Aanmaken</h3>
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          marginBottom: "2rem",
-          padding: "1rem",
-          border: "1px solid #ddd",
-          borderRadius: "8px",
-        }}
-      >
+    <div>
+      <form onSubmit={handleSubmit}>
         <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
           <input
             type="text"

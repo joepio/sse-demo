@@ -4,7 +4,7 @@ import { useSSE } from "./hooks/useSSE";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
 import GitHubTimeline from "./components/GitHubTimeline";
-import ResourceEditor from "./components/ResourceEditor";
+import Modal from "./components/Modal";
 
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
@@ -14,8 +14,7 @@ const ZakenDashboard: React.FC = () => {
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const prevIssuesRef = useRef<Record<string, Issue>>({});
 
   // Track which issues are new for animation
@@ -47,63 +46,7 @@ const ZakenDashboard: React.FC = () => {
 
   const handleCreateIssue = async (event: CloudEvent) => {
     await sendEvent(event);
-  };
-
-  const handleEditIssue = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setIsEditorOpen(true);
-  };
-
-  const handlePatchIssue = async (event: CloudEvent) => {
-    await sendEvent(event);
-    setIsEditorOpen(false);
-    setSelectedIssue(null);
-
-    // Trigger shine effect on the updated issue
-    if (event.subject) {
-      setTimeout(() => {
-        const issueCard = document.querySelector(
-          `[data-issue-id="${event.subject}"]`,
-        );
-        if (issueCard) {
-          issueCard.classList.add("issue-shine");
-          setTimeout(() => {
-            issueCard.classList.remove("issue-shine");
-          }, 1000);
-        }
-      }, 100);
-    }
-  };
-
-  const handleEditorClose = () => {
-    setIsEditorOpen(false);
-    setSelectedIssue(null);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "open":
-        return "var(--status-open)";
-      case "in_progress":
-        return "var(--status-progress)";
-      case "closed":
-        return "var(--status-closed)";
-      default:
-        return "var(--text-secondary)";
-    }
-  };
-
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case "high":
-        return "var(--priority-high)";
-      case "medium":
-        return "var(--priority-medium)";
-      case "low":
-        return "var(--priority-low)";
-      default:
-        return "var(--text-secondary)";
-    }
+    setIsCreateModalOpen(false);
   };
 
   const issueEntries = Object.entries(issues);
@@ -120,25 +63,7 @@ const ZakenDashboard: React.FC = () => {
 
       {/* Main content */}
       <div className="github-timeline-content">
-        {/* Create Issue Form */}
-        <div className="github-timeline-item">
-          <div className="github-timeline-item-avatar">
-            <div className="avatar">+</div>
-          </div>
-          <div className="github-timeline-item-content">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">Nieuwe Zaak Aanmaken</h2>
-                <p className="card-subtitle">
-                  Maak een nieuwe zaak aan om werk bij te houden
-                </p>
-              </div>
-              <CreateIssueForm onCreateIssue={handleCreateIssue} />
-            </div>
-          </div>
-        </div>
-
-        {/* Issues List */}
+        {/* Zaken List */}
         <div className="github-timeline-item">
           <div className="github-timeline-item-avatar">
             <div className="avatar">📋</div>
@@ -162,95 +87,16 @@ const ZakenDashboard: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="issues-grid">
+                  <div className="zaken-list">
                     {issueEntries.map(([id, issue]) => (
                       <div
                         key={id}
-                        className={`issue-card ${animatingIssues.has(id) ? "new" : ""}`}
+                        className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
                         data-issue-id={id}
                       >
-                        <div className="issue-card-header">
-                          <h3 className="issue-card-title">
-                            <a href={`/zaak/${id}`} className="issue-link">
-                              {issue.title || "Zaak zonder titel"}
-                            </a>
-                            <span className="issue-number">#{id}</span>
-                          </h3>
-
-                          <div className="issue-card-actions">
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => handleEditIssue(issue)}
-                              title="Zaak bewerken"
-                            >
-                              ✏️ Bewerken
-                            </button>
-                          </div>
-                        </div>
-
-                        <p className="issue-card-description">
-                          {issue.description ||
-                            "Geen beschrijving beschikbaar."}
-                        </p>
-
-                        <div className="issue-card-meta">
-                          <div className="issue-meta-item">
-                            <span className="meta-label">Status:</span>
-                            <span
-                              className="badge badge-status"
-                              style={{
-                                backgroundColor: getStatusColor(issue.status),
-                              }}
-                            >
-                              {issue.status === "in_progress"
-                                ? "In Behandeling"
-                                : issue.status === "open"
-                                  ? "Open"
-                                  : issue.status === "closed"
-                                    ? "Gesloten"
-                                    : issue.status}
-                            </span>
-                          </div>
-
-                          <div className="issue-meta-item">
-                            <span className="meta-label">Toegewezen aan:</span>
-                            <span className="meta-value">
-                              {issue.assignee || "Niet toegewezen"}
-                            </span>
-                          </div>
-
-                          {issue.priority && (
-                            <div className="issue-meta-item">
-                              <span className="meta-label">Prioriteit:</span>
-                              <span
-                                className="meta-value priority"
-                                style={{
-                                  color: getPriorityColor(issue.priority),
-                                }}
-                              >
-                                {issue.priority === "high"
-                                  ? "Hoog"
-                                  : issue.priority === "medium"
-                                    ? "Gemiddeld"
-                                    : issue.priority === "low"
-                                      ? "Laag"
-                                      : issue.priority}
-                              </span>
-                            </div>
-                          )}
-
-                          {issue.created_at && (
-                            <div className="issue-meta-item">
-                              <span className="meta-label">Aangemaakt:</span>
-                              <span className="meta-value">
-                                {new Date(issue.created_at).toLocaleDateString(
-                                  "nl-NL",
-                                )}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        <a href={`/zaak/${id}`} className="zaak-link">
+                          {issue.title || "Zaak zonder titel"}
+                        </a>
                       </div>
                     ))}
                   </div>
@@ -260,27 +106,47 @@ const ZakenDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Live Events Indicator */}
+        {/* Create New Zaak Button */}
         <div className="github-timeline-item">
           <div className="github-timeline-item-avatar">
-            <div className="avatar">🔴</div>
+            <div className="avatar">+</div>
           </div>
           <div className="github-timeline-item-content">
-            <div className="live-indicator">
-              <span>🔴</span>
-              Live CloudEvents Stream - Nieuwe events verschijnen in realtime
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Nieuwe Zaak</h2>
+                <p className="card-subtitle">
+                  Klik om een nieuwe zaak aan te maken
+                </p>
+              </div>
+              <div className="card-body">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem 1rem",
+                    fontSize: "1rem",
+                  }}
+                >
+                  + Nieuwe Zaak Aanmaken
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <ResourceEditor<Issue>
-        isOpen={isEditorOpen}
-        onClose={handleEditorClose}
-        resource={selectedIssue}
-        resourceType="issue"
-        onSave={handlePatchIssue}
-      />
+      {/* Create Zaak Modal */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Nieuwe Zaak Aanmaken"
+        maxWidth="600px"
+      >
+        <CreateIssueForm onCreateIssue={handleCreateIssue} />
+      </Modal>
     </div>
   );
 };
