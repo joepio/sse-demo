@@ -12,7 +12,7 @@ use shuttle_axum::axum::{
     routing::{get, post},
     Json, Router,
 };
-use std::{convert::Infallible, sync::Arc, time::Duration};
+use std::{convert::Infallible, path::Path, sync::Arc, time::Duration};
 use tokio::{
     sync::{broadcast, RwLock},
     time::sleep,
@@ -108,6 +108,14 @@ async fn main() {
 }
 
 async fn create_app() -> Router {
+    // In production mode, panic if the dist folder is missing
+    #[cfg(not(feature = "local"))]
+    {
+        if !Path::new("dist").exists() {
+            panic!("Frontend dist folder is missing! Please build the frontend first with: cd frontend && npm run build");
+        }
+    }
+
     let state = AppState::default();
 
     // Optional: emit demo events every 20s that randomly update existing issues

@@ -195,7 +195,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         let timeline_event = json!({
             "specversion": "1.0",
             "id": Uuid::now_v7().to_string(),
-            "source": format!("/timeline/items/{}", item_id),
+            "source": "server-demo-event",
             "subject": issue_id,
             "type": "https://api.example.com/events/timeline/item/created/v1",
             "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
@@ -216,7 +216,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
     let timeline_update_event = json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "source": "/timeline/items/comment-1001",
+        "source": "server-demo-event",
         "subject": "1",
         "type": "https://api.example.com/events/timeline/item/updated/v1",
         "time": (base_time + Duration::minutes(90)).to_rfc3339(),
@@ -417,7 +417,7 @@ fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
     json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "source": "/issues",
+        "source": "server-demo-event",
         "subject": issue_id,
         "type": "com.example.issue.patch",
         "time": Utc::now().to_rfc3339(),
@@ -480,7 +480,7 @@ fn generate_create_event_with_data(
     json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "source": "/issues",
+        "source": "server-demo-event",
         "subject": issue_id,
         "type": "com.example.issue.create",
         "time": Utc::now().to_rfc3339(),
@@ -499,7 +499,7 @@ fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
     json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "source": "/issues",
+        "source": "server-demo-event",
         "subject": issue_id,
         "type": "com.example.issue.delete",
         "time": Utc::now().to_rfc3339(),

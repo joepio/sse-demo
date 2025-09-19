@@ -102,7 +102,7 @@ const GitHubTimeline: React.FC = () => {
       const commentEvent: CloudEvent = {
         specversion: "1.0",
         id: crypto.randomUUID(),
-        source: `/timeline/items/comment-${Date.now()}`,
+        source: `frontend-demo-event`,
         subject: issueId,
         type: "https://api.example.com/events/timeline/item/created/v1",
         time: new Date().toISOString(),
@@ -164,7 +164,7 @@ const GitHubTimeline: React.FC = () => {
       const deleteEvent: CloudEvent = {
         specversion: "1.0",
         id: crypto.randomUUID(),
-        source: `/issues/${issueId}`,
+        source: "frontend-demo-event",
         subject: issueId,
         type: "com.example.issue.delete",
         time: new Date().toISOString(),
