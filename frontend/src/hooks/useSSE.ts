@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { CloudEvent, Issue } from "../types";
 
+interface IssueWithActivity extends Issue {
+  lastActivity?: string;
+}
+
 interface UseSSEResult {
   events: CloudEvent[];
-  issues: Record<string, Issue>;
+  issues: Record<string, IssueWithActivity>;
   connectionStatus: "connecting" | "connected" | "disconnected" | "error";
   sendEvent: (event: CloudEvent) => Promise<void>;
 }
 
 export const useSSE = (): UseSSEResult => {
   const [events, setEvents] = useState<CloudEvent[]>([]);
-  const [issues, setIssues] = useState<Record<string, Issue>>({});
+  const [issues, setIssues] = useState<Record<string, IssueWithActivity>>({});
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
@@ -54,6 +58,7 @@ export const useSSE = (): UseSSEResult => {
     (cloudEvent: CloudEvent) => {
       setIssues((prevIssues) => {
         const newIssues = { ...prevIssues };
+        const eventTime = cloudEvent.time || new Date().toISOString();
 
         switch (cloudEvent.type) {
           case "com.example.issue.create":
@@ -64,7 +69,10 @@ export const useSSE = (): UseSSEResult => {
             ) {
               const data = cloudEvent.data as Record<string, unknown>;
               if (data.id && typeof data.id === "string") {
-                newIssues[data.id] = data as Issue;
+                newIssues[data.id] = {
+                  ...(data as Issue),
+                  lastActivity: eventTime,
+                };
               }
             }
             break;
@@ -73,17 +81,17 @@ export const useSSE = (): UseSSEResult => {
             if (cloudEvent.subject && cloudEvent.data) {
               const issueId = cloudEvent.subject;
               if (newIssues[issueId]) {
-                newIssues[issueId] = applyMergePatch(
-                  newIssues[issueId],
-                  cloudEvent.data,
-                );
+                newIssues[issueId] = {
+                  ...applyMergePatch(newIssues[issueId], cloudEvent.data),
+                  lastActivity: eventTime,
+                };
               } else {
                 // Create new issue if it doesn't exist
                 const newIssue = { id: issueId };
-                newIssues[issueId] = applyMergePatch(
-                  newIssue,
-                  cloudEvent.data,
-                ) as Issue;
+                newIssues[issueId] = {
+                  ...(applyMergePatch(newIssue, cloudEvent.data) as Issue),
+                  lastActivity: eventTime,
+                };
               }
             }
             break;
@@ -91,6 +99,16 @@ export const useSSE = (): UseSSEResult => {
           case "com.example.issue.delete":
             if (cloudEvent.subject) {
               delete newIssues[cloudEvent.subject];
+            }
+            break;
+
+          // Handle timeline events that should update lastActivity
+          default:
+            if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
+              newIssues[cloudEvent.subject] = {
+                ...newIssues[cloudEvent.subject],
+                lastActivity: eventTime,
+              };
             }
             break;
         }
@@ -155,8 +173,25 @@ export const useSSE = (): UseSSEResult => {
           setEvents(snapshotEvents);
 
           // Process all events to build initial issues state
-          const initialIssues: Record<string, Issue> = {};
+          const initialIssues: Record<string, IssueWithActivity> = {};
+          const issueActivityMap: Record<string, string> = {};
+
+          // First pass: track latest activity for each issue
           for (const event of snapshotEvents) {
+            if (event.subject) {
+              const eventTime = event.time || new Date().toISOString();
+              if (
+                !issueActivityMap[event.subject] ||
+                eventTime > issueActivityMap[event.subject]
+              ) {
+                issueActivityMap[event.subject] = eventTime;
+              }
+            }
+          }
+
+          for (const event of snapshotEvents) {
+            const eventTime = event.time || new Date().toISOString();
+
             switch (event.type) {
               case "com.example.issue.create":
                 if (
@@ -166,7 +201,10 @@ export const useSSE = (): UseSSEResult => {
                 ) {
                   const data = event.data as Record<string, unknown>;
                   if (data.id && typeof data.id === "string") {
-                    initialIssues[data.id] = data as Issue;
+                    initialIssues[data.id] = {
+                      ...(data as Issue),
+                      lastActivity: issueActivityMap[data.id] || eventTime,
+                    };
                   }
                 }
                 break;
@@ -175,16 +213,16 @@ export const useSSE = (): UseSSEResult => {
                 if (event.subject && event.data) {
                   const issueId = event.subject;
                   if (initialIssues[issueId]) {
-                    initialIssues[issueId] = applyMergePatch(
-                      initialIssues[issueId],
-                      event.data,
-                    );
+                    initialIssues[issueId] = {
+                      ...applyMergePatch(initialIssues[issueId], event.data),
+                      lastActivity: issueActivityMap[issueId] || eventTime,
+                    };
                   } else {
                     const newIssue = { id: issueId };
-                    initialIssues[issueId] = applyMergePatch(
-                      newIssue,
-                      event.data,
-                    ) as Issue;
+                    initialIssues[issueId] = {
+                      ...(applyMergePatch(newIssue, event.data) as Issue),
+                      lastActivity: issueActivityMap[issueId] || eventTime,
+                    };
                   }
                 }
                 break;

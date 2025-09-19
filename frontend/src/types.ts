@@ -18,6 +18,7 @@ export interface Issue extends Record<string, unknown> {
   assignee?: string;
   created_at?: string;
   resolution?: string;
+  lastActivity?: string;
 }
 
 export interface IssueFormData {

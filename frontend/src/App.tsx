@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useSSE } from "./hooks/useSSE";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
 import GitHubTimeline from "./components/GitHubTimeline";
 import Modal from "./components/Modal";
+import { formatRelativeTime } from "./utils/time";
 
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
@@ -49,95 +51,66 @@ const ZakenDashboard: React.FC = () => {
     setIsCreateModalOpen(false);
   };
 
-  const issueEntries = Object.entries(issues);
+  const issueEntries = Object.entries(issues).sort((a, b) => {
+    const [, issueA] = a;
+    const [, issueB] = b;
+
+    // Sort by lastActivity (newest first), fallback to created_at
+    const timeA = issueA.lastActivity || issueA.created_at || "1970-01-01";
+    const timeB = issueB.lastActivity || issueB.created_at || "1970-01-01";
+
+    return new Date(timeB).getTime() - new Date(timeA).getTime();
+  });
 
   return (
-    <div className="github-timeline">
-      {/* Header */}
-      <div className="github-timeline-header">
-        <div className="breadcrumb">
-          <span className="breadcrumb-current">ZaakSysteem Dashboard</span>
-        </div>
+    <div className="app">
+      <header>
+        <h1>Mijn Zaken</h1>
+        <p>
+          {issueEntries.length} {issueEntries.length !== 1 ? "zaken" : "zaak"}{" "}
+          opgebouwd uit events
+        </p>
         <ConnectionStatus status={connectionStatus} />
-      </div>
+      </header>
 
-      {/* Main content */}
-      <div className="github-timeline-content">
-        {/* Zaken List */}
-        <div className="github-timeline-item">
-          <div className="github-timeline-item-avatar">
-            <div className="avatar">📋</div>
-          </div>
-          <div className="github-timeline-item-content">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">Huidige Zaken</h2>
-                <p className="card-subtitle">
-                  {issueEntries.length}{" "}
-                  {issueEntries.length !== 1 ? "zaken" : "zaak"} opgebouwd uit
-                  events
-                </p>
-              </div>
-
-              <div className="card-body">
-                {issueEntries.length === 0 ? (
-                  <div className="loading-message">
-                    <p>
-                      Geen zaken gevonden. Maak uw eerste zaak hierboven aan.
-                    </p>
+      <main>
+        <div className="zaken-list">
+          {issueEntries.length === 0 ? (
+            <p>Geen zaken gevonden.</p>
+          ) : (
+            issueEntries.map(([id, issue]) => (
+              <a
+                href={`/zaak/${id}`}
+                key={id}
+                className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
+                data-issue-id={id}
+              >
+                <div className="zaak-content">
+                  <div className="zaak-link">
+                    {issue.title || "Zaak zonder titel"}
                   </div>
-                ) : (
-                  <div className="zaken-list">
-                    {issueEntries.map(([id, issue]) => (
-                      <a
-                        href={`/zaak/${id}`}
-                        key={id}
-                        className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
-                        data-issue-id={id}
-                      >
-                        <div className="zaak-link">
-                          {issue.title || "Zaak zonder titel"}
-                        </div>
-                      </a>
-                    ))}
+                  <div className="zaak-time">
+                    {formatRelativeTime(
+                      issue.lastActivity ||
+                        issue.created_at ||
+                        new Date().toISOString(),
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
+                </div>
+              </a>
+            ))
+          )}
         </div>
 
-        {/* Create New Zaak Button */}
-        <div className="github-timeline-item">
-          <div className="github-timeline-item-avatar">
-            <div className="avatar">+</div>
-          </div>
-          <div className="github-timeline-item-content">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">Nieuwe Zaak</h2>
-                <p className="card-subtitle">
-                  Klik om een nieuwe zaak aan te maken
-                </p>
-              </div>
-              <div className="card-body">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => setIsCreateModalOpen(true)}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem 1rem",
-                    fontSize: "1rem",
-                  }}
-                >
-                  + Nieuwe Zaak Aanmaken
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setIsCreateModalOpen(true)}
+          style={{ marginTop: "2rem" }}
+        >
+          + Nieuwe Zaak Aanmaken
+        </button>
+      </main>
 
       {/* Create Zaak Modal */}
       <Modal
