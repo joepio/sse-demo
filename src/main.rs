@@ -116,7 +116,7 @@ async fn create_app() -> Router {
     let demo = state.clone();
     tokio::spawn(async move {
         loop {
-            sleep(Duration::from_secs(2)).await;
+            sleep(Duration::from_secs(10)).await;
 
             // Get current zaken for random selection
             let current_issues = {
@@ -146,7 +146,6 @@ async fn create_app() -> Router {
     let app = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
-        .route("/cloudevents", get(get_all)) // convenient REST snapshot
         .with_state(state)
         .layer(CorsLayer::permissive())
         .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
@@ -176,10 +175,6 @@ async fn sse_handler(
         );
 
     Sse::new(stream).keep_alive(KeepAlive::default())
-}
-
-async fn get_all(State(state): State<AppState>) -> Json<Vec<Value>> {
-    Json(state.events.read().await.clone())
 }
 
 /// Process a CloudEvent JSON and update the zaken state

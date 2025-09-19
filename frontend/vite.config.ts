@@ -18,14 +18,6 @@ export default defineConfig({
         target: serverUrl,
         changeOrigin: true,
       },
-      "/issues": {
-        target: serverUrl,
-        changeOrigin: true,
-      },
-      "/cloudevents": {
-        target: serverUrl,
-        changeOrigin: true,
-      },
     },
   },
   build: {

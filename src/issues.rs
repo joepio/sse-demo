@@ -375,20 +375,8 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     let operation_type = fastrand::usize(0..100);
 
     match operation_type {
-        // 45% chance: comment creation
-        0..45 => Some(generate_random_comment_event(random_issue_id)),
-        // 35% chance: status/patch updates
-        45..80 => Some(generate_random_patch_event(random_issue_id)),
-        // 15% chance: create new issue
-        80..95 => Some(generate_random_create_event()),
-        // 5% chance: delete operation (but only if we have more than 3 issues)
-        _ => {
-            if existing_issues.len() > 3 {
-                Some(generate_random_delete_event(random_issue_id))
-            } else {
-                Some(generate_random_comment_event(random_issue_id))
-            }
-        }
+        0..75 => Some(generate_random_comment_event(random_issue_id)),
+        _ => Some(generate_random_patch_event(random_issue_id)),
     }
 }
 
