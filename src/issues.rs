@@ -347,7 +347,10 @@ mod tests {
         let event_type = event["type"].as_str().unwrap();
         assert!(matches!(
             event_type,
-            "com.example.issue.create" | "com.example.issue.patch" | "com.example.issue.delete"
+            "com.example.issue.create"
+                | "com.example.issue.patch"
+                | "com.example.issue.delete"
+                | "https://api.example.com/events/timeline/item/created/v1"
         ));
     }
 
@@ -372,16 +375,18 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     let operation_type = fastrand::usize(0..100);
 
     match operation_type {
-        // 60% chance: patch operation
-        0..60 => Some(generate_random_patch_event(random_issue_id)),
-        // 20% chance: create new issue
-        60..80 => Some(generate_random_create_event()),
-        // 20% chance: delete operation (but only if we have more than 3 issues)
+        // 45% chance: comment creation
+        0..45 => Some(generate_random_comment_event(random_issue_id)),
+        // 35% chance: status/patch updates
+        45..80 => Some(generate_random_patch_event(random_issue_id)),
+        // 15% chance: create new issue
+        80..95 => Some(generate_random_create_event()),
+        // 5% chance: delete operation (but only if we have more than 3 issues)
         _ => {
             if existing_issues.len() > 3 {
                 Some(generate_random_delete_event(random_issue_id))
             } else {
-                Some(generate_random_patch_event(random_issue_id))
+                Some(generate_random_comment_event(random_issue_id))
             }
         }
     }
@@ -389,13 +394,35 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
 
 fn generate_random_patch_event(issue_id: &str) -> Value {
     let patch_operations = [
-        json!({"status": "in_progress"}),
-        json!({"status": "closed", "resolution": "fixed"}),
         json!({"status": "open"}),
-        json!({"assignee": "demo@gemeente.nl"}),
+        json!({"status": "in_behandeling"}),
+        json!({"status": "wachtend_op_informatie"}),
+        json!({"status": "in_beoordeling"}),
+        json!({"status": "gereed_voor_besluit"}),
+        json!({"status": "afgesloten", "resolution": "toegekend"}),
+        json!({"status": "afgesloten", "resolution": "afgewezen"}),
+        json!({"status": "afgesloten", "resolution": "ingetrokken"}),
+        json!({"assignee": "alice@gemeente.nl"}),
+        json!({"assignee": "bob@gemeente.nl"}),
+        json!({"assignee": "specialist@gemeente.nl"}),
         json!({"assignee": null}),
-        json!({"priority": "high"}),
-        json!({"priority": "low"}),
+        json!({"priority": "hoog"}),
+        json!({"priority": "normaal"}),
+        json!({"priority": "laag"}),
+        json!({"category": "omgevingsvergunning"}),
+        json!({"category": "melding_openbare_ruimte"}),
+        json!({"category": "bijstandsverzoek"}),
+        json!({"category": "woo_verzoek"}),
+        json!({"category": "parkeervergunning"}),
+        json!({"due_date": "2024-03-15"}),
+        json!({"due_date": "2024-04-01"}),
+        json!({"tags": ["urgent", "spoed"]}),
+        json!({"tags": ["complex"]}),
+        json!({"tags": ["externe_partij"]}),
+        json!({"department": "omgeving_en_vergunningen"}),
+        json!({"department": "publiekszaken"}),
+        json!({"department": "sociale_zaken"}),
+        json!({"department": "juridische_zaken"}),
     ];
 
     let random_patch = &patch_operations[fastrand::usize(..patch_operations.len())];
@@ -497,6 +524,77 @@ fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
         "data": {
             "id": issue_id,
             "reason": reason
+        }
+    })
+}
+
+fn generate_random_comment_event(issue_id: &str) -> Value {
+    let comments = [
+        "Status update: bezig met verwerking van deze aanvraag.",
+        "Aanvullende informatie ontvangen van aanvrager.",
+        "Doorverwezen naar de juiste afdeling voor behandeling.",
+        "Locatie inspectie gepland voor volgende week.",
+        "Advies gevraagd aan externe adviseur.",
+        "Alle benodigde documenten zijn nu compleet.",
+        "Zaak is in behandeling genomen door specialist.",
+        "Eerste beoordeling van de aanvraag afgerond.",
+        "Contact opgenomen met betrokken partijen.",
+        "Verdere analyse van de situatie vereist.",
+        "Planning gemaakt voor vervolgstappen.",
+        "Overleg gepland met collega's over deze zaak.",
+        "Termijn verlengd na overleg met aanvrager.",
+        "Advies van juridische afdeling ingewonomen.",
+        "Technische beoordeling uitgevoerd ter plaatse.",
+        "Afspraak ingepland met aanvrager voor volgende week.",
+        "Zaak doorgestuurd naar behandelend ambtenaar.",
+        "Extra documentatie opgevraagd bij externe partij.",
+        "Interne afstemming afgerond, kan door naar volgende fase.",
+        "Wachten op goedkeuring van leidinggevende.",
+        "Controle uitgevoerd, alles in orde bevonden.",
+        "Vraag gesteld aan ICT-afdeling over technische aspecten.",
+        "Besluitvorming uitgesteld tot na vakantieperiode.",
+        "Prioriteit verhoogd vanwege urgentie van de aanvraag.",
+        "Aanvraag gemarkeerd voor extra aandacht van senior medewerker.",
+        "Update: wachten op reactie van externe instantie.",
+        "Telefonisch contact gehad met aanvrager over voortgang.",
+        "Zaak tijdelijk on-hold gezet vanwege onduidelijkheden.",
+        "Herziening van de aanvraag na nieuwe informatie.",
+        "Consultant ingeschakeld voor specialistisch advies.",
+    ];
+
+    let actors = [
+        "alice@gemeente.nl",
+        "bob@gemeente.nl",
+        "carol@gemeente.nl",
+        "demo@gemeente.nl",
+        "specialist@gemeente.nl",
+    ];
+
+    let comment_text = comments[fastrand::usize(..comments.len())];
+    let actor = actors[fastrand::usize(..actors.len())];
+
+    generate_comment_event_with_data(issue_id, comment_text, actor)
+}
+
+fn generate_comment_event_with_data(issue_id: &str, content: &str, actor: &str) -> Value {
+    json!({
+        "specversion": "1.0",
+        "id": Uuid::now_v7().to_string(),
+        "source": "server-demo-event",
+        "subject": issue_id,
+        "type": "https://api.example.com/events/timeline/item/created/v1",
+        "time": Utc::now().to_rfc3339(),
+        "datacontenttype": "application/json",
+        "data": {
+            "item_type": "comment",
+            "item_id": format!("comment-{}", Uuid::now_v7().simple()),
+            "actor": actor,
+            "timestamp": Utc::now().to_rfc3339(),
+            "item_data": {
+                "content": content,
+                "parent_id": null,
+                "mentions": []
+            }
         }
     })
 }

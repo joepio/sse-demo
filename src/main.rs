@@ -301,7 +301,10 @@ mod tests {
         assert!(event.source.contains("demo") || event.source == "server");
         assert!(matches!(
             event.event_type.as_str(),
-            "com.example.issue.create" | "com.example.issue.patch" | "com.example.issue.delete"
+            "com.example.issue.create"
+                | "com.example.issue.patch"
+                | "com.example.issue.delete"
+                | "https://api.example.com/events/timeline/item/created/v1"
         ));
         assert!(event.datacontenttype.is_some());
         assert!(event.data.is_some());
@@ -315,7 +318,7 @@ mod tests {
         // Verify it contains expected fields
         assert!(json.contains("\"specversion\": \"1.0\""));
         assert!(json.contains("\"source\":"));
-        assert!(json.contains("\"type\": \"com.example.issue."));
+        assert!(json.contains("\"type\":"));
         assert!(json.contains("\"datacontenttype\":"));
 
         println!("CloudEvent JSON:\n{}", json);
