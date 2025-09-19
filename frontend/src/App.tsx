@@ -5,6 +5,7 @@ import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
 import GitHubTimeline from "./components/GitHubTimeline";
 import ResourceEditor from "./components/ResourceEditor";
+
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 

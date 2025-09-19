@@ -5,6 +5,7 @@ import type {
   TimelineItemType,
   TimelineItemData,
 } from "../types";
+import { getEventPlugin } from "../plugins/eventTypes";
 
 interface TimelineItemProps {
   event: TimelineEvent;
@@ -97,172 +98,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 
   const renderEventContent = () => {
     const data = (event.data || {}) as TimelineItemData;
+    const timeInfo = formatTimestamp(event.timestamp);
 
-    switch (itemType) {
-      case "comment": {
-        // Handle nested item_data structure for timeline comments
-        const commentData = (data.item_data || data) as Record<string, unknown>;
-        const content =
-          commentData.content || (data as Record<string, unknown>).content;
-        const mentions =
-          commentData.mentions || (data as Record<string, unknown>).mentions;
-
-        return (
-          <div className="timeline-content-comment">
-            <p>{typeof content === "string" ? content : "No content"}</p>
-            {Array.isArray(mentions) && mentions.length > 0 && (
-              <div className="mentions">
-                <small>Mentions: {mentions.map(String).join(", ")}</small>
-              </div>
-            )}
-          </div>
-        );
-      }
-
-      case "status_change":
-        return (
-          <div className="timeline-content-status">
-            <p>
-              Changed <strong>{data.field || "status"}</strong> from{" "}
-              <span className="old-value">
-                {String(data.old_value) || "unknown"}
-              </span>{" "}
-              to{" "}
-              <span className="new-value">
-                {String(data.new_value) || "unknown"}
-              </span>
-            </p>
-            {data.reason && (
-              <p className="reason">Reason: {String(data.reason)}</p>
-            )}
-          </div>
-        );
-
-      case "llm_analysis":
-        return (
-          <div className="timeline-content-llm">
-            <div className="llm-prompt">
-              <strong>Prompt:</strong> {data.prompt || "No prompt provided"}
-            </div>
-            <div className="llm-response">
-              <strong>Response:</strong>
-              <p>{data.response || "No response"}</p>
-            </div>
-            <div className="llm-meta">
-              <small>
-                Model: {String(data.model) || "unknown"}
-                {typeof data.confidence === "number" &&
-                  ` • Confidence: ${Math.round(data.confidence * 100)}%`}
-              </small>
-            </div>
-          </div>
-        );
-
-      case "deployment":
-        return (
-          <div className="timeline-content-deployment">
-            <p>
-              Deployed version{" "}
-              <strong>{String(data.version) || "unknown"}</strong>
-              {typeof data.environment === "string" &&
-                ` to ${data.environment}`}
-            </p>
-            {data.commit_hash && (
-              <div className="commit-info">
-                <small>
-                  Commit: <code>{data.commit_hash.substring(0, 8)}</code>
-                </small>
-              </div>
-            )}
-          </div>
-        );
-
-      case "issue_created":
-        return (
-          <div className="timeline-content-issue-created">
-            <p>
-              <strong>{String(data.title) || "Issue created"}</strong>
-            </p>
-            {(() => {
-              const description = data.description;
-              return typeof description === "string" && description ? (
-                <p>{description}</p>
-              ) : null;
-            })()}
-            <div className="issue-meta">
-              <small>
-                Status: {String(data.status) || "open"}
-                {(() => {
-                  const priority = data.priority;
-                  return typeof priority === "string" && priority
-                    ? ` • Priority: ${String(priority)}`
-                    : "";
-                })()}
-                {(() => {
-                  const assignee = data.assignee;
-                  return typeof assignee === "string" && assignee
-                    ? ` • Assigned to: ${String(assignee)}`
-                    : "";
-                })()}
-              </small>
-            </div>
-          </div>
-        );
-
-      case "issue_updated": {
-        // Generate a clean summary of changes
-        const changeKeys = Object.entries(data)
-          .filter(
-            ([key]) =>
-              key !== "item_type" &&
-              key !== "item_id" &&
-              key !== "actor" &&
-              key !== "timestamp",
-          )
-          .map(([key]) => key);
-
-        let changeText: string;
-        if (changeKeys.length === 0) {
-          changeText = "updated issue";
-        } else if (changeKeys.length === 1) {
-          const key = changeKeys[0];
-          const value = Object.entries(data).find(([k]) => k === key)?.[1];
-          let valueText = String(value);
-          if (valueText.length > 30) {
-            valueText = valueText.substring(0, 30) + "...";
-          }
-          changeText = `${key} updated to "${valueText}"`;
-        } else if (changeKeys.length === 2) {
-          changeText = `${changeKeys[0]} and ${changeKeys[1]} updated`;
-        } else {
-          changeText = `${changeKeys.length} fields updated`;
-        }
-        return (
-          <div className="timeline-content-issue-updated">
-            <p>{changeText}</p>
-          </div>
-        );
-      }
-
-      case "issue_deleted":
-        return (
-          <div className="timeline-content-issue-deleted">
-            <p>Issue deleted</p>
-            {data.reason && <p>Reason: {String(data.reason)}</p>}
-          </div>
-        );
-
-      default:
-        return (
-          <div className="timeline-content-generic">
-            <p>System event occurred</p>
-            <details>
-              <summary>Event data</summary>
-              <pre>{JSON.stringify(data, null, 2)}</pre>
-            </details>
-          </div>
-        );
-    }
+    // Use plugin system for content rendering
+    const PluginComponent = getEventPlugin(itemType);
+    return <PluginComponent event={event} data={data} timeInfo={timeInfo} />;
   };
 
   const timeInfo = formatTimestamp(event.timestamp);
