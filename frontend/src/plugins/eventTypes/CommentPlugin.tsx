@@ -11,12 +11,16 @@ const CommentPlugin: React.FC<EventPluginProps> = ({ data }) => {
 
   return (
     <div className="timeline-content-comment">
-      <p>{typeof content === "string" ? content : "Geen inhoud"}</p>
-      {Array.isArray(mentions) && mentions.length > 0 && (
-        <div className="mentions">
-          <small>Vermeldingen: {mentions.map(String).join(", ")}</small>
-        </div>
-      )}
+      <div className="comment-body">
+        <p style={{ margin: "0 0 0.5rem 0", lineHeight: "1.5" }}>
+          {typeof content === "string" ? content : "Geen inhoud"}
+        </p>
+        {Array.isArray(mentions) && mentions.length > 0 && (
+          <div className="mentions">
+            <small>Vermeldingen: {mentions.map(String).join(", ")}</small>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

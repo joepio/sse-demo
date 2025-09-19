@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { CloudEvent, IssueFormData } from "../types";
 
 interface CreateIssueFormProps {
@@ -6,6 +7,7 @@ interface CreateIssueFormProps {
 }
 
 const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<IssueFormData>({
     title: "",
     description: "",
@@ -72,7 +74,10 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
 
       await onCreateIssue(cloudEvent);
 
-      // Reset form on success
+      // Navigate to the newly created zaak
+      navigate(`/zaak/${issueId}`);
+
+      // Reset form on success (in case navigation fails)
       setFormData({
         title: "",
         description: "",

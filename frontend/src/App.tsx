@@ -89,15 +89,16 @@ const ZakenDashboard: React.FC = () => {
                 ) : (
                   <div className="zaken-list">
                     {issueEntries.map(([id, issue]) => (
-                      <div
+                      <a
+                        href={`/zaak/${id}`}
                         key={id}
                         className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
                         data-issue-id={id}
                       >
-                        <a href={`/zaak/${id}`} className="zaak-link">
+                        <div className="zaak-link">
                           {issue.title || "Zaak zonder titel"}
-                        </a>
-                      </div>
+                        </div>
+                      </a>
                     ))}
                   </div>
                 )}

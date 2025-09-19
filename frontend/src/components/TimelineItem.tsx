@@ -74,11 +74,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     type: TimelineItemType,
     eventType: "created" | "updated" | "deleted",
   ) => {
-    // Don't show title for comments - they should be headerless
-    if (type === "comment") return "";
+    // Show proper title for comments with commenter info
+    if (type === "comment") return "Opmerking";
 
     const titles = {
-      comment: "",
+      comment: "Opmerking",
       status_change: "Status Wijziging",
       llm_analysis: "AI Analyse",
       deployment: "Uitrol",

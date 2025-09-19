@@ -90,7 +90,7 @@
 }
 
 .github-timeline-issue .github-timeline-item-content {
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-primary);
     border: 1px solid var(--border-primary);
     border-radius: 12px;
     padding: 2rem;
@@ -187,17 +187,6 @@
     border: 1px solid transparent;
 }
 
-.btn-edit {
-    background-color: var(--button-secondary-bg);
-    color: var(--text-primary);
-    border-color: var(--border-primary);
-}
-
-.btn-edit:hover {
-    background-color: var(--button-secondary-hover);
-    border-color: var(--border-hover);
-}
-
 .btn-primary {
     background-color: var(--button-primary-bg);
     color: var(--text-inverse);
@@ -206,17 +195,6 @@
 
 .btn-primary:hover:not(:disabled) {
     background-color: var(--button-primary-hover);
-}
-
-.btn-delete {
-    background-color: var(--button-danger-bg);
-    color: var(--text-inverse);
-    border-color: var(--button-danger-bg);
-}
-
-.btn-delete:hover:not(:disabled) {
-    background-color: var(--button-danger-hover);
-    border-color: var(--button-danger-hover);
 }
 
 .btn:disabled {

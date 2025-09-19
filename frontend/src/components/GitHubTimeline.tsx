@@ -315,20 +315,16 @@ const GitHubTimeline: React.FC = () => {
             </div>
 
             <div className="issue-actions">
-              <button
-                type="button"
-                className="btn btn-edit"
-                onClick={handleEditIssue}
-              >
-                Zaak Bewerken
+              <button type="button" className="btn" onClick={handleEditIssue}>
+                Bewerken
               </button>
               <button
                 type="button"
-                className="btn btn-delete"
+                className="btn"
                 onClick={handleDeleteIssue}
                 disabled={isDeleting}
               >
-                {isDeleting ? "Verwijderen..." : "Zaak Verwijderen"}
+                {isDeleting ? "Verwijderen..." : "Verwijderen"}
               </button>
             </div>
           </div>

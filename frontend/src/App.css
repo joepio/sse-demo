@@ -424,7 +424,7 @@
 }
 
 .zaak-item {
-    background-color: var(--bg-secondary);
+    background-color: white;
     border: 1px solid var(--border-primary);
     border-radius: 6px;
     padding: 0.75rem 1rem;
@@ -434,7 +434,7 @@
 .zaak-item:hover {
     border-color: var(--border-hover);
     box-shadow: var(--shadow-sm);
-    background-color: var(--bg-hover);
+    background-color: var(--bg-primary);
 }
 
 .zaak-item.new {
