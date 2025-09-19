@@ -1,0 +1,9 @@
+[deploy]
+include = [
+  "dist/*", # include all files and subdirs in static/
+]
+
+[build]
+assets = [
+  "dist/*", # include build assets
+]
