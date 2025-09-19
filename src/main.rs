@@ -108,12 +108,8 @@ async fn main() {
 }
 
 async fn create_app() -> Router {
-    // In production mode, panic if the dist folder is missing
-    #[cfg(not(feature = "local"))]
-    {
-        if !Path::new("dist").exists() {
-            panic!("Frontend dist folder is missing! Please build the frontend first with: cd frontend && npm run build");
-        }
+    if !Path::new("dist").exists() {
+        panic!("Frontend dist folder is missing! Please build the frontend first with: cd frontend && pnpm run build");
     }
 
     let state = AppState::default();
@@ -149,26 +145,14 @@ async fn create_app() -> Router {
         }
     });
 
-    let mut app = Router::new()
+    let app = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/cloudevents", get(get_all)) // convenient REST snapshot
         .route("/issues", get(get_all_issues)) // get all zaken
         .with_state(state)
-        .layer(CorsLayer::permissive());
-
-    // In production, serve React build files
-    #[cfg(not(feature = "local"))]
-    {
-        app =
-            app.fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
-    }
-
-    // In development, serve the old HTML file for backwards compatibility
-    #[cfg(feature = "local")]
-    {
-        app = app.route("/", get(index));
-    }
+        .layer(CorsLayer::permissive())
+        .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
 
     app
 }

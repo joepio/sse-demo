@@ -64,7 +64,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
       const cloudEvent: CloudEvent = {
         specversion: "1.0",
         id: crypto.randomUUID(),
-        source: "/issues",
+        source: "frontend-create",
         subject: issueId,
         type: "com.example.issue.create",
         time: new Date().toISOString(),
