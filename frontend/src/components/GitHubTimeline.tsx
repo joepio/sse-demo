@@ -316,12 +316,16 @@ const GitHubTimeline: React.FC = () => {
             </div>
 
             <div className="issue-actions">
-              <button type="button" className="btn" onClick={handleEditIssue}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleEditIssue}
+              >
                 Bewerken
               </button>
               <button
                 type="button"
-                className="btn"
+                className="btn btn-secondary"
                 onClick={handleDeleteIssue}
                 disabled={isDeleting}
               >

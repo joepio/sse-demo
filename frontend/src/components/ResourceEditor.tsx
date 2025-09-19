@@ -80,10 +80,18 @@ const ResourceEditor = <T extends BaseEntity>({
       <div
         style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}
       >
-        <button onClick={onClose} disabled={isSubmitting}>
+        <button
+          className="btn btn-secondary"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
           Annuleren
         </button>
-        <button onClick={handleSave} disabled={isSubmitting}>
+        <button
+          className="btn btn-primary"
+          onClick={handleSave}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Opslaan..." : "Opslaan"}
         </button>
       </div>

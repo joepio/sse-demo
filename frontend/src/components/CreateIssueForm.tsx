@@ -180,16 +180,8 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
 
         <button
           type="submit"
+          className="btn btn-primary"
           disabled={isSubmitting}
-          style={{
-            padding: "0.75rem 1rem",
-            backgroundColor: isSubmitting ? "#6c757d" : "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-            fontSize: "1rem",
-          }}
         >
           {isSubmitting ? "Aanmaken..." : "Zaak Aanmaken"}
         </button>
