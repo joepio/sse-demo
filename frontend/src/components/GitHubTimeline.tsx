@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useSSE } from "../hooks/useSSE";
+import { useSSE } from "../contexts/SSEContext";
 import type {
   CloudEvent,
   TimelineEvent,

@@ -1,18 +1,32 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from "react";
 import type { CloudEvent, Issue } from "../types";
 
 interface IssueWithActivity extends Issue {
   lastActivity?: string;
 }
 
-interface UseSSEResult {
+interface SSEContextType {
   events: CloudEvent[];
   issues: Record<string, IssueWithActivity>;
   connectionStatus: "connecting" | "connected" | "disconnected" | "error";
   sendEvent: (event: CloudEvent) => Promise<void>;
 }
 
-export const useSSE = (): UseSSEResult => {
+const SSEContext = createContext<SSEContextType | undefined>(undefined);
+
+interface SSEProviderProps {
+  children: ReactNode;
+}
+
+export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const [events, setEvents] = useState<CloudEvent[]>([]);
   const [issues, setIssues] = useState<Record<string, IssueWithActivity>>({});
   const [connectionStatus, setConnectionStatus] = useState<
@@ -21,37 +35,45 @@ export const useSSE = (): UseSSEResult => {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   // Apply JSON Merge Patch (RFC 7396)
-  const applyMergePatch = useCallback((target: any, patch: any): any => {
-    if (patch === null || typeof patch !== "object" || Array.isArray(patch)) {
-      return patch;
-    }
-
-    if (
-      target === null ||
-      typeof target !== "object" ||
-      Array.isArray(target)
-    ) {
-      target = {};
-    }
-
-    const result = { ...target };
-
-    for (const [key, value] of Object.entries(patch)) {
-      if (value === null) {
-        delete result[key];
-      } else if (
-        typeof value === "object" &&
-        !Array.isArray(value) &&
-        value !== null
-      ) {
-        result[key] = applyMergePatch(target[key], value);
-      } else {
-        result[key] = value;
+  const applyMergePatch = useCallback(
+    (target: unknown, patch: unknown): unknown => {
+      if (patch === null || typeof patch !== "object" || Array.isArray(patch)) {
+        return patch;
       }
-    }
 
-    return result;
-  }, []);
+      if (
+        target === null ||
+        typeof target !== "object" ||
+        Array.isArray(target)
+      ) {
+        target = {};
+      }
+
+      const result = { ...(target as Record<string, unknown>) };
+
+      for (const [key, value] of Object.entries(
+        patch as Record<string, unknown>,
+      )) {
+        if (value === null) {
+          delete result[key];
+        } else if (
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          value !== null
+        ) {
+          result[key] = applyMergePatch(
+            (target as Record<string, unknown>)[key],
+            value,
+          );
+        } else {
+          result[key] = value;
+        }
+      }
+
+      return result;
+    },
+    [],
+  );
 
   // Process CloudEvent and update issues state
   const processCloudEvent = useCallback(
@@ -81,15 +103,23 @@ export const useSSE = (): UseSSEResult => {
             if (cloudEvent.subject && cloudEvent.data) {
               const issueId = cloudEvent.subject;
               if (newIssues[issueId]) {
+                const patchedIssue = applyMergePatch(
+                  newIssues[issueId],
+                  cloudEvent.data,
+                ) as IssueWithActivity;
                 newIssues[issueId] = {
-                  ...applyMergePatch(newIssues[issueId], cloudEvent.data),
+                  ...patchedIssue,
                   lastActivity: eventTime,
                 };
               } else {
                 // Create new issue if it doesn't exist
                 const newIssue = { id: issueId };
+                const patchedNewIssue = applyMergePatch(
+                  newIssue,
+                  cloudEvent.data,
+                ) as IssueWithActivity;
                 newIssues[issueId] = {
-                  ...(applyMergePatch(newIssue, cloudEvent.data) as Issue),
+                  ...patchedNewIssue,
                   lastActivity: eventTime,
                 };
               }
@@ -213,14 +243,22 @@ export const useSSE = (): UseSSEResult => {
                 if (event.subject && event.data) {
                   const issueId = event.subject;
                   if (initialIssues[issueId]) {
+                    const patchedExisting = applyMergePatch(
+                      initialIssues[issueId],
+                      event.data,
+                    ) as IssueWithActivity;
                     initialIssues[issueId] = {
-                      ...applyMergePatch(initialIssues[issueId], event.data),
+                      ...patchedExisting,
                       lastActivity: issueActivityMap[issueId] || eventTime,
                     };
                   } else {
                     const newIssue = { id: issueId };
+                    const patchedNew = applyMergePatch(
+                      newIssue,
+                      event.data,
+                    ) as IssueWithActivity;
                     initialIssues[issueId] = {
-                      ...(applyMergePatch(newIssue, event.data) as Issue),
+                      ...patchedNew,
                       lastActivity: issueActivityMap[issueId] || eventTime,
                     };
                   }
@@ -267,10 +305,22 @@ export const useSSE = (): UseSSEResult => {
     };
   }, [processCloudEvent, applyMergePatch]);
 
-  return {
+  const contextValue: SSEContextType = {
     events,
     issues,
     connectionStatus,
     sendEvent,
   };
+
+  return (
+    <SSEContext.Provider value={contextValue}>{children}</SSEContext.Provider>
+  );
+};
+
+export const useSSE = (): SSEContextType => {
+  const context = useContext(SSEContext);
+  if (context === undefined) {
+    throw new Error("useSSE must be used within an SSEProvider");
+  }
+  return context;
 };

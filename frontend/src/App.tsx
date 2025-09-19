@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useSSE } from "./hooks/useSSE";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
 import GitHubTimeline from "./components/GitHubTimeline";
@@ -79,8 +79,8 @@ const ZakenDashboard: React.FC = () => {
             <p>Geen zaken gevonden.</p>
           ) : (
             issueEntries.map(([id, issue]) => (
-              <a
-                href={`/zaak/${id}`}
+              <Link
+                to={`/zaak/${id}`}
                 key={id}
                 className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
                 data-issue-id={id}
@@ -97,7 +97,7 @@ const ZakenDashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </a>
+              </Link>
             ))
           )}
         </div>
@@ -127,12 +127,14 @@ const ZakenDashboard: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<ZakenDashboard />} />
-        <Route path="/zaak/:zaakId" element={<GitHubTimeline />} />
-      </Routes>
-    </Router>
+    <SSEProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<ZakenDashboard />} />
+          <Route path="/zaak/:zaakId" element={<GitHubTimeline />} />
+        </Routes>
+      </Router>
+    </SSEProvider>
   );
 };
 
