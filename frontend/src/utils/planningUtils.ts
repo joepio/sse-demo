@@ -25,39 +25,41 @@ export const getPlanningForIssue = (
 
   for (const event of relevantEvents) {
     const data = event.data as Record<string, unknown>;
-    const planningId = data.item_id;
+    const planningId = String(data.item_id);
 
     if (event.type.includes("created")) {
       // Create new planning
-      const itemData = data.item_data || {};
+      const itemData = (data.item_data || {}) as Record<string, unknown>;
       planningMap.set(planningId, {
         id: planningId,
-        title: itemData.title || "",
-        description: itemData.description || "",
-        moments: itemData.moments || [],
-        actor: data.actor || "system",
-        timestamp: data.timestamp || event.time || new Date().toISOString(),
+        title: String(itemData.title) || "",
+        description: String(itemData.description) || "",
+        moments: (itemData.moments as PlanningMoment[]) || [],
+        actor: String(data.actor) || "system",
+        timestamp:
+          String(data.timestamp) || event.time || new Date().toISOString(),
       } as Planning);
     } else if (event.type.includes("updated")) {
       // Update existing planning
       const existingPlanning = planningMap.get(planningId);
       if (existingPlanning) {
-        const patch = data.patch || {};
+        const patch = (data.patch || {}) as Record<string, unknown>;
         const updatedPlanning = { ...existingPlanning };
 
-        if (patch.title !== undefined) {
-          updatedPlanning.title = patch.title as string;
+        // Apply patch fields
+        if (patch.title) {
+          updatedPlanning.title = String(patch.title);
         }
-        if (patch.description !== undefined) {
-          updatedPlanning.description = patch.description as string;
+        if (patch.description) {
+          updatedPlanning.description = String(patch.description);
         }
-        if (patch.moments !== undefined) {
+        if (patch.moments) {
           updatedPlanning.moments = patch.moments as PlanningMoment[];
         }
 
         // Update timestamp
         updatedPlanning.timestamp =
-          data.timestamp || event.time || new Date().toISOString();
+          String(data.timestamp) || event.time || new Date().toISOString();
 
         planningMap.set(planningId, updatedPlanning);
       }

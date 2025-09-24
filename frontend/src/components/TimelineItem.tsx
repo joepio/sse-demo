@@ -78,7 +78,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
     // For tasks, try to show the CTA in the title
     if (type === "task") {
       const eventData = (event.data || {}) as Record<string, unknown>;
-      const taskData = eventData.item_data || {};
+      const taskData = (eventData.item_data || {}) as Record<string, unknown>;
       if (taskData.cta) {
         if (eventType === "updated") {
           // Check if task was completed
@@ -163,7 +163,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
     } else if (itemType === "task" && event.type === "updated") {
       // For completed tasks, show as simple text update
       const eventData = (event.data || {}) as Record<string, unknown>;
-      const taskData = eventData.item_data || {};
+      const taskData = (eventData.item_data || {}) as Record<string, unknown>;
       if (taskData.completed && taskData.cta) {
         changeText = `taak voltooid: ${taskData.cta}`;
       } else {

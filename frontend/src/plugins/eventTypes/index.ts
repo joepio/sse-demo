@@ -12,22 +12,21 @@ import DeploymentPlugin from "./DeploymentPlugin";
 import SystemEventPlugin from "./SystemEventPlugin";
 import TaskPlugin from "./TaskPlugin";
 import PlanningPlugin from "./PlanningPlugin";
-import TextOnlyPreviewPlugin from "./TextOnlyPreviewPlugin";
 
 // Plugin registry - map event types to components
 export const eventPlugins: Record<TimelineItemType, EventPluginComponent> = {
   comment: CommentPlugin,
   status_change: StatusChangePlugin,
-  field_update: TextOnlyPreviewPlugin,
-  system_update: TextOnlyPreviewPlugin,
-  llm_analysis: TextOnlyPreviewPlugin,
+  field_update: SystemEventPlugin,
+  system_update: SystemEventPlugin,
+  llm_analysis: SystemEventPlugin,
   deployment: DeploymentPlugin,
   system_event: SystemEventPlugin,
   issue_created: IssueCreatedPlugin,
   issue_updated: IssueUpdatedPlugin,
   issue_deleted: IssueDeletedPlugin,
   task: TaskPlugin,
-  planning: TextOnlyPreviewPlugin,
+  planning: SystemEventPlugin,
 };
 
 // Utility function to get plugin for event type
@@ -48,5 +47,4 @@ export {
   SystemEventPlugin,
   TaskPlugin,
   PlanningPlugin,
-  TextOnlyPreviewPlugin,
 };
