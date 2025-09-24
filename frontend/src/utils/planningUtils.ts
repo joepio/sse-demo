@@ -13,16 +13,18 @@ export const getPlanningForIssue = (
   const relevantEvents = events.filter(
     (event) =>
       event.subject === issueId &&
-      (event.type === "https://api.example.com/events/timeline/item/created/v1" ||
-        event.type === "https://api.example.com/events/timeline/item/updated/v1") &&
+      (event.type ===
+        "https://api.example.com/events/timeline/item/created/v1" ||
+        event.type ===
+          "https://api.example.com/events/timeline/item/updated/v1") &&
       event.data &&
       typeof event.data === "object" &&
       event.data !== null &&
-      (event.data as any).item_type === "planning",
+      (event.data as Record<string, unknown>).item_type === "planning",
   );
 
   for (const event of relevantEvents) {
-    const data = event.data as any;
+    const data = event.data as Record<string, unknown>;
     const planningId = data.item_id;
 
     if (event.type.includes("created")) {
@@ -54,7 +56,8 @@ export const getPlanningForIssue = (
         }
 
         // Update timestamp
-        updatedPlanning.timestamp = data.timestamp || event.time || new Date().toISOString();
+        updatedPlanning.timestamp =
+          data.timestamp || event.time || new Date().toISOString();
 
         planningMap.set(planningId, updatedPlanning);
       }
@@ -79,7 +82,10 @@ export const getLatestPlanningForIssue = (
     .filter((planning) =>
       planning.moments.some((moment) => moment.status !== "completed"),
     )
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
 
   return activePlanning.length > 0 ? activePlanning[0] : null;
 };
@@ -87,7 +93,9 @@ export const getLatestPlanningForIssue = (
 /**
  * Get progress information for a planning
  */
-export const getPlanningProgress = (planning: Planning): {
+export const getPlanningProgress = (
+  planning: Planning,
+): {
   completed: number;
   current: number;
   planned: number;
@@ -95,13 +103,17 @@ export const getPlanningProgress = (planning: Planning): {
   currentMoment: PlanningMoment | null;
   nextMoment: PlanningMoment | null;
 } => {
-  const completed = planning.moments.filter((m) => m.status === "completed").length;
+  const completed = planning.moments.filter(
+    (m) => m.status === "completed",
+  ).length;
   const current = planning.moments.filter((m) => m.status === "current").length;
   const planned = planning.moments.filter((m) => m.status === "planned").length;
   const total = planning.moments.length;
 
-  const currentMoment = planning.moments.find((m) => m.status === "current") || null;
-  const nextMoment = planning.moments.find((m) => m.status === "planned") || null;
+  const currentMoment =
+    planning.moments.find((m) => m.status === "current") || null;
+  const nextMoment =
+    planning.moments.find((m) => m.status === "planned") || null;
 
   return {
     completed,
@@ -123,14 +135,20 @@ export const isPlanningActive = (planning: Planning): boolean => {
 /**
  * Sort planning moments by date
  */
-export const sortPlanningMoments = (moments: PlanningMoment[]): PlanningMoment[] => {
-  return [...moments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+export const sortPlanningMoments = (
+  moments: PlanningMoment[],
+): PlanningMoment[] => {
+  return [...moments].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
 };
 
 /**
  * Get formatted status text for a planning moment
  */
-export const getPlanningMomentStatusText = (status: "completed" | "current" | "planned"): string => {
+export const getPlanningMomentStatusText = (
+  status: "completed" | "current" | "planned",
+): string => {
   switch (status) {
     case "completed":
       return "Afgerond";
@@ -149,6 +167,8 @@ export const getPlanningMomentStatusText = (status: "completed" | "current" | "p
 export const getPlanningCompletionPercentage = (planning: Planning): number => {
   if (planning.moments.length === 0) return 0;
 
-  const completedCount = planning.moments.filter((m) => m.status === "completed").length;
+  const completedCount = planning.moments.filter(
+    (m) => m.status === "completed",
+  ).length;
   return Math.round((completedCount / planning.moments.length) * 100);
 };

@@ -7,23 +7,18 @@ import type {
   TimelineItemType,
   Issue,
 } from "../types";
-import TimelineItem from "./TimelineItem";
 import ResourceEditor from "./ResourceEditor";
 import NotificationBell from "./NotificationBell";
-import ActionButton from "./ActionButton";
-import Card, { CardHeader, CardContent } from "./Card";
-import { getLatestTaskForIssue } from "../utils/taskUtils";
-import { getLatestPlanningForIssue } from "../utils/planningUtils";
-import TaskPlugin from "../plugins/eventTypes/TaskPlugin";
-import PlanningPlugin from "../plugins/eventTypes/PlanningPlugin";
+import IssueHeader from "./IssueHeader";
+import ActiveTaskSection from "./ActiveTaskSection";
+import ActivePlanningSection from "./ActivePlanningSection";
+import CommentForm from "./CommentForm";
+import TimelineEventsList from "./TimelineEventsList";
 
 const IssueTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
   const { events, issues, sendEvent } = useSSE();
-  const [commentText, setCommentText] = useState("");
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [commentError, setCommentError] = useState<string | null>(null);
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -97,51 +92,12 @@ const IssueTimeline: React.FC = () => {
     return "system_event";
   };
 
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim() || !zaakId || isSubmittingComment) return;
-
-    setIsSubmittingComment(true);
-    setCommentError(null);
-
-    try {
-      // Create a timeline comment event
-      const commentEvent: CloudEvent = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
-        source: `frontend-demo-event`,
-        subject: zaakId,
-        type: "https://api.example.com/events/timeline/item/created/v1",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: "comment",
-          item_id: `comment-${Date.now()}`,
-          actor: "user@example.com", // In a real app, this would come from auth
-          timestamp: new Date().toISOString(),
-          item_data: {
-            content: commentText.trim(),
-            parent_id: null,
-            mentions: [],
-          },
-        },
-      };
-
-      // Send the comment event to the server
-      await sendEvent(commentEvent);
-      setCommentText("");
-    } catch (error) {
-      console.error("Failed to submit comment:", error);
-      setCommentError(
-        error instanceof Error ? error.message : "Opmerking verzenden mislukt",
-      );
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  };
-
   const handleEditIssue = () => {
     setIsEditorOpen(true);
+  };
+
+  const handleCommentSubmit = async (event: CloudEvent) => {
+    await sendEvent(event);
   };
 
   const handleEditorClose = () => {
@@ -188,19 +144,6 @@ const IssueTimeline: React.FC = () => {
       alert("Verwijderen van zaak mislukt");
     } finally {
       setIsDeleting(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "open":
-        return "var(--status-open)";
-      case "in_progress":
-        return "var(--status-progress)";
-      case "closed":
-        return "var(--status-closed)";
-      default:
-        return "var(--text-secondary)";
     }
   };
 
@@ -262,329 +205,32 @@ const IssueTimeline: React.FC = () => {
       <div className="max-w-5xl mx-auto p-8 md:p-4">
         {/* Zaak header - de hoofdzaak als eerste item */}
         <div className="mb-12 md:mb-6 relative">
-          <div
-            className="border rounded-xl p-8 md:p-6"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              borderColor: "var(--border-primary)",
-            }}
-          >
-            <div className="mb-6 md:mb-4">
-              <h1 className="text-3xl md:text-2xl font-semibold text-text-primary mb-3 leading-tight flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
-                {String(issue.title) || "Zaak zonder titel"}
-              </h1>
-
-              <div className="flex items-center gap-3 mb-4">
-                <span
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-text-inverse capitalize"
-                  style={{ backgroundColor: getStatusColor(issue.status) }}
-                >
-                  {issue.status === "in_progress"
-                    ? "In Behandeling"
-                    : issue.status === "open"
-                      ? "Open"
-                      : issue.status === "closed"
-                        ? "Gesloten"
-                        : issue.status}
-                </span>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <p className="text-base leading-relaxed text-text-primary m-0">
-                {String(issue.description) || "Geen beschrijving beschikbaar."}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-6 md:gap-3 mb-6 md:flex-col">
-              <div className="text-sm text-text-tertiary">
-                <strong className="text-text-primary">Toegewezen aan:</strong>{" "}
-                {String(issue.assignee) || "Niet toegewezen"}
-              </div>
-              {issue.created_at && (
-                <div className="text-sm text-text-tertiary">
-                  <strong className="text-text-primary">Aangemaakt:</strong>{" "}
-                  {new Date(String(issue.created_at)).toLocaleDateString(
-                    "nl-NL",
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <ActionButton variant="secondary" onClick={handleEditIssue}>
-                Bewerken
-              </ActionButton>
-              <ActionButton
-                variant="secondary"
-                onClick={handleDeleteIssue}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Verwijderen..." : "Verwijderen"}
-              </ActionButton>
-            </div>
-          </div>
+          {issue && (
+            <IssueHeader
+              issue={issue}
+              onEdit={handleEditIssue}
+              onDelete={handleDeleteIssue}
+              isDeleting={isDeleting}
+            />
+          )}
         </div>
 
         {/* Active task section - completely separate from timeline */}
-        {zaakId &&
-          (() => {
-            const latestTask = getLatestTaskForIssue(events, zaakId);
-            if (!latestTask || latestTask.completed) return null;
-
-            // Create a mock event structure for the TaskPlugin
-            const mockEvent = {
-              id: `active-task-${latestTask.id}`,
-              type: "created" as const,
-              timestamp: latestTask.timestamp,
-              actor: latestTask.actor,
-              data: {
-                item_type: "task",
-                item_id: latestTask.id,
-                item_data: {
-                  cta: latestTask.cta,
-                  description: latestTask.description,
-                  url: latestTask.url,
-                  completed: latestTask.completed,
-                  deadline: latestTask.deadline,
-                },
-                actor: latestTask.actor,
-                timestamp: latestTask.timestamp,
-              },
-              originalEvent: {
-                specversion: "1.0",
-                id: `active-task-${latestTask.id}`,
-                source: "frontend-active-task",
-                subject: zaakId,
-                type: "https://api.example.com/events/timeline/item/created/v1",
-                time: latestTask.timestamp,
-                datacontenttype: "application/json",
-                data: {
-                  item_type: "task",
-                  item_id: latestTask.id,
-                  item_data: {
-                    cta: latestTask.cta,
-                    description: latestTask.description,
-                    url: latestTask.url,
-                    completed: latestTask.completed,
-                    deadline: latestTask.deadline,
-                  },
-                  actor: latestTask.actor,
-                  timestamp: latestTask.timestamp,
-                },
-              },
-            };
-
-            return (
-              <div className="mb-8" style={{ position: "relative", zIndex: 1 }}>
-                <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-2 ml-0">
-                  Actieve taak
-                </div>
-                <div
-                  className="border rounded-xl p-8 md:p-6"
-                  style={{
-                    backgroundColor: "var(--bg-primary)",
-                    borderColor: "var(--border-primary)",
-                  }}
-                >
-                  <TaskPlugin
-                    event={mockEvent}
-                    data={mockEvent.data}
-                    timeInfo={{
-                      date: new Date(latestTask.timestamp).toLocaleDateString(
-                        "nl-NL",
-                      ),
-                      time: new Date(latestTask.timestamp).toLocaleTimeString(
-                        "nl-NL",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      ),
-                      relative: "actief",
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })()}
+        {zaakId && <ActiveTaskSection events={events} zaakId={zaakId} />}
 
         {/* Active planning section - completely separate from timeline */}
-        {zaakId &&
-          (() => {
-            const latestPlanning = getLatestPlanningForIssue(events, zaakId);
-            if (!latestPlanning) return null;
-
-            // Create a mock event structure for the PlanningPlugin
-            const mockEvent = {
-              id: `active-planning-${latestPlanning.id}`,
-              type: "created" as const,
-              timestamp: latestPlanning.timestamp,
-              actor: latestPlanning.actor,
-              data: {
-                item_type: "planning",
-                item_id: latestPlanning.id,
-                item_data: {
-                  title: latestPlanning.title,
-                  description: latestPlanning.description,
-                  moments: latestPlanning.moments,
-                },
-                actor: latestPlanning.actor,
-                timestamp: latestPlanning.timestamp,
-              },
-              originalEvent: {
-                specversion: "1.0",
-                id: `active-planning-${latestPlanning.id}`,
-                source: "frontend-active-planning",
-                subject: zaakId,
-                type: "https://api.example.com/events/timeline/item/created/v1",
-                time: latestPlanning.timestamp,
-                datacontenttype: "application/json",
-                data: {
-                  item_type: "planning",
-                  item_id: latestPlanning.id,
-                  item_data: {
-                    title: latestPlanning.title,
-                    description: latestPlanning.description,
-                    moments: latestPlanning.moments,
-                  },
-                  actor: latestPlanning.actor,
-                  timestamp: latestPlanning.timestamp,
-                },
-              },
-            };
-
-            return (
-              <div className="mb-8" style={{ position: "relative", zIndex: 1 }}>
-                <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-2 ml-0">
-                  Planning
-                </div>
-                <div
-                  className="border rounded-xl p-8 md:p-6"
-                  style={{
-                    backgroundColor: "var(--bg-primary)",
-                    borderColor: "var(--border-primary)",
-                  }}
-                >
-                  <PlanningPlugin
-                    event={mockEvent}
-                    data={mockEvent.data}
-                    timeInfo={{
-                      date: new Date(
-                        latestPlanning.timestamp,
-                      ).toLocaleDateString("nl-NL"),
-                      time: new Date(
-                        latestPlanning.timestamp,
-                      ).toLocaleTimeString("nl-NL", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }),
-                      relative: "planning",
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })()}
+        {zaakId && <ActivePlanningSection events={events} zaakId={zaakId} />}
 
         {/* Timeline events */}
-        <div className="relative">
-          {/* Timeline line */}
-          <div
-            className="absolute left-5 md:left-4 top-0 bottom-0 w-0.5 z-10"
-            style={{ backgroundColor: "var(--border-primary)" }}
-          ></div>
-
-          {timelineEvents.map((event) => {
-            const itemType = getTimelineItemType(event.originalEvent);
-            return (
-              <div key={event.id} className="flex mb-8 md:mb-6 relative z-20">
-                <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
-                  <div
-                    className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
-                    style={{
-                      backgroundColor: "var(--link-primary)",
-                      color: "var(--text-inverse)",
-                      borderColor: "var(--bg-primary)",
-                    }}
-                  >
-                    {event.actor ? event.actor.charAt(0).toUpperCase() : "?"}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div>
-                    <TimelineItem event={event} itemType={itemType} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <TimelineEventsList
+          events={timelineEvents}
+          getTimelineItemType={getTimelineItemType}
+        />
 
         {/* Comment form */}
-        <div className="flex mb-8 relative z-20">
-          <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
-            <div
-              className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
-              style={{
-                backgroundColor: "var(--link-primary)",
-                color: "var(--text-inverse)",
-                borderColor: "var(--bg-primary)",
-              }}
-            >
-              U
-            </div>
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <Card>
-              <CardHeader>
-                <h3 className="m-0 text-sm font-semibold text-text-primary">
-                  Opmerking toevoegen
-                </h3>
-              </CardHeader>
-
-              <form onSubmit={handleCommentSubmit}>
-                <CardContent>
-                  {commentError && (
-                    <div
-                      className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-error text-text-error"
-                      style={{ borderLeftColor: "var(--text-error)" }}
-                    >
-                      <strong>Fout:</strong> {commentError}
-                    </div>
-                  )}
-                  <textarea
-                    className="w-full min-h-[120px] p-4 border-none outline-none resize-y text-sm leading-relaxed placeholder:opacity-60"
-                    style={{
-                      backgroundColor: "var(--bg-primary)",
-                      color: "var(--text-primary)",
-                    }}
-                    placeholder="Voeg een opmerking toe..."
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    rows={4}
-                    disabled={isSubmittingComment}
-                  />
-                </CardContent>
-
-                <CardHeader>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border bg-button-primary-bg text-text-inverse border-button-primary-bg hover:bg-button-primary-hover hover:border-button-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
-                      disabled={!commentText.trim() || isSubmittingComment}
-                    >
-                      {isSubmittingComment
-                        ? "Verzenden..."
-                        : "Opmerking toevoegen"}
-                    </button>
-                  </div>
-                </CardHeader>
-              </form>
-            </Card>
-          </div>
-        </div>
+        {zaakId && (
+          <CommentForm zaakId={zaakId} onSubmit={handleCommentSubmit} />
+        )}
       </div>
 
       <ResourceEditor<Issue>

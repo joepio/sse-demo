@@ -245,7 +245,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
       // Handle snapshot (initial full state)
       eventSource.addEventListener("snapshot", (e) => {
         try {
-          let snapshotEvents = JSON.parse(e.data) as CloudEvent[];
+          const snapshotEvents = JSON.parse(e.data) as CloudEvent[];
 
           setEvents(snapshotEvents);
 

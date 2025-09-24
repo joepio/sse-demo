@@ -48,6 +48,9 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
     const baseIcons = {
       comment: "💬",
       status_change: "🔄",
+      field_update: "✏️",
+      system_update: "⚙️",
+      llm_analysis: "🤖",
       deployment: "🚀",
       system_event: "⚙️",
       issue_created: "📝",
@@ -74,7 +77,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
 
     // For tasks, try to show the CTA in the title
     if (type === "task") {
-      const eventData = (event.data || {}) as any;
+      const eventData = (event.data || {}) as Record<string, unknown>;
       const taskData = eventData.item_data || {};
       if (taskData.cta) {
         if (eventType === "updated") {
@@ -93,6 +96,9 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
     const titles = {
       comment: "Opmerking",
       status_change: "Status Wijziging",
+      field_update: "Veld Update",
+      system_update: "Systeem Update",
+      llm_analysis: "AI Analyse",
       deployment: "Deployment",
       system_event: "Systeem Event",
       issue_created: "Zaak Aangemaakt",
@@ -130,6 +136,10 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
   if (
     itemType === "issue_updated" ||
     itemType === "status_change" ||
+    itemType === "field_update" ||
+    itemType === "system_update" ||
+    itemType === "llm_analysis" ||
+    itemType === "planning" ||
     itemType === "issue_created" ||
     (itemType === "task" && event.type === "updated")
   ) {
@@ -140,11 +150,19 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
       const data = (event.data || {}) as TimelineItemData;
       const newStatus = data.status || data.new_value || "unknown";
       changeText = `status gewijzigd naar "${newStatus}"`;
+    } else if (itemType === "field_update") {
+      changeText = "veld bijgewerkt";
+    } else if (itemType === "system_update") {
+      changeText = "systeem update";
+    } else if (itemType === "llm_analysis") {
+      changeText = "AI-analyse uitgevoerd";
+    } else if (itemType === "planning") {
+      changeText = "planning gewijzigd";
     } else if (itemType === "issue_created") {
       changeText = "zaak aangemaakt";
     } else if (itemType === "task" && event.type === "updated") {
       // For completed tasks, show as simple text update
-      const eventData = (event.data || {}) as any;
+      const eventData = (event.data || {}) as Record<string, unknown>;
       const taskData = eventData.item_data || {};
       if (taskData.completed && taskData.cta) {
         changeText = `taak voltooid: ${taskData.cta}`;

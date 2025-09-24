@@ -198,6 +198,9 @@ export interface TimelineItemData {
 export type TimelineItemType =
   | "comment"
   | "status_change"
+  | "field_update"
+  | "system_update"
+  | "llm_analysis"
   | "deployment"
   | "system_event"
   | "issue_created"
