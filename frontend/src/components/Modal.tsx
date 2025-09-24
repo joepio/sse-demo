@@ -40,7 +40,8 @@ const Modal: React.FC<ModalProps> = ({
 
   const modalContent = (
     <div
-      className="fixed inset-0 bg-overlay flex items-center justify-center z-50 p-4 md:p-2"
+      className="fixed inset-0 flex items-center justify-center z-50 p-4 md:p-2"
+      style={{ backgroundColor: "var(--overlay)" }}
       onClick={(e) => {
         // Only close if clicking the overlay, not the modal content
         if (e.target === e.currentTarget) {

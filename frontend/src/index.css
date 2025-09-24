@@ -42,7 +42,7 @@
     --status-progress: #ffc107;
     --status-closed: #dc3545;
 
-    --overlay: rgba(0, 0, 0, 0.5);
+    --overlay: rgba(0, 0, 0, 0.75);
 
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md:
@@ -93,7 +93,7 @@
         --status-progress: #d29922;
         --status-closed: #f85149;
 
-        --overlay: rgba(0, 0, 0, 0.7);
+        --overlay: rgba(0, 0, 0, 0.85);
 
         --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
         --shadow-md:
@@ -148,7 +148,7 @@
     --priority-medium: #d29922;
     --priority-low: #3fb950;
 
-    --overlay: rgba(0, 0, 0, 0.7);
+    --overlay: rgba(0, 0, 0, 0.85);
 
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
     --shadow-md:
