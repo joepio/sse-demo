@@ -80,12 +80,12 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
         if (eventType === "updated") {
           // Check if task was completed
           if (taskData.completed) {
-            return `Taak Voltooid: ${taskData.cta}`;
+            return `Taak Voltooid`;
           } else {
-            return `Taak Bijgewerkt: ${taskData.cta}`;
+            return `Taak Bijgewerkt`;
           }
         } else {
-          return `Nieuwe Taak: ${taskData.cta}`;
+          return `Nieuwe Taak`;
         }
       }
     }

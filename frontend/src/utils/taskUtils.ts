@@ -169,7 +169,7 @@ export const formatTaskDeadline = (deadline: string): string => {
   } else if (diffDays === 1) {
     return "Morgen";
   } else if (diffDays <= 7) {
-    return `Over ${diffDays} dagen`;
+    return `Nog ${diffDays} dagen`;
   } else {
     return deadlineDate.toLocaleDateString("nl-NL");
   }

@@ -133,6 +133,12 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
             }
             break;
 
+          case "com.example.system.reset":
+            // System reset event - reload the page to get fresh state
+            console.log("🔄 System reset event received - refreshing page");
+            window.location.reload();
+            break;
+
           // Handle timeline events that should update lastActivity
           default:
             if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
@@ -323,6 +329,13 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
       eventSource.addEventListener("delta", (e) => {
         try {
           const cloudEvent = JSON.parse(e.data) as CloudEvent;
+
+          // Check for system reset event before processing
+          if (cloudEvent.type === "com.example.system.reset") {
+            console.log("🔄 System reset event received - refreshing page");
+            window.location.reload();
+            return;
+          }
 
           // Add to events list
           setEvents((prevEvents) => [...prevEvents, cloudEvent]);

@@ -3,11 +3,8 @@ import type { EventPluginProps } from "./types";
 
 import ActionButton from "../../components/ActionButton";
 import { useSSE } from "../../contexts/SSEContext";
-import {
-  getTaskUrgencyClass,
-  formatTaskDeadline,
-  getTasksForIssue,
-} from "../../utils/taskUtils";
+import { getTasksForIssue } from "../../utils/taskUtils";
+import DeadlineBadge from "../../components/DeadlineBadge";
 
 const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
   const { events, completeTask } = useSSE();
@@ -70,22 +67,6 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
 
   const { description, cta, completed, deadline } = currentTask;
 
-  const getUrgencyColor = (deadline: string) => {
-    const urgencyClass = getTaskUrgencyClass(deadline);
-    switch (urgencyClass) {
-      case "deadline-overdue":
-        return "#dc3545";
-      case "deadline-urgent":
-        return "#fd7e14";
-      case "deadline-soon":
-        return "#ffc107";
-      case "deadline-normal":
-        return "#28a745";
-      default:
-        return "#6c757d";
-    }
-  };
-
   if (completed) {
     return (
       <div className="p-0">
@@ -102,12 +83,7 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
     <div className="p-0">
       {deadline && (
         <div className="mb-3">
-          <span
-            className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold text-white"
-            style={{ backgroundColor: getUrgencyColor(deadline) }}
-          >
-            Deadline: {formatTaskDeadline(deadline)}
-          </span>
+          <DeadlineBadge deadline={deadline} variant="full" showLabel={true} />
         </div>
       )}
       <p className="m-0 mb-4 leading-relaxed">{description}</p>

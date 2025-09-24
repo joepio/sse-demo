@@ -105,15 +105,33 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       </button>
 
       {isNotificationOpen && (
-        <div className="absolute top-full mt-1 right-0 bg-bg-primary border border-border-primary rounded-lg shadow-theme-lg z-50 min-w-[300px] max-w-[400px] md:fixed md:top-12 md:left-2 md:right-2 md:min-w-0 md:max-w-none sm:top-10 sm:left-2 sm:right-2">
-          <div className="p-4 border-b border-border-primary bg-bg-tertiary rounded-t-lg">
-            <h3 className="m-0 text-sm md:text-xs font-semibold text-text-primary">
+        <div
+          className="absolute top-full mt-1 right-0 rounded-lg shadow-theme-lg z-50 w-80 border"
+          style={{
+            backgroundColor: "var(--bg-primary)",
+            borderColor: "var(--border-primary)",
+          }}
+        >
+          <div
+            className="p-4 border-b rounded-t-lg"
+            style={{
+              borderBottomColor: "var(--border-primary)",
+              backgroundColor: "var(--bg-tertiary)",
+            }}
+          >
+            <h3
+              className="m-0 text-sm md:text-xs font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Recente Zaken
             </h3>
           </div>
           <div className="max-h-[300px] overflow-y-auto">
             {recentIssues.length === 0 ? (
-              <div className="block px-4 py-3 text-text-tertiary italic text-center cursor-default">
+              <div
+                className="block px-4 py-3 italic text-center cursor-default"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Geen andere zaken
               </div>
             ) : (
@@ -121,13 +139,28 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                 <Link
                   key={id}
                   to={`/zaak/${id}`}
-                  className="block px-4 py-3 border-b border-border-primary last:border-b-0 text-inherit no-underline transition-colors duration-200 hover:bg-bg-secondary"
+                  className="block px-4 py-3 border-b last:border-b-0 text-inherit no-underline transition-colors duration-200"
+                  style={{
+                    borderBottomColor: "var(--border-primary)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "";
+                  }}
                   onClick={() => setIsNotificationOpen(false)}
                 >
-                  <div className="font-medium text-text-primary mb-1 overflow-hidden text-ellipsis whitespace-nowrap md:text-sm">
+                  <div
+                    className="font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap md:text-sm"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {issue.title || "Zaak zonder titel"}
                   </div>
-                  <div className="text-xs md:text-xs text-text-secondary capitalize">
+                  <div
+                    className="text-xs md:text-xs capitalize"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {issue.status === "in_progress"
                       ? "In Behandeling"
                       : issue.status === "open"

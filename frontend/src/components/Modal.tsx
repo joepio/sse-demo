@@ -49,22 +49,46 @@ const Modal: React.FC<ModalProps> = ({
       }}
     >
       <div
-        className="bg-bg-primary rounded-lg shadow-theme-lg w-full max-h-[90vh] overflow-auto animate-in fade-in slide-in-from-bottom-4 duration-200"
-        style={{ maxWidth }}
+        className="rounded-lg w-full max-h-[90vh] overflow-auto animate-in fade-in slide-in-from-bottom-4 duration-200"
+        style={{
+          maxWidth,
+          backgroundColor: "var(--bg-primary)",
+          boxShadow: "var(--shadow-lg)",
+          border: "1px solid var(--border-primary)",
+        }}
       >
-        <div className="flex justify-between items-center p-6 md:p-4 border-b border-border-secondary">
-          <h2 className="text-xl font-semibold text-text-primary m-0">
+        <div
+          className="flex justify-between items-center p-6 md:p-4"
+          style={{ borderBottom: "1px solid var(--border-secondary)" }}
+        >
+          <h2
+            className="text-xl font-semibold m-0"
+            style={{ color: "var(--text-primary)" }}
+          >
             {title}
           </h2>
           <button
-            className="w-8 h-8 flex items-center justify-center rounded text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors duration-150 text-2xl leading-none p-0 border-0 bg-transparent cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-2xl leading-none p-0 border-0 bg-transparent cursor-pointer"
+            style={{
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
             onClick={onClose}
             aria-label="Close modal"
           >
             ×
           </button>
         </div>
-        <div className="p-6 md:p-4 text-text-primary">{children}</div>
+        <div className="p-6 md:p-4" style={{ color: "var(--text-primary)" }}>
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -75,7 +75,8 @@ export type EventType =
   | "com.example.message.delete"
   | "com.example.document.create"
   | "com.example.document.patch"
-  | "com.example.document.delete";
+  | "com.example.document.delete"
+  | "com.example.system.reset";
 
 // Generic entity interface that all entities should extend
 export interface BaseEntity extends Record<string, unknown> {

@@ -4,11 +4,11 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
-import GitHubTimeline from "./components/GitHubTimeline";
+import IssueTimeline from "./components/IssueTimeline";
 import Modal from "./components/Modal";
 import ActionButton from "./components/ActionButton";
 import { formatRelativeTime } from "./utils/time";
-import { getLatestTaskForIssue } from "./utils/taskUtils";
+import { getLatestTaskForIssue, formatTaskDeadline } from "./utils/taskUtils";
 
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
@@ -74,17 +74,17 @@ const ZakenDashboard: React.FC = () => {
       }}
     >
       <header
-        className="text-center mb-8 py-8 md:py-4 border-b"
+        className="text-center mb-12 py-12 md:py-8 border-b"
         style={{ borderColor: "var(--border-secondary)" }}
       >
         <h1
-          className="mb-4 text-4xl md:text-3xl font-semibold"
+          className="mb-6 text-5xl md:text-4xl font-bold"
           style={{ color: "var(--text-primary)" }}
         >
           Mijn Zaken
         </h1>
         <p
-          className="text-base leading-relaxed max-w-3xl mx-auto"
+          className="text-lg leading-relaxed max-w-3xl mx-auto mb-4"
           style={{ color: "var(--text-secondary)" }}
         >
           {issueEntries.length} {issueEntries.length !== 1 ? "zaken" : "zaak"}{" "}
@@ -94,7 +94,7 @@ const ZakenDashboard: React.FC = () => {
       </header>
 
       <main className="max-w-4xl mx-auto">
-        <div className="flex flex-col gap-2 md:gap-1.5 mb-8">
+        <div className="flex flex-col gap-6 md:gap-4 mb-8">
           {issueEntries.length === 0 ? (
             <p style={{ color: "var(--text-secondary)" }}>
               Geen zaken gevonden.
@@ -106,7 +106,7 @@ const ZakenDashboard: React.FC = () => {
               return (
                 <div
                   key={id}
-                  className={`zaak-item-hover rounded-md p-4 md:p-3 border transition-all duration-150 block no-underline ${
+                  className={`zaak-item-hover rounded-md p-6 md:p-4 border transition-all duration-150 block no-underline ${
                     animatingIssues.has(id) ? "animate-timeline-appear" : ""
                   }`}
                   style={{
@@ -117,16 +117,16 @@ const ZakenDashboard: React.FC = () => {
                 >
                   <Link
                     to={`/zaak/${id}`}
-                    className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-1 no-underline group"
+                    className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-2 no-underline group"
                   >
                     <div
-                      className="zaak-link font-medium text-base md:text-sm leading-snug flex-1 min-w-0 no-underline"
+                      className="zaak-link font-semibold text-xl md:text-lg leading-tight flex-1 min-w-0 no-underline"
                       style={{ color: "var(--text-primary)" }}
                     >
                       {issue.title || "Zaak zonder titel"}
                     </div>
                     <div
-                      className="text-xs font-normal whitespace-nowrap flex-shrink-0 opacity-80 group-hover:opacity-100 md:self-end"
+                      className="text-sm font-normal whitespace-nowrap flex-shrink-0 opacity-80 group-hover:opacity-100 md:self-end"
                       style={{ color: "var(--text-tertiary)" }}
                     >
                       {formatRelativeTime(
@@ -139,22 +139,13 @@ const ZakenDashboard: React.FC = () => {
 
                   {latestTask && !latestTask.completed && (
                     <div
-                      className="mt-2 md:mt-1.5"
+                      className="mt-4 md:mt-3"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                       }}
                     >
                       <div className="flex items-center gap-2 text-xs">
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium"
-                          style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          📋 {latestTask.description}
-                        </span>
                         <div className="text-xs">
                           <ActionButton
                             variant="secondary"
@@ -165,6 +156,15 @@ const ZakenDashboard: React.FC = () => {
                             {latestTask.cta}
                           </ActionButton>
                         </div>
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium text-xs"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          doe voor {formatTaskDeadline(latestTask.deadline)}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -176,7 +176,7 @@ const ZakenDashboard: React.FC = () => {
 
         <button
           type="button"
-          className="btn-primary-hover inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed mt-8"
+          className="btn-primary-hover inline-flex items-center gap-2 px-6 py-3 rounded-md text-base font-semibold cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed mt-12"
           style={{
             backgroundColor: "var(--button-primary-bg)",
             color: "var(--text-inverse)",
@@ -207,7 +207,7 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/" element={<ZakenDashboard />} />
-          <Route path="/zaak/:zaakId" element={<GitHubTimeline />} />
+          <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
         </Routes>
       </Router>
     </SSEProvider>

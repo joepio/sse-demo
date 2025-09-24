@@ -13,15 +13,16 @@ import NotificationBell from "./NotificationBell";
 import ActionButton from "./ActionButton";
 import Card, { CardHeader, CardContent } from "./Card";
 import { getLatestTaskForIssue } from "../utils/taskUtils";
+import TaskPlugin from "../plugins/eventTypes/TaskPlugin";
 
 const GitHubTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
-  const { events, issues, sendEvent, completeTask } = useSSE();
+  const { events, issues, sendEvent } = useSSE();
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
-  const [commentSuccess, setCommentSuccess] = useState(false);
+
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -101,7 +102,6 @@ const GitHubTimeline: React.FC = () => {
 
     setIsSubmittingComment(true);
     setCommentError(null);
-    setCommentSuccess(false);
 
     try {
       // Create a timeline comment event
@@ -129,10 +129,6 @@ const GitHubTimeline: React.FC = () => {
       // Send the comment event to the server
       await sendEvent(commentEvent);
       setCommentText("");
-      setCommentSuccess(true);
-
-      // Clear success message after 3 seconds
-      setTimeout(() => setCommentSuccess(false), 3000);
     } catch (error) {
       console.error("Failed to submit comment:", error);
       setCommentError(
@@ -277,22 +273,9 @@ const GitHubTimeline: React.FC = () => {
       {/* Main content */}
       <div className="max-w-5xl mx-auto p-8 md:p-4">
         {/* Zaak header - de hoofdzaak als eerste item */}
-        <div className="flex mb-12 md:mb-6 relative">
-          <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
-            <div
-              className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
-              style={{
-                backgroundColor: "var(--link-primary)",
-                color: "var(--text-inverse)",
-                borderColor: "var(--bg-primary)",
-              }}
-            >
-              {issue.assignee ? issue.assignee.charAt(0).toUpperCase() : "?"}
-            </div>
-          </div>
-
+        <div className="mb-12 md:mb-6 relative">
           <div
-            className="flex-1 min-w-0 border rounded-xl p-8 md:p-6"
+            className="border rounded-xl p-8 md:p-6"
             style={{
               backgroundColor: "var(--bg-primary)",
               borderColor: "var(--border-primary)",
@@ -355,43 +338,6 @@ const GitHubTimeline: React.FC = () => {
               )}
             </div>
 
-            {/* Latest task display */}
-            {zaakId &&
-              (() => {
-                const latestTask = getLatestTaskForIssue(events, zaakId);
-                return latestTask && !latestTask.completed ? (
-                  <div className="mb-6">
-                    <div
-                      className="flex items-center justify-between gap-4 p-4 rounded-md border border-border-primary border-l-4"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        borderLeftColor: "var(--link-primary)",
-                      }}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-base">📁</span>
-                        <div>
-                          <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-0.5">
-                            Actieve taak
-                          </div>
-                          <div className="font-medium text-text-primary text-sm">
-                            {latestTask.description}
-                          </div>
-                        </div>
-                      </div>
-                      <ActionButton
-                        variant="secondary"
-                        onClick={() =>
-                          zaakId && completeTask(latestTask.id, zaakId)
-                        }
-                      >
-                        {latestTask.cta}
-                      </ActionButton>
-                    </div>
-                  </div>
-                ) : null;
-              })()}
-
             <div className="flex gap-3">
               <ActionButton variant="secondary" onClick={handleEditIssue}>
                 Bewerken
@@ -406,6 +352,90 @@ const GitHubTimeline: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Active task section - completely separate from timeline */}
+        {zaakId &&
+          (() => {
+            const latestTask = getLatestTaskForIssue(events, zaakId);
+            if (!latestTask || latestTask.completed) return null;
+
+            // Create a mock event structure for the TaskPlugin
+            const mockEvent = {
+              id: `active-task-${latestTask.id}`,
+              type: "created" as const,
+              timestamp: latestTask.timestamp,
+              actor: latestTask.actor,
+              data: {
+                item_type: "task",
+                item_id: latestTask.id,
+                item_data: {
+                  cta: latestTask.cta,
+                  description: latestTask.description,
+                  url: latestTask.url,
+                  completed: latestTask.completed,
+                  deadline: latestTask.deadline,
+                },
+                actor: latestTask.actor,
+                timestamp: latestTask.timestamp,
+              },
+              originalEvent: {
+                specversion: "1.0",
+                id: `active-task-${latestTask.id}`,
+                source: "frontend-active-task",
+                subject: zaakId,
+                type: "https://api.example.com/events/timeline/item/created/v1",
+                time: latestTask.timestamp,
+                datacontenttype: "application/json",
+                data: {
+                  item_type: "task",
+                  item_id: latestTask.id,
+                  item_data: {
+                    cta: latestTask.cta,
+                    description: latestTask.description,
+                    url: latestTask.url,
+                    completed: latestTask.completed,
+                    deadline: latestTask.deadline,
+                  },
+                  actor: latestTask.actor,
+                  timestamp: latestTask.timestamp,
+                },
+              },
+            };
+
+            return (
+              <div className="mb-8" style={{ position: "relative", zIndex: 1 }}>
+                <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-2 ml-0">
+                  Actieve taak
+                </div>
+                <div
+                  className="border-l-4 rounded-md p-4 bg-white shadow-sm"
+                  style={{
+                    borderLeftColor: "var(--link-primary)",
+                    backgroundColor: "var(--bg-secondary)",
+                    marginLeft: 0,
+                  }}
+                >
+                  <TaskPlugin
+                    event={mockEvent}
+                    data={mockEvent.data}
+                    timeInfo={{
+                      date: new Date(latestTask.timestamp).toLocaleDateString(
+                        "nl-NL",
+                      ),
+                      time: new Date(latestTask.timestamp).toLocaleTimeString(
+                        "nl-NL",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      ),
+                      relative: "actief",
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
 
         {/* Timeline events */}
         <div className="relative">
@@ -474,16 +504,6 @@ const GitHubTimeline: React.FC = () => {
                       <strong>Fout:</strong> {commentError}
                     </div>
                   )}
-
-                  {commentSuccess && (
-                    <div
-                      className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-success text-text-success"
-                      style={{ borderLeftColor: "var(--text-success)" }}
-                    >
-                      Opmerking succesvol verzonden!
-                    </div>
-                  )}
-
                   <textarea
                     className="w-full min-h-[120px] p-4 border-none outline-none resize-y text-sm leading-relaxed placeholder:opacity-60"
                     style={{

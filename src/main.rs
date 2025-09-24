@@ -143,6 +143,58 @@ async fn create_app() -> Router {
         }
     });
 
+    // Reset all app state every 5 minutes
+    let reset_state = state.clone();
+    tokio::spawn(async move {
+        loop {
+            sleep(Duration::from_secs(300)).await; // 5 minutes = 300 seconds
+
+            let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+            println!("🔄 [{}] Resetting all app state...", reset_time);
+
+            // Generate fresh initial data
+            let (new_events, new_issues) = issues::generate_initial_data();
+
+            // Store lengths before moving the data
+            let events_count = new_events.len();
+            let issues_count = new_issues.len();
+
+            // Reset events
+            {
+                let mut events = reset_state.events.write().await;
+                *events = new_events;
+            }
+
+            // Reset issues
+            {
+                let mut issues = reset_state.issues.write().await;
+                *issues = new_issues;
+            }
+
+            // Send a reset notification event
+            let reset_event = CloudEvent {
+                specversion: "1.0".to_string(),
+                id: uuid::Uuid::now_v7().to_string(),
+                source: "server".to_string(),
+                subject: None,
+                event_type: "com.example.system.reset".to_string(),
+                time: Some(chrono::Utc::now().to_rfc3339()),
+                datacontenttype: Some("application/json".to_string()),
+                data: Some(serde_json::json!({
+                    "message": "App state has been reset",
+                    "timestamp": chrono::Utc::now().to_rfc3339()
+                })),
+            };
+
+            let _ = reset_state.tx.send(reset_event);
+            let complete_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+            println!(
+                "✅ [{}] App state reset complete - {} issues and {} events regenerated",
+                complete_time, issues_count, events_count
+            );
+        }
+    });
+
     let app = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
@@ -392,5 +444,43 @@ mod tests {
         assert_eq!(event["type"], "com.example.issue.patch");
         assert_eq!(event["datacontenttype"], "application/merge-patch+json");
         assert!(event["data"].is_object());
+    }
+
+    #[test]
+    fn test_system_reset_cloudevent() {
+        // Test system reset event creation
+        let reset_event = CloudEvent {
+            specversion: "1.0".to_string(),
+            id: uuid::Uuid::now_v7().to_string(),
+            source: "server".to_string(),
+            subject: None,
+            event_type: "com.example.system.reset".to_string(),
+            time: Some(chrono::Utc::now().to_rfc3339()),
+            datacontenttype: Some("application/json".to_string()),
+            data: Some(serde_json::json!({
+                "message": "App state has been reset",
+                "timestamp": chrono::Utc::now().to_rfc3339()
+            })),
+        };
+
+        assert_eq!(reset_event.specversion, "1.0");
+        assert_eq!(reset_event.source, "server");
+        assert_eq!(reset_event.event_type, "com.example.system.reset");
+        assert_eq!(
+            reset_event.datacontenttype,
+            Some("application/json".to_string())
+        );
+        assert!(reset_event.data.is_some());
+        assert!(reset_event.time.is_some());
+
+        // Verify the data contains expected fields
+        let data = reset_event.data.as_ref().unwrap();
+        assert!(data.get("message").is_some());
+        assert!(data.get("timestamp").is_some());
+
+        // Verify serialization
+        let json = serde_json::to_string(&reset_event).unwrap();
+        assert!(json.contains("com.example.system.reset"));
+        assert!(json.contains("App state has been reset"));
     }
 }

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { Task as TaskType } from "../types";
+import DeadlineBadge from "./DeadlineBadge";
 
 interface TaskProps {
   task: TaskType;
@@ -67,8 +68,12 @@ const Task: React.FC<TaskProps> = ({
     >
       <div className={`${isCompact ? "p-3" : "p-4"}`}>
         {task.deadline && (
-          <div className="text-xs text-text-secondary mb-2">
-            {new Date(task.deadline).toLocaleDateString("nl-NL")}
+          <div className="mb-2">
+            <DeadlineBadge
+              deadline={task.deadline}
+              variant="compact"
+              showLabel={false}
+            />
           </div>
         )}
 
