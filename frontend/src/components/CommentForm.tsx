@@ -79,28 +79,26 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
           </CardHeader>
 
           <form onSubmit={handleCommentSubmit}>
-            <CardContent>
-              {commentError && (
-                <div
-                  className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-error text-text-error"
-                  style={{ borderLeftColor: "var(--text-error)" }}
-                >
-                  <strong>Fout:</strong> {commentError}
-                </div>
-              )}
-              <textarea
-                className="w-full min-h-[120px] p-4 border-none outline-none resize-y text-sm leading-relaxed placeholder:opacity-60"
-                style={{
-                  backgroundColor: "var(--bg-primary)",
-                  color: "var(--text-primary)",
-                }}
-                placeholder="Voeg een opmerking toe..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                rows={4}
-                disabled={isSubmittingComment}
-              />
-            </CardContent>
+            {commentError && (
+              <div
+                className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-error text-text-error"
+                style={{ borderLeftColor: "var(--text-error)" }}
+              >
+                <strong>Fout:</strong> {commentError}
+              </div>
+            )}
+            <textarea
+              className="w-full min-h-[120px] p-4 border-none outline-none resize-y text-sm leading-relaxed placeholder:opacity-60"
+              style={{
+                backgroundColor: "var(--bg-primary)",
+                color: "var(--text-primary)",
+              }}
+              placeholder="Voeg een opmerking toe..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              rows={4}
+              disabled={isSubmittingComment}
+            />
 
             <CardHeader>
               <div className="flex justify-end gap-2">
