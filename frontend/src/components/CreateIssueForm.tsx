@@ -42,7 +42,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
 
     try {
       const issueId = crypto.randomUUID();
-      const issueData: any = {
+      const issueData: Record<string, unknown> = {
         id: issueId,
         title: formData.title.trim(),
         status: "open",

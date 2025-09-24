@@ -188,6 +188,48 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             85,
         ),
+        (
+            "1",
+            "task",
+            "task-1005",
+            "system@gemeente.nl",
+            json!({
+                "cta": "Documenten Controleren",
+                "description": "Controleer de ingediende paspoort aanvraag documenten",
+                "url": "/review/passport-1",
+                "completed": false,
+                "deadline": "2025-09-26"
+            }),
+            90,
+        ),
+        (
+            "2",
+            "task",
+            "task-1006",
+            "workflow@gemeente.nl",
+            json!({
+                "cta": "Locatie Inspecteren",
+                "description": "Voer inspectie ter plaatse uit voor geluidsoverlast melding",
+                "url": "/inspect/noise-complaint-2",
+                "completed": false,
+                "deadline": "2025-09-24"
+            }),
+            95,
+        ),
+        (
+            "3",
+            "task",
+            "task-1007",
+            "system@gemeente.nl",
+            json!({
+                "cta": "Aanvrager Bellen",
+                "description": "Bel aanvrager om nieuwe adresgegevens te bevestigen",
+                "url": "/contact/applicant-3",
+                "completed": false,
+                "deadline": "2025-09-25"
+            }),
+            100,
+        ),
     ];
 
     for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
@@ -375,7 +417,8 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     let operation_type = fastrand::usize(0..100);
 
     match operation_type {
-        0..75 => Some(generate_random_comment_event(random_issue_id)),
+        0..50 => Some(generate_random_comment_event(random_issue_id)),
+        50..75 => Some(generate_random_task_event(random_issue_id)),
         _ => Some(generate_random_patch_event(random_issue_id)),
     }
 }
@@ -582,6 +625,110 @@ fn generate_comment_event_with_data(issue_id: &str, content: &str, actor: &str) 
                 "content": content,
                 "parent_id": null,
                 "mentions": []
+            }
+        }
+    })
+}
+
+/// Generate a random task timeline item for an issue
+fn generate_random_task_event(issue_id: &str) -> Value {
+    let tasks = [
+        (
+            "Documenten Controleren",
+            "Controleer de ingediende documenten op volledigheid",
+            "/review/documents",
+        ),
+        (
+            "Afspraak Inplannen",
+            "Plan een afspraak in met de aanvrager",
+            "/schedule/appointment",
+        ),
+        (
+            "Locatie Inspecteren",
+            "Voer een inspectie ter plaatse uit",
+            "/inspect/location",
+        ),
+        (
+            "Aanvrager Bellen",
+            "Bel de aanvrager voor aanvullende informatie",
+            "/contact/applicant",
+        ),
+        (
+            "Ontbrekende Documenten",
+            "Upload ontbrekende documentatie naar het systeem",
+            "/upload/documents",
+        ),
+        (
+            "Juridische Controle",
+            "Laat deze zaak controleren door de juridische afdeling",
+            "/review/legal",
+        ),
+        (
+            "Manager Goedkeuring",
+            "Vraag goedkeuring van de manager voor dit besluit",
+            "/approval/manager",
+        ),
+        (
+            "Betaling Verwerken",
+            "Verwerk de betaling voor leges",
+            "/payment/process",
+        ),
+        (
+            "Melding Versturen",
+            "Stuur statusupdate naar aanvrager",
+            "/send/notification",
+        ),
+        (
+            "Eindcontrole",
+            "Voer eindcontrole uit voordat de zaak wordt afgerond",
+            "/check/final",
+        ),
+    ];
+
+    let actors = [
+        "system@gemeente.nl",
+        "workflow@gemeente.nl",
+        "alice@gemeente.nl",
+        "bob@gemeente.nl",
+    ];
+
+    let (cta, description, url) = tasks[fastrand::usize(..tasks.len())];
+    let actor = actors[fastrand::usize(..actors.len())];
+
+    generate_task_event_with_data(issue_id, cta, description, url, actor)
+}
+
+fn generate_task_event_with_data(
+    issue_id: &str,
+    cta: &str,
+    description: &str,
+    url: &str,
+    actor: &str,
+) -> Value {
+    // Generate a deadline 1-5 days from now
+    let days_ahead = fastrand::usize(1..=5);
+    let deadline = (Utc::now() + Duration::days(days_ahead as i64))
+        .format("%Y-%m-%d")
+        .to_string();
+    json!({
+        "specversion": "1.0",
+        "id": Uuid::now_v7().to_string(),
+        "source": "server-demo-event",
+        "subject": issue_id,
+        "type": "https://api.example.com/events/timeline/item/created/v1",
+        "time": Utc::now().to_rfc3339(),
+        "datacontenttype": "application/json",
+        "data": {
+            "item_type": "task",
+            "item_id": format!("task-{}", Uuid::now_v7().simple()),
+            "actor": actor,
+            "timestamp": Utc::now().to_rfc3339(),
+            "item_data": {
+                "cta": cta,
+                "description": description,
+                "url": url,
+                "completed": false,
+                "deadline": deadline
             }
         }
     })

@@ -10,6 +10,7 @@ import type {
 import TimelineItem from "./TimelineItem";
 import ResourceEditor from "./ResourceEditor";
 import NotificationBell from "./NotificationBell";
+import ActionButton from "./ActionButton";
 import "./GitHubTimeline.css";
 
 const GitHubTimeline: React.FC = () => {
@@ -79,7 +80,10 @@ const GitHubTimeline: React.FC = () => {
     if (event.type === "com.example.issue.delete") return "issue_deleted";
 
     // Check for timeline-specific event types from EVENT_DESIGN.md
-    if (event.type.includes("timeline/item/created")) {
+    if (
+      event.type.includes("timeline/item/created") ||
+      event.type.includes("timeline/item/updated")
+    ) {
       if (event.data && typeof event.data === "object" && event.data !== null) {
         const data = event.data as Record<string, unknown>;
         return (data.item_type as TimelineItemType) || "system_event";
@@ -316,21 +320,16 @@ const GitHubTimeline: React.FC = () => {
             </div>
 
             <div className="issue-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleEditIssue}
-              >
+              <ActionButton variant="secondary" onClick={handleEditIssue}>
                 Bewerken
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
+              </ActionButton>
+              <ActionButton
+                variant="secondary"
                 onClick={handleDeleteIssue}
                 disabled={isDeleting}
               >
                 {isDeleting ? "Verwijderen..." : "Verwijderen"}
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>

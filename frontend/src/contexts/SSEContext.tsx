@@ -18,6 +18,7 @@ interface SSEContextType {
   issues: Record<string, IssueWithActivity>;
   connectionStatus: "connecting" | "connected" | "disconnected" | "error";
   sendEvent: (event: CloudEvent) => Promise<void>;
+  completeTask: (taskId: string, issueId?: string) => Promise<void>;
 }
 
 const SSEContext = createContext<SSEContextType | undefined>(undefined);
@@ -175,6 +176,44 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     [processCloudEvent],
   );
 
+  // Complete a task
+  const completeTask = useCallback(
+    async (taskId: string, issueId?: string) => {
+      try {
+        console.log("Completing task:", taskId);
+
+        // Update the original task to mark it as completed
+        const taskUpdateEvent = {
+          specversion: "1.0",
+          id: `update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          source: "frontend-user-action",
+          subject: issueId,
+          type: "https://api.example.com/events/timeline/item/updated/v1",
+          time: new Date().toISOString(),
+          datacontenttype: "application/merge-patch+json",
+          data: {
+            item_type: "task",
+            item_id: taskId,
+            actor: "user@gemeente.nl",
+            timestamp: new Date().toISOString(),
+            patch: {
+              completed: true,
+              completed_at: new Date().toISOString(),
+            },
+          },
+        };
+
+        console.log("Sending task update event:", taskUpdateEvent);
+        await sendEvent(taskUpdateEvent);
+        console.log("Task update completed successfully");
+      } catch (error) {
+        console.error("Error completing task:", error);
+        throw error;
+      }
+    },
+    [sendEvent],
+  );
+
   // Connect to SSE endpoint
   useEffect(() => {
     const connectSSE = () => {
@@ -199,7 +238,8 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
       // Handle snapshot (initial full state)
       eventSource.addEventListener("snapshot", (e) => {
         try {
-          const snapshotEvents = JSON.parse(e.data) as CloudEvent[];
+          let snapshotEvents = JSON.parse(e.data) as CloudEvent[];
+
           setEvents(snapshotEvents);
 
           // Process all events to build initial issues state
@@ -310,6 +350,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     issues,
     connectionStatus,
     sendEvent,
+    completeTask,
   };
 
   return (

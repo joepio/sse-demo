@@ -21,6 +21,17 @@ export interface Issue extends Record<string, unknown> {
   lastActivity?: string;
 }
 
+export interface Task {
+  id: string;
+  cta: string;
+  description: string;
+  url: string;
+  completed: boolean;
+  deadline: string;
+  actor: string;
+  timestamp: string;
+}
+
 export interface IssueFormData {
   title: string;
   description: string;
@@ -95,7 +106,7 @@ export interface Document extends BaseEntity {
 // Generic CloudEvent data types
 export type CreateCloudEventData<T extends BaseEntity> = T;
 
-export type PatchCloudEventData = Record<string, any>;
+export type PatchCloudEventData = Record<string, unknown>;
 
 export interface DeleteCloudEventData {
   id: string;
@@ -145,6 +156,13 @@ export interface TimelineItemData {
   environment?: string;
   commit_hash?: string;
 
+  // For tasks
+  cta?: string;
+  description?: string;
+  url?: string;
+  completed?: boolean;
+  deadline?: string;
+
   // Generic fields
   [key: string]: unknown;
 }
@@ -157,4 +175,5 @@ export type TimelineItemType =
   | "system_event"
   | "issue_created"
   | "issue_updated"
-  | "issue_deleted";
+  | "issue_deleted"
+  | "task";

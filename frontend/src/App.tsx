@@ -7,12 +7,13 @@ import CreateIssueForm from "./components/CreateIssueForm";
 import GitHubTimeline from "./components/GitHubTimeline";
 import Modal from "./components/Modal";
 import { formatRelativeTime } from "./utils/time";
+import { getLatestTaskForIssue } from "./utils/taskUtils";
 
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 
 const ZakenDashboard: React.FC = () => {
-  const { issues, connectionStatus, sendEvent } = useSSE();
+  const { issues, events, connectionStatus, sendEvent } = useSSE();
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
@@ -78,27 +79,38 @@ const ZakenDashboard: React.FC = () => {
           {issueEntries.length === 0 ? (
             <p>Geen zaken gevonden.</p>
           ) : (
-            issueEntries.map(([id, issue]) => (
-              <Link
-                to={`/zaak/${id}`}
-                key={id}
-                className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
-                data-issue-id={id}
-              >
-                <div className="zaak-content">
-                  <div className="zaak-link">
-                    {issue.title || "Zaak zonder titel"}
-                  </div>
-                  <div className="zaak-time">
-                    {formatRelativeTime(
-                      issue.lastActivity ||
-                        issue.created_at ||
-                        new Date().toISOString(),
-                    )}
-                  </div>
+            issueEntries.map(([id, issue]) => {
+              const latestTask = getLatestTaskForIssue(events, id);
+
+              return (
+                <div
+                  key={id}
+                  className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
+                  data-issue-id={id}
+                >
+                  <Link to={`/zaak/${id}`} className="zaak-content">
+                    <div className="zaak-link">
+                      {issue.title || "Zaak zonder titel"}
+                    </div>
+                    <div className="zaak-time">
+                      {formatRelativeTime(
+                        issue.lastActivity ||
+                          issue.created_at ||
+                          new Date().toISOString(),
+                      )}
+                    </div>
+                  </Link>
+
+                  {latestTask && (
+                    <div className="zaak-task-indicator">
+                      <span className="task-indicator-badge">
+                        📋 Actieve taak
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </Link>
-            ))
+              );
+            })
           )}
         </div>
 

@@ -60,6 +60,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
       issue_created: "📝",
       issue_updated: "✏️",
       issue_deleted: "🗑️",
+      task: "📋",
     };
 
     const icon = baseIcons[type] || "📋";
@@ -77,6 +78,24 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
     // Show proper title for comments with commenter info
     if (type === "comment") return "Opmerking";
 
+    // For tasks, try to show the CTA in the title
+    if (type === "task") {
+      const eventData = (event.data || {}) as any;
+      const taskData = eventData.item_data || {};
+      if (taskData.cta) {
+        if (eventType === "updated") {
+          // Check if task was completed
+          if (taskData.completed) {
+            return `Taak Voltooid: ${taskData.cta}`;
+          } else {
+            return `Taak Bijgewerkt: ${taskData.cta}`;
+          }
+        } else {
+          return `Nieuwe Taak: ${taskData.cta}`;
+        }
+      }
+    }
+
     const titles = {
       comment: "Opmerking",
       status_change: "Status Wijziging",
@@ -86,6 +105,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
       issue_created: "Zaak Aangemaakt",
       issue_updated: "Zaak Bijgewerkt",
       issue_deleted: "Zaak Verwijderd",
+      task: "Nieuwe Taak",
     };
 
     const baseTitle = titles[type] || "Event";

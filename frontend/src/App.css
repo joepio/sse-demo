@@ -442,6 +442,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    text-decoration: none;
 }
 
 .zaak-link {
@@ -471,6 +472,23 @@
     opacity: 1;
 }
 
+/* Task indicator styles */
+.zaak-task-indicator {
+    margin-top: 0.5rem;
+}
+
+.task-indicator-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .zaken-list {
@@ -485,6 +503,14 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 0.25rem;
+    }
+
+    .zaak-task-indicator {
+        margin-top: 0.375rem;
+    }
+
+    .task-indicator-badge {
+        font-size: 0.6875rem;
     }
 
     .zaak-link {

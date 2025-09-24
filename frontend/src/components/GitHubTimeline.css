@@ -409,6 +409,58 @@
     color: var(--text-success);
 }
 
+/* Task section styles */
+.github-timeline-task {
+    border: 2px solid var(--accent-primary);
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.github-timeline-task .github-timeline-item-content {
+    padding: 1.5rem;
+}
+
+.task-section-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.task-section-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.task-section-header h3::before {
+    content: "📋";
+    font-size: 1rem;
+}
+
+.task-avatar {
+    background-color: var(--accent-primary);
+    color: white;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.github-timeline-task .task {
+    border: none;
+    background-color: transparent;
+    margin-bottom: 0;
+}
+
+.github-timeline-task .task:hover {
+    box-shadow: none;
+}
+
 /* Error and loading states */
 .github-timeline-error,
 .github-timeline-loading {

@@ -129,7 +129,7 @@ async fn create_app() -> Router {
                 // Convert JSON to our CloudEvent struct
                 if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
                     // Process the event using the same handle_event logic
-                    process_cloud_event(&demo.issues, &demo_event_json).await;
+                    process_cloud_event(&demo.issues, &demo.events, &demo_event_json).await;
 
                     // Add to events list
                     {
@@ -180,6 +180,7 @@ async fn sse_handler(
 /// Process a CloudEvent JSON and update the zaken state
 async fn process_cloud_event(
     issues_lock: &Arc<RwLock<std::collections::HashMap<String, Value>>>,
+    events_lock: &Arc<RwLock<Vec<Value>>>,
     event_json: &Value,
 ) {
     if let (Some(event_type), Some(data)) = (
@@ -212,6 +213,29 @@ async fn process_cloud_event(
                     issues.remove(id);
                 }
             }
+            "https://api.example.com/events/timeline/item/updated/v1" => {
+                if let (Some(item_id), Some(patch)) = (
+                    data.get("item_id").and_then(|i| i.as_str()),
+                    data.get("patch"),
+                ) {
+                    let mut events = events_lock.write().await;
+
+                    // Find and update the timeline item
+                    for event in events.iter_mut() {
+                        if let Some(event_data) = event.get("data") {
+                            if event_data.get("item_id").and_then(|id| id.as_str()) == Some(item_id)
+                            {
+                                if let Some(item_data) =
+                                    event.get_mut("data").and_then(|d| d.get_mut("item_data"))
+                                {
+                                    issues::apply_merge_patch(item_data, patch);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -224,8 +248,20 @@ async fn handle_event(
     // Convert to JSON for processing
     let event_json = serde_json::to_value(&incoming_event).unwrap();
 
+    // Debug logging
+    println!(
+        "Received event: type={}, subject={:?}",
+        incoming_event.event_type, incoming_event.subject
+    );
+    if incoming_event.event_type.contains("task") {
+        println!(
+            "Task event data: {}",
+            serde_json::to_string_pretty(&event_json).unwrap_or_default()
+        );
+    }
+
     // Process the event
-    process_cloud_event(&state.issues, &event_json).await;
+    process_cloud_event(&state.issues, &state.events, &event_json).await;
 
     // Convert incoming event to our CloudEvent format
     let cloud_event = CloudEvent {
