@@ -11,12 +11,13 @@ import TimelineItem from "./TimelineItem";
 import ResourceEditor from "./ResourceEditor";
 import NotificationBell from "./NotificationBell";
 import ActionButton from "./ActionButton";
+import { getLatestTaskForIssue } from "../utils/taskUtils";
 import "./GitHubTimeline.css";
 
 const GitHubTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
-  const { events, issues, sendEvent } = useSSE();
+  const { events, issues, sendEvent, completeTask } = useSSE();
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -318,6 +319,72 @@ const GitHubTimeline: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Latest task display */}
+            {zaakId &&
+              (() => {
+                const latestTask = getLatestTaskForIssue(events, zaakId);
+                return latestTask && !latestTask.completed ? (
+                  <div
+                    className="issue-detail"
+                    style={{ marginTop: "0.75rem" }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "1rem",
+                        padding: "0.75rem 1rem",
+                        backgroundColor: "#f8f9fa",
+                        border: "1px solid #e1e4e8",
+                        borderRadius: "6px",
+                        borderLeft: "3px solid #0366d6",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.75rem",
+                          flex: 1,
+                        }}
+                      >
+                        <span style={{ fontSize: "1rem" }}>📁</span>
+                        <div>
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              color: "#586069",
+                              textTransform: "uppercase",
+                              fontWeight: "600",
+                              letterSpacing: "0.5px",
+                              marginBottom: "0.125rem",
+                            }}
+                          >
+                            Actieve taak
+                          </div>
+                          <div
+                            style={{
+                              fontWeight: "500",
+                              color: "#24292e",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            {latestTask.description}
+                          </div>
+                        </div>
+                      </div>
+                      <ActionButton
+                        variant="secondary"
+                        onClick={() => completeTask(latestTask.id, zaakId)}
+                      >
+                        {latestTask.cta}
+                      </ActionButton>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
             <div className="issue-actions">
               <ActionButton variant="secondary" onClick={handleEditIssue}>

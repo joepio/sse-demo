@@ -664,11 +664,6 @@ fn generate_random_task_event(issue_id: &str) -> Value {
             "/review/legal",
         ),
         (
-            "Manager Goedkeuring",
-            "Vraag goedkeuring van de manager voor dit besluit",
-            "/approval/manager",
-        ),
-        (
             "Betaling Verwerken",
             "Verwerk de betaling voor leges",
             "/payment/process",
@@ -679,7 +674,7 @@ fn generate_random_task_event(issue_id: &str) -> Value {
             "/send/notification",
         ),
         (
-            "Eindcontrole",
+            "Eindcontrole aanvragen",
             "Voer eindcontrole uit voordat de zaak wordt afgerond",
             "/check/final",
         ),

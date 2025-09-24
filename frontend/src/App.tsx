@@ -6,6 +6,7 @@ import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
 import GitHubTimeline from "./components/GitHubTimeline";
 import Modal from "./components/Modal";
+import ActionButton from "./components/ActionButton";
 import { formatRelativeTime } from "./utils/time";
 import { getLatestTaskForIssue } from "./utils/taskUtils";
 
@@ -13,7 +14,8 @@ import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 
 const ZakenDashboard: React.FC = () => {
-  const { issues, events, connectionStatus, sendEvent } = useSSE();
+  const { issues, events, connectionStatus, sendEvent, completeTask } =
+    useSSE();
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
@@ -101,11 +103,45 @@ const ZakenDashboard: React.FC = () => {
                     </div>
                   </Link>
 
-                  {latestTask && (
-                    <div className="zaak-task-indicator">
-                      <span className="task-indicator-badge">
-                        📋 Actieve taak
-                      </span>
+                  {latestTask && !latestTask.completed && (
+                    <div
+                      className="zaak-task-indicator"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <span
+                          className="task-indicator-badge"
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          📋 {latestTask.description}
+                        </span>
+                        <div
+                          style={{
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          <ActionButton
+                            variant="secondary"
+                            onClick={() => {
+                              completeTask(latestTask.id, id);
+                            }}
+                          >
+                            {latestTask.cta}
+                          </ActionButton>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

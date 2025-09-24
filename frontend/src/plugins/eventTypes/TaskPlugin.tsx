@@ -24,17 +24,22 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
     const completed = taskData.completed;
 
     if (completed) {
+      // Find the original task to get its CTA
+      const allTasks = issueId ? getTasksForIssue(events, issueId) : [];
+      const originalTask = allTasks.find((task) => task.id === taskId);
+      const taskCTA = originalTask?.cta || "Taak";
+
       return (
         <div className="timeline-content-comment">
           <div className="comment-body">
             <p style={{ margin: "0 0 0.5rem 0", lineHeight: "1.5" }}>
-              <strong>✅ Taak voltooid</strong>
-              <span
-                style={{ marginLeft: "0.5rem", color: "var(--text-secondary)" }}
-              >
-                Taak is gemarkeerd als voltooid
-              </span>
+              <strong>✅ Taak voltooid: {taskCTA}</strong>
             </p>
+            <div
+              style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}
+            >
+              {originalTask?.description || "Taak is gemarkeerd als voltooid"}
+            </div>
           </div>
         </div>
       );
@@ -92,7 +97,7 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
       <div className="timeline-content-comment">
         <div className="comment-body">
           <p style={{ margin: "0 0 0.5rem 0", lineHeight: "1.5" }}>
-            <strong>✅ Taak voltooid</strong>
+            <strong>✅ Taak voltooid: {cta}</strong>
           </p>
           <div style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
             {description}
