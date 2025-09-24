@@ -1,252 +1,31 @@
-/* App.css - Main application styles using theme variables */
+/* App.css - Minimal styles for animations that can't be done with Tailwind */
 
-.app {
-    min-height: 100vh;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    padding: 1rem;
+/* Animation keyframes */
+@keyframes timelineItemAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* Header styles */
-.app header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 2rem 0;
-    border-bottom: 1px solid var(--border-secondary);
+/* Loading spinner animation for pseudo-elements */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.app header h1 {
-    color: var(--text-primary);
-    margin-bottom: 1rem;
-    font-size: 2.5rem;
-    font-weight: 600;
+/* Custom utility for new item animation */
+.animate-timeline-appear {
+    animation: timelineItemAppear 0.3s ease-out;
 }
 
-.app header p {
-    color: var(--text-secondary);
-    font-size: 1rem;
-    line-height: 1.6;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-/* Main content */
-.app main {
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Form styles */
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.form-input,
-.form-textarea,
-.form-select {
-    width: 100%;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    padding: 0.75rem;
-    font-size: 1rem;
-    transition: border-color var(--animation-duration-fast) ease;
-}
-
-.form-input:focus,
-.form-textarea:focus,
-.form-select:focus {
-    outline: none;
-    border-color: var(--border-focus);
-    box-shadow: 0 0 0 2px var(--border-focus);
-}
-
-.form-textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-/* Button styles */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all var(--animation-duration-fast) ease;
-    border: 1px solid transparent;
-}
-
-.btn-primary {
-    background-color: var(--button-primary-bg);
-    color: var(--text-inverse);
-    border-color: var(--button-primary-bg);
-}
-
-.btn-primary:hover:not(:disabled) {
-    background-color: var(--button-primary-hover);
-    border-color: var(--button-primary-hover);
-}
-
-.btn-secondary {
-    background-color: var(--button-secondary-bg);
-    color: var(--text-primary);
-    border-color: var(--border-primary);
-}
-
-.btn-secondary:hover:not(:disabled) {
-    background-color: var(--button-secondary-hover);
-    border-color: var(--border-hover);
-}
-
-.btn-danger {
-    background-color: var(--button-danger-bg);
-    color: var(--text-inverse);
-    border-color: var(--button-danger-bg);
-}
-
-.btn-danger:hover:not(:disabled) {
-    background-color: var(--button-danger-hover);
-    border-color: var(--button-danger-hover);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-/* Card styles */
-.card {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--animation-duration-fast) ease;
-}
-
-.card:hover {
-    box-shadow: var(--shadow-md);
-}
-
-.card-header {
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-secondary);
-}
-
-.card-title {
-    color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.card-subtitle {
-    color: var(--text-secondary);
-    margin: 0;
-    font-size: 0.875rem;
-}
-
-.card-body {
-    color: var(--text-primary);
-}
-
-.card-footer {
-    margin-top: 1rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--border-secondary);
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-}
-
-/* Alert styles */
-.alert {
-    padding: 0.75rem 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    border: 1px solid;
-}
-
-.alert-success {
-    background-color: var(--bg-success);
-    color: var(--text-success);
-    border-color: var(--text-success);
-}
-
-.alert-error {
-    background-color: var(--bg-error);
-    color: var(--text-error);
-    border-color: var(--text-error);
-}
-
-.alert-warning {
-    background-color: var(--bg-warning);
-    color: var(--text-warning);
-    border-color: var(--text-warning);
-}
-
-/* Badge styles */
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: capitalize;
-}
-
-.badge-status-open {
-    background-color: var(--status-open);
-    color: var(--text-inverse);
-}
-
-.badge-status-progress {
-    background-color: var(--status-progress);
-    color: var(--text-inverse);
-}
-
-.badge-status-closed {
-    background-color: var(--status-closed);
-    color: var(--text-inverse);
-}
-
-.badge-priority-high {
-    color: var(--priority-high);
-}
-
-.badge-priority-medium {
-    color: var(--priority-medium);
-}
-
-.badge-priority-low {
-    color: var(--priority-low);
-}
-
-/* Loading styles */
-.loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    color: var(--text-secondary);
-}
-
-.loading::before {
+/* Loading spinner utility */
+.loading-spinner::before {
     content: "";
     width: 20px;
     height: 20px;
@@ -257,268 +36,47 @@
     margin-right: 0.5rem;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+/* Hover effects for zaak items - keeping for compatibility during migration */
+.zaak-item-hover:hover {
+    border-color: var(--border-hover) !important;
 }
 
-/* Utility classes */
-.text-muted {
-    color: var(--text-secondary);
+.zaak-item-hover:hover .zaak-link {
+    color: var(--link-primary) !important;
 }
 
-.text-small {
-    font-size: 0.875rem;
+/* Button hover effects */
+.btn-primary-hover:hover {
+    background-color: var(--button-primary-hover) !important;
+    border-color: var(--button-primary-hover) !important;
 }
 
-.text-center {
-    text-align: center;
+.btn-secondary-hover:hover {
+    background-color: var(--button-secondary-hover) !important;
+    border-color: var(--border-hover) !important;
 }
 
-.mb-0 {
-    margin-bottom: 0;
+.btn-danger-hover:hover {
+    background-color: var(--button-danger-hover) !important;
+    border-color: var(--button-danger-hover) !important;
 }
 
-.mb-1 {
-    margin-bottom: 0.5rem;
+/* Timeline hover effects */
+.timeline-header-hover:hover {
+    background-color: var(--bg-hover) !important;
 }
 
-.mb-2 {
-    margin-bottom: 1rem;
+/* Form focus styles */
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+    outline: none !important;
+    border-color: var(--border-focus) !important;
+    box-shadow: 0 0 0 2px var(--border-focus) !important;
 }
 
-.mb-3 {
-    margin-bottom: 1.5rem;
-}
-
-.mt-0 {
-    margin-top: 0;
-}
-
-.mt-1 {
-    margin-top: 0.5rem;
-}
-
-.mt-2 {
-    margin-top: 1rem;
-}
-
-.mt-3 {
-    margin-top: 1.5rem;
-}
-
-.flex {
-    display: flex;
-}
-
-.flex-wrap {
-    flex-wrap: wrap;
-}
-
-.gap-1 {
-    gap: 0.5rem;
-}
-
-.gap-2 {
-    gap: 1rem;
-}
-
-.items-center {
-    align-items: center;
-}
-
-.justify-between {
-    justify-content: space-between;
-}
-
-.justify-end {
-    justify-content: flex-end;
-}
-
-/* Section styles for homepage */
-.section {
-    margin-top: 2rem;
-}
-
-.section-header {
-    margin-bottom: 1rem;
-}
-
-.section-title {
-    color: var(--text-primary);
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.section-description {
-    color: var(--text-secondary);
-    margin: 0 0 1rem 0;
-    font-size: 0.875rem;
-    line-height: 1.5;
-}
-
-.live-indicator {
-    background: var(--button-primary-bg);
-    color: var(--text-inverse);
-    border-radius: 6px;
-    padding: 0.75rem;
-    margin: 1rem 0;
-    font-weight: 600;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.loading-message {
-    margin-top: 2rem;
-    text-align: center;
-    color: var(--text-secondary);
-    padding: 2rem;
-    font-size: 1rem;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .app {
-        padding: 0.5rem;
-    }
-
-    .app header {
-        padding: 1rem 0;
-    }
-
-    .app header h1 {
-        font-size: 2rem;
-    }
-
-    .card {
-        padding: 1rem;
-    }
-
-    .btn {
-        padding: 0.625rem 1rem;
-        font-size: 0.875rem;
-    }
-
-    .section-title {
-        font-size: 1.25rem;
-    }
-}
-
-/* Simplified styles */
-.zaken-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
-}
-
-.zaak-item {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 6px;
-    padding: 1rem;
-    transition: all var(--animation-duration-fast) ease;
-    display: block;
-    text-decoration: none;
-}
-
-.zaak-item:hover {
-    border-color: var(--border-hover);
-    box-shadow: var(--shadow-sm);
-}
-
-.zaak-item.new {
-    animation: timelineItemAppear var(--animation-duration-normal)
-        var(--animation-easing-ease-out);
-}
-
-.zaak-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    text-decoration: none;
-}
-
-.zaak-link {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 1rem;
-    line-height: 1.4;
-    flex: 1;
-    min-width: 0;
-}
-
-.zaak-item:hover .zaak-link {
-    color: var(--accent-primary);
-}
-
-.zaak-time {
+/* Placeholder styles */
+::placeholder {
     color: var(--text-tertiary);
-    font-size: 0.75rem;
-    font-weight: 400;
-    white-space: nowrap;
-    flex-shrink: 0;
-    opacity: 0.8;
-}
-
-.zaak-item:hover .zaak-time {
-    opacity: 1;
-}
-
-/* Task indicator styles */
-.zaak-task-indicator {
-    margin-top: 0.5rem;
-}
-
-.task-indicator-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    background-color: var(--bg-secondary);
-    color: var(--text-secondary);
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .zaken-list {
-        gap: 0.375rem;
-    }
-
-    .zaak-item {
-        padding: 0.75rem;
-    }
-
-    .zaak-content {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-    }
-
-    .zaak-task-indicator {
-        margin-top: 0.375rem;
-    }
-
-    .task-indicator-badge {
-        font-size: 0.6875rem;
-    }
-
-    .zaak-link {
-        font-size: 0.9rem;
-    }
-
-    .zaak-time {
-        align-self: flex-end;
-        font-size: 0.7rem;
-    }
+    opacity: 0.7;
 }

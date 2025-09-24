@@ -95,8 +95,8 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex flex-col md:flex-row gap-2 mb-4">
           <input
             type="text"
             name="title"
@@ -105,11 +105,11 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
             placeholder="Zaak titel"
             required
             disabled={isSubmitting}
+            className="form-input flex-1 px-3 py-2 text-base rounded-md border transition-colors duration-150 focus:outline-none disabled:opacity-60"
             style={{
-              flex: 1,
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
+              backgroundColor: "var(--bg-primary)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-primary)",
             }}
           />
           <input
@@ -119,26 +119,26 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
             onChange={handleInputChange}
             placeholder="Beschrijving (optioneel)"
             disabled={isSubmitting}
+            className="form-input flex-1 px-3 py-2 text-base rounded-md border transition-colors duration-150 focus:outline-none disabled:opacity-60"
             style={{
-              flex: 1,
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
+              backgroundColor: "var(--bg-primary)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-primary)",
             }}
           />
         </div>
 
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+        <div className="flex flex-col md:flex-row gap-2 mb-4">
           <select
             name="priority"
             value={formData.priority}
             onChange={handleInputChange}
             disabled={isSubmitting}
+            className="form-select flex-1 px-3 py-2 text-base rounded-md border transition-colors duration-150 focus:outline-none disabled:opacity-60"
             style={{
-              flex: 1,
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
+              backgroundColor: "var(--bg-primary)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-primary)",
             }}
           >
             <option value="">Prioriteit (optioneel)</option>
@@ -153,25 +153,22 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
             onChange={handleInputChange}
             placeholder="Toegewezen aan email (optioneel)"
             disabled={isSubmitting}
+            className="form-input flex-1 px-3 py-2 text-base rounded-md border transition-colors duration-150 focus:outline-none disabled:opacity-60"
             style={{
-              flex: 1,
-              padding: "0.5rem",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
+              backgroundColor: "var(--bg-primary)",
+              color: "var(--text-primary)",
+              borderColor: "var(--border-primary)",
             }}
           />
         </div>
 
         {error && (
           <div
+            className="px-4 py-3 mb-4 text-sm rounded border-l-4"
             style={{
-              color: "#dc3545",
-              fontSize: "0.9rem",
-              marginBottom: "1rem",
-              padding: "0.5rem",
-              backgroundColor: "#f8d7da",
-              border: "1px solid #f5c6cb",
-              borderRadius: "4px",
+              backgroundColor: "var(--bg-error)",
+              color: "var(--text-error)",
+              borderLeftColor: "var(--text-error)",
             }}
           >
             {error}
@@ -180,7 +177,12 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
 
         <button
           type="submit"
-          className="btn btn-primary"
+          className="btn-primary-hover inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{
+            backgroundColor: "var(--button-primary-bg)",
+            color: "var(--text-inverse)",
+            borderColor: "var(--button-primary-bg)",
+          }}
           disabled={isSubmitting}
         >
           {isSubmitting ? "Aanmaken..." : "Zaak Aanmaken"}

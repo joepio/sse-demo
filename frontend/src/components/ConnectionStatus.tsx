@@ -20,29 +20,34 @@ const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ status }) => {
     }
   };
 
-  const getStatusColor = () => {
+  const getStatusStyles = () => {
     switch (status) {
       case "connected":
-        return "#28a745";
+        return {
+          color: "var(--status-open)",
+          fontWeight: "bold",
+        };
       case "connecting":
-        return "#ffc107";
+        return {
+          color: "var(--status-progress)",
+          fontWeight: "normal",
+        };
       case "disconnected":
       case "error":
-        return "#dc3545";
+        return {
+          color: "var(--status-closed)",
+          fontWeight: "normal",
+        };
       default:
-        return "#6c757d";
+        return {
+          color: "var(--text-secondary)",
+          fontWeight: "normal",
+        };
     }
   };
 
   return (
-    <div
-      style={{
-        fontSize: "0.9rem",
-        opacity: 0.7,
-        color: getStatusColor(),
-        fontWeight: status === "connected" ? "bold" : "normal",
-      }}
-    >
+    <div className="text-sm opacity-70" style={getStatusStyles()}>
       {getStatusText()}
     </div>
   );

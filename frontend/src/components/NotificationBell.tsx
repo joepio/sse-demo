@@ -2,8 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
 
-import "./NotificationBell.css";
-
 interface NotificationBellProps {
   currentZaakId?: string;
 }
@@ -89,38 +87,47 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   };
 
   return (
-    <div className="notification-container" ref={notificationRef}>
+    <div className="relative ml-auto" ref={notificationRef}>
       <button
-        className="notification-bell"
+        className="relative bg-transparent border border-border-primary rounded-md p-2 md:p-1.5 text-xl md:text-base cursor-pointer flex items-center justify-center transition-all duration-200 hover:bg-bg-secondary hover:border-border-secondary"
         onClick={handleBellClick}
         type="button"
       >
         🔔
         {newEventsCount > 0 && (
-          <span className="notification-badge">{newEventsCount}</span>
+          <span
+            className="absolute -top-1 -right-1 text-xs font-semibold px-1.5 py-0.5 rounded-full min-w-[16px] text-center text-white"
+            style={{ backgroundColor: "var(--text-error)" }}
+          >
+            {newEventsCount}
+          </span>
         )}
       </button>
 
       {isNotificationOpen && (
-        <div className="notification-dropdown">
-          <div className="notification-header">
-            <h3>Recente Zaken</h3>
+        <div className="absolute top-full mt-1 right-0 bg-bg-primary border border-border-primary rounded-lg shadow-theme-lg z-50 min-w-[300px] max-w-[400px] md:fixed md:top-12 md:left-2 md:right-2 md:min-w-0 md:max-w-none sm:top-10 sm:left-2 sm:right-2">
+          <div className="p-4 border-b border-border-primary bg-bg-tertiary rounded-t-lg">
+            <h3 className="m-0 text-sm md:text-xs font-semibold text-text-primary">
+              Recente Zaken
+            </h3>
           </div>
-          <div className="notification-list">
+          <div className="max-h-[300px] overflow-y-auto">
             {recentIssues.length === 0 ? (
-              <div className="notification-item empty">Geen andere zaken</div>
+              <div className="block px-4 py-3 text-text-tertiary italic text-center cursor-default">
+                Geen andere zaken
+              </div>
             ) : (
               recentIssues.map(([id, issue]) => (
                 <Link
                   key={id}
                   to={`/zaak/${id}`}
-                  className="notification-item"
+                  className="block px-4 py-3 border-b border-border-primary last:border-b-0 text-inherit no-underline transition-colors duration-200 hover:bg-bg-secondary"
                   onClick={() => setIsNotificationOpen(false)}
                 >
-                  <div className="notification-title">
+                  <div className="font-medium text-text-primary mb-1 overflow-hidden text-ellipsis whitespace-nowrap md:text-sm">
                     {issue.title || "Zaak zonder titel"}
                   </div>
-                  <div className="notification-status">
+                  <div className="text-xs md:text-xs text-text-secondary capitalize">
                     {issue.status === "in_progress"
                       ? "In Behandeling"
                       : issue.status === "open"

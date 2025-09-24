@@ -11,8 +11,8 @@ import TimelineItem from "./TimelineItem";
 import ResourceEditor from "./ResourceEditor";
 import NotificationBell from "./NotificationBell";
 import ActionButton from "./ActionButton";
+import Card, { CardHeader, CardContent } from "./Card";
 import { getLatestTaskForIssue } from "../utils/taskUtils";
-import "./GitHubTimeline.css";
 
 const GitHubTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
@@ -197,53 +197,75 @@ const GitHubTimeline: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return "#28a745";
+        return "var(--status-open)";
       case "in_progress":
-        return "#ffc107";
+        return "var(--status-progress)";
       case "closed":
-        return "#dc3545";
+        return "var(--status-closed)";
       default:
-        return "#6c757d";
+        return "var(--text-secondary)";
     }
   };
 
   const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case "high":
-        return "#dc3545";
+        return "var(--priority-high)";
       case "medium":
-        return "#ffc107";
+        return "var(--priority-medium)";
       case "low":
-        return "#28a745";
+        return "var(--priority-low)";
       default:
-        return "#6c757d";
+        return "var(--text-secondary)";
     }
   };
 
   if (!zaakId) {
     return (
-      <div className="github-timeline-error">
-        <h1>Zaak niet gevonden</h1>
-        <Link to="/">← Terug naar Zaken</Link>
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-bg-primary">
+        <h1 className="text-3xl text-text-primary mb-4">Zaak niet gevonden</h1>
+        <Link
+          to="/"
+          className="text-link-primary hover:text-link-hover hover:underline font-medium"
+        >
+          ← Terug naar Zaken
+        </Link>
       </div>
     );
   }
 
   if (!issue) {
     return (
-      <div className="github-timeline-loading">
-        <h1>Zaak laden...</h1>
-        <Link to="/">← Terug naar Zaken</Link>
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-bg-primary">
+        <h1 className="text-3xl text-text-primary mb-4">Zaak laden...</h1>
+        <Link
+          to="/"
+          className="text-link-primary hover:text-link-hover hover:underline font-medium"
+        >
+          ← Terug naar Zaken
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="github-timeline">
+    <div
+      className="min-h-screen font-sans"
+      style={{ backgroundColor: "var(--bg-primary)" }}
+    >
       {/* Header */}
-      <div className="github-timeline-header">
-        <div className="breadcrumb">
-          <Link to="/" className="breadcrumb-link">
+      <div
+        className="sticky top-0 z-50 border-b p-4 md:px-8 md:py-4 flex justify-start items-center gap-4"
+        style={{
+          backgroundColor: "var(--bg-tertiary)",
+          borderBottomColor: "var(--border-primary)",
+        }}
+      >
+        <div className="flex items-center gap-2 text-sm flex-1">
+          <Link
+            to="/"
+            className="text-link-primary hover:text-link-hover hover:underline font-medium"
+          >
             Terug naar mijn Zaken
           </Link>
         </div>
@@ -253,24 +275,37 @@ const GitHubTimeline: React.FC = () => {
       </div>
 
       {/* Main content */}
-      <div className="github-timeline-content">
+      <div className="max-w-5xl mx-auto p-8 md:p-4">
         {/* Zaak header - de hoofdzaak als eerste item */}
-        <div className="github-timeline-item github-timeline-issue">
-          <div className="github-timeline-item-avatar">
-            <div className="avatar">
+        <div className="flex mb-12 md:mb-6 relative">
+          <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
+            <div
+              className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
+              style={{
+                backgroundColor: "var(--link-primary)",
+                color: "var(--text-inverse)",
+                borderColor: "var(--bg-primary)",
+              }}
+            >
               {issue.assignee ? issue.assignee.charAt(0).toUpperCase() : "?"}
             </div>
           </div>
 
-          <div className="github-timeline-item-content">
-            <div className="github-timeline-issue-header">
-              <h1 className="issue-title">
+          <div
+            className="flex-1 min-w-0 border rounded-xl p-8 md:p-6"
+            style={{
+              backgroundColor: "var(--bg-primary)",
+              borderColor: "var(--border-primary)",
+            }}
+          >
+            <div className="mb-6 md:mb-4">
+              <h1 className="text-3xl md:text-2xl font-semibold text-text-primary mb-3 leading-tight flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
                 {String(issue.title) || "Zaak zonder titel"}
               </h1>
 
-              <div className="issue-meta">
+              <div className="flex items-center gap-3 mb-4">
                 <span
-                  className="issue-status"
+                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-text-inverse capitalize"
                   style={{ backgroundColor: getStatusColor(issue.status) }}
                 >
                   {issue.status === "in_progress"
@@ -283,7 +318,7 @@ const GitHubTimeline: React.FC = () => {
                 </span>
                 {issue.priority && (
                   <span
-                    className="issue-priority"
+                    className="text-sm font-medium capitalize"
                     style={{ color: getPriorityColor(issue.priority) }}
                   >
                     {String(issue.priority) === "high"
@@ -299,20 +334,20 @@ const GitHubTimeline: React.FC = () => {
               </div>
             </div>
 
-            <div className="issue-description">
-              <p>
+            <div className="mb-6">
+              <p className="text-base leading-relaxed text-text-primary m-0">
                 {String(issue.description) || "Geen beschrijving beschikbaar."}
               </p>
             </div>
 
-            <div className="issue-details">
-              <div className="issue-detail">
-                <strong>Toegewezen aan:</strong>{" "}
+            <div className="flex flex-wrap gap-6 md:gap-3 mb-6 md:flex-col">
+              <div className="text-sm text-text-tertiary">
+                <strong className="text-text-primary">Toegewezen aan:</strong>{" "}
                 {String(issue.assignee) || "Niet toegewezen"}
               </div>
               {issue.created_at && (
-                <div className="issue-detail">
-                  <strong>Aangemaakt:</strong>{" "}
+                <div className="text-sm text-text-tertiary">
+                  <strong className="text-text-primary">Aangemaakt:</strong>{" "}
                   {new Date(String(issue.created_at)).toLocaleDateString(
                     "nl-NL",
                   )}
@@ -325,52 +360,21 @@ const GitHubTimeline: React.FC = () => {
               (() => {
                 const latestTask = getLatestTaskForIssue(events, zaakId);
                 return latestTask && !latestTask.completed ? (
-                  <div
-                    className="issue-detail"
-                    style={{ marginTop: "0.75rem" }}
-                  >
+                  <div className="mb-6">
                     <div
+                      className="flex items-center justify-between gap-4 p-4 rounded-md border border-border-primary border-l-4"
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "1rem",
-                        padding: "0.75rem 1rem",
-                        backgroundColor: "#f8f9fa",
-                        border: "1px solid #e1e4e8",
-                        borderRadius: "6px",
-                        borderLeft: "3px solid #0366d6",
+                        backgroundColor: "var(--bg-secondary)",
+                        borderLeftColor: "var(--link-primary)",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.75rem",
-                          flex: 1,
-                        }}
-                      >
-                        <span style={{ fontSize: "1rem" }}>📁</span>
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-base">📁</span>
                         <div>
-                          <div
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "#586069",
-                              textTransform: "uppercase",
-                              fontWeight: "600",
-                              letterSpacing: "0.5px",
-                              marginBottom: "0.125rem",
-                            }}
-                          >
+                          <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-0.5">
                             Actieve taak
                           </div>
-                          <div
-                            style={{
-                              fontWeight: "500",
-                              color: "#24292e",
-                              fontSize: "0.875rem",
-                            }}
-                          >
+                          <div className="font-medium text-text-primary text-sm">
                             {latestTask.description}
                           </div>
                         </div>
@@ -386,7 +390,7 @@ const GitHubTimeline: React.FC = () => {
                 ) : null;
               })()}
 
-            <div className="issue-actions">
+            <div className="flex gap-3">
               <ActionButton variant="secondary" onClick={handleEditIssue}>
                 Bewerken
               </ActionButton>
@@ -402,23 +406,38 @@ const GitHubTimeline: React.FC = () => {
         </div>
 
         {/* Timeline events */}
-        <div className="github-timeline-events">
+        <div className="relative">
+          {/* Timeline line */}
+          <div
+            className="absolute left-5 md:left-4 top-0 bottom-0 w-0.5 z-10"
+            style={{ backgroundColor: "var(--border-primary)" }}
+          ></div>
+
           {timelineEvents.map((event) => {
             const itemType = getTimelineItemType(event.originalEvent);
             return (
-              <div key={event.id} className="github-timeline-item">
-                <div className="github-timeline-item-avatar">
-                  <div className="avatar">
+              <div key={event.id} className="flex mb-8 md:mb-6 relative z-20">
+                <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
+                  <div
+                    className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
+                    style={{
+                      backgroundColor: "var(--link-primary)",
+                      color: "var(--text-inverse)",
+                      borderColor: "var(--bg-primary)",
+                    }}
+                  >
                     {event.actor ? event.actor.charAt(0).toUpperCase() : "?"}
                   </div>
                 </div>
-                <div className="github-timeline-item-content">
-                  <TimelineItem
-                    event={event}
-                    itemType={itemType}
-                    isFirst={false}
-                    isLast={false}
-                  />
+                <div className="flex-1 min-w-0">
+                  <div>
+                    <TimelineItem
+                      event={event}
+                      itemType={itemType}
+                      isFirst={false}
+                      isLast={false}
+                    />
+                  </div>
                 </div>
               </div>
             );
@@ -426,52 +445,77 @@ const GitHubTimeline: React.FC = () => {
         </div>
 
         {/* Comment form */}
-        <div className="github-timeline-item github-timeline-comment-form">
-          <div className="github-timeline-item-avatar">
-            <div className="avatar">U</div>
+        <div className="flex mb-8 relative z-20">
+          <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
+            <div
+              className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
+              style={{
+                backgroundColor: "var(--link-primary)",
+                color: "var(--text-inverse)",
+                borderColor: "var(--bg-primary)",
+              }}
+            >
+              U
+            </div>
           </div>
 
-          <div className="github-timeline-item-content">
-            <form onSubmit={handleCommentSubmit} className="comment-form">
-              <div className="comment-form-header">
-                <h3>Opmerking toevoegen</h3>
-              </div>
+          <div className="flex-1 min-w-0">
+            <Card>
+              <CardHeader>
+                <h3 className="m-0 text-sm font-semibold text-text-primary">
+                  Opmerking toevoegen
+                </h3>
+              </CardHeader>
 
-              {commentError && (
-                <div className="comment-error">
-                  <strong>Fout:</strong> {commentError}
-                </div>
-              )}
+              <form onSubmit={handleCommentSubmit}>
+                <CardContent>
+                  {commentError && (
+                    <div
+                      className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-error text-text-error"
+                      style={{ borderLeftColor: "var(--text-error)" }}
+                    >
+                      <strong>Fout:</strong> {commentError}
+                    </div>
+                  )}
 
-              {commentSuccess && (
-                <div className="comment-success">
-                  Opmerking succesvol verzonden!
-                </div>
-              )}
+                  {commentSuccess && (
+                    <div
+                      className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-success text-text-success"
+                      style={{ borderLeftColor: "var(--text-success)" }}
+                    >
+                      Opmerking succesvol verzonden!
+                    </div>
+                  )}
 
-              <textarea
-                className="comment-textarea"
-                placeholder="Voeg een opmerking toe..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                rows={4}
-                disabled={isSubmittingComment}
-              />
+                  <textarea
+                    className="w-full min-h-[120px] p-4 border-none outline-none resize-y text-sm leading-relaxed placeholder:opacity-60"
+                    style={{
+                      backgroundColor: "var(--bg-primary)",
+                      color: "var(--text-primary)",
+                    }}
+                    placeholder="Voeg een opmerking toe..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    rows={4}
+                    disabled={isSubmittingComment}
+                  />
+                </CardContent>
 
-              <div className="comment-form-footer">
-                <div className="comment-form-actions">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={!commentText.trim() || isSubmittingComment}
-                  >
-                    {isSubmittingComment
-                      ? "Verzenden..."
-                      : "Opmerking toevoegen"}
-                  </button>
-                </div>
-              </div>
-            </form>
+                <CardHeader>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border bg-button-primary-bg text-text-inverse border-button-primary-bg hover:bg-button-primary-hover hover:border-button-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled={!commentText.trim() || isSubmittingComment}
+                    >
+                      {isSubmittingComment
+                        ? "Verzenden..."
+                        : "Opmerking toevoegen"}
+                    </button>
+                  </div>
+                </CardHeader>
+              </form>
+            </Card>
           </div>
         </div>
       </div>

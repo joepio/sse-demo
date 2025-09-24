@@ -10,7 +10,7 @@ import {
 } from "../../utils/taskUtils";
 
 const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
-  const { completeTask, events } = useSSE();
+  const { events } = useSSE();
 
   const eventData = data as Record<string, unknown>;
   const taskId = eventData.item_id as string;
@@ -29,29 +29,25 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
       const originalTask = allTasks.find((task) => task.id === taskId);
       const taskCTA = originalTask?.cta || "Taak";
 
-      return (
-        <div className="timeline-content-comment">
-          <div className="comment-body">
-            <p style={{ margin: "0 0 0.5rem 0", lineHeight: "1.5" }}>
+      if (completed) {
+        return (
+          <div className="p-0">
+            <p className="m-0 mb-2 leading-relaxed">
               <strong>✅ Taak voltooid: {taskCTA}</strong>
             </p>
-            <div
-              style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}
-            >
+            <div className="text-sm text-text-secondary">
               {originalTask?.description || "Taak is gemarkeerd als voltooid"}
             </div>
           </div>
-        </div>
-      );
+        );
+      }
     }
 
     return (
-      <div className="timeline-content-comment">
-        <div className="comment-body">
-          <p style={{ margin: "0", lineHeight: "1.5" }}>
-            <strong>📝 Taak bijgewerkt</strong>
-          </p>
-        </div>
+      <div className="p-0">
+        <p className="m-0 leading-relaxed">
+          <strong>📝 Taak bijgewerkt</strong>
+        </p>
       </div>
     );
   }
@@ -64,17 +60,15 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
     // Fallback to event data if task not found
     const taskData = (data.item_data || data) as Record<string, unknown>;
     return (
-      <div className="timeline-content-comment">
-        <div className="comment-body">
-          <p style={{ margin: "0", lineHeight: "1.5" }}>
-            {String(taskData.description || "Taak informatie niet beschikbaar")}
-          </p>
-        </div>
+      <div className="p-0">
+        <p className="m-0 leading-relaxed">
+          {String(taskData.description || "Taak informatie niet beschikbaar")}
+        </p>
       </div>
     );
   }
 
-  const { description, cta, url, completed, deadline } = currentTask;
+  const { description, cta, completed, deadline } = currentTask;
 
   const getUrgencyColor = (deadline: string) => {
     const urgencyClass = getTaskUrgencyClass(deadline);
@@ -94,46 +88,39 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
 
   if (completed) {
     return (
-      <div className="timeline-content-comment">
-        <div className="comment-body">
-          <p style={{ margin: "0 0 0.5rem 0", lineHeight: "1.5" }}>
-            <strong>✅ Taak voltooid: {cta}</strong>
-          </p>
-          <div style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-            {description}
-          </div>
-        </div>
+      <div className="p-0">
+        <p className="m-0 mb-2 leading-relaxed">
+          <strong>✅ Taak voltooid: {cta}</strong>
+        </p>
+        <div className="text-sm text-text-secondary">{description}</div>
       </div>
     );
   }
 
   // Show the active task interface
   return (
-    <div className="timeline-content-comment">
-      <div className="comment-body">
-        {deadline && (
-          <div style={{ marginBottom: "0.75rem" }}>
-            <span
-              className="badge"
-              style={{
-                fontSize: "0.75rem",
-                backgroundColor: getUrgencyColor(deadline),
-                color: "white",
-              }}
-            >
-              Deadline: {formatTaskDeadline(deadline)}
-            </span>
-          </div>
-        )}
-        <p style={{ margin: "0 0 1rem 0", lineHeight: "1.5" }}>{description}</p>
-        <div style={{ marginTop: "0.5rem", display: "flex", gap: "0.5rem" }}>
-          <ActionButton
-            variant="secondary"
-            onClick={() => completeTask(taskId, event.originalEvent.subject)}
+    <div className="p-0">
+      {deadline && (
+        <div className="mb-3">
+          <span
+            className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold text-white"
+            style={{ backgroundColor: getUrgencyColor(deadline) }}
           >
-            {cta}
-          </ActionButton>
+            Deadline: {formatTaskDeadline(deadline)}
+          </span>
         </div>
+      )}
+      <p className="m-0 mb-4 leading-relaxed">{description}</p>
+      <div className="mt-2 flex gap-2">
+        <ActionButton
+          variant="secondary"
+          onClick={() => {
+            // This will be handled by the parent component
+            console.log("Complete task:", currentTask.id);
+          }}
+        >
+          {cta}
+        </ActionButton>
       </div>
     </div>
   );

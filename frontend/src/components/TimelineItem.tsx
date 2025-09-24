@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
+import Card, { CardHeader, CardContent } from "./Card";
 import type {
   TimelineEvent,
   TimelineItemType,
@@ -14,12 +15,7 @@ interface TimelineItemProps {
   isLast: boolean;
 }
 
-const TimelineItem: React.FC<TimelineItemProps> = ({
-  event,
-  itemType,
-  isFirst,
-  isLast,
-}) => {
+const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
   const [showEventModal, setShowEventModal] = useState(false);
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -132,66 +128,82 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
   const icon = getEventIcon(itemType, event.type);
   const title = getEventTitle(itemType, event.type);
 
-  // For issue updates, render as a compact single line
-  if (itemType === "issue_updated") {
-    // Generate a clean summary of changes
-    const changeKeys = Object.entries((event.data || {}) as TimelineItemData)
-      .filter(
-        ([key]) =>
-          key !== "item_type" &&
-          key !== "item_id" &&
-          key !== "actor" &&
-          key !== "timestamp",
-      )
-      .map(([key]) => key);
-
+  // Simple text-only updates for certain event types
+  if (
+    itemType === "issue_updated" ||
+    itemType === "status_change" ||
+    itemType === "issue_created" ||
+    (itemType === "task" && event.type === "updated")
+  ) {
     let changeText: string;
-    if (changeKeys.length === 0) {
-      changeText = "zaak bijgewerkt";
-    } else if (changeKeys.length === 1) {
-      const key = changeKeys[0];
-      const value = Object.entries((event.data || {}) as TimelineItemData).find(
-        ([k]) => k === key,
-      )?.[1];
-      let valueText = String(value);
-      if (valueText.length > 30) {
-        valueText = valueText.substring(0, 30) + "...";
+
+    if (itemType === "status_change") {
+      // For status changes, show a specific message
+      const data = (event.data || {}) as TimelineItemData;
+      const newStatus = data.status || data.new_value || "unknown";
+      changeText = `status gewijzigd naar "${newStatus}"`;
+    } else if (itemType === "issue_created") {
+      changeText = "zaak aangemaakt";
+    } else if (itemType === "task" && event.type === "updated") {
+      // For completed tasks, show as simple text update
+      const eventData = (event.data || {}) as any;
+      const taskData = eventData.item_data || {};
+      if (taskData.completed && taskData.cta) {
+        changeText = `taak voltooid: ${taskData.cta}`;
+      } else {
+        changeText = "taak bijgewerkt";
       }
-      changeText = `${key} gewijzigd naar "${valueText}"`;
-    } else if (changeKeys.length === 2) {
-      changeText = `${changeKeys[0]} en ${changeKeys[1]} gewijzigd`;
     } else {
-      changeText = `${changeKeys.length} velden gewijzigd`;
+      // Generate a clean summary of changes for issue updates
+      const changeKeys = Object.entries((event.data || {}) as TimelineItemData)
+        .filter(
+          ([key]) =>
+            key !== "item_type" &&
+            key !== "item_id" &&
+            key !== "actor" &&
+            key !== "timestamp",
+        )
+        .map(([key]) => key);
+
+      if (changeKeys.length === 0) {
+        changeText = "zaak bijgewerkt";
+      } else if (changeKeys.length === 1) {
+        const key = changeKeys[0];
+        const value = Object.entries(
+          (event.data || {}) as TimelineItemData,
+        ).find(([k]) => k === key)?.[1];
+        let valueText = String(value);
+        if (valueText.length > 30) {
+          valueText = valueText.substring(0, 30) + "...";
+        }
+        changeText = `${key} gewijzigd naar "${valueText}"`;
+      } else if (changeKeys.length === 2) {
+        changeText = `${changeKeys[0]} en ${changeKeys[1]} gewijzigd`;
+      } else {
+        changeText = `${changeKeys.length} velden gewijzigd`;
+      }
     }
 
     return (
       <>
-        <div className="timeline-item-compact">
-          <div className="timeline-marker">
-            <div className="timeline-icon-small">✏️</div>
-            {!isLast && <div className="timeline-line" />}
-          </div>
-          <div className="timeline-compact-content">
-            <div className="timeline-compact-header">
-              <div className="timeline-meta">
-                <span className="timeline-compact-text">
-                  {event.actor && event.actor !== "system" && (
-                    <strong>{event.actor}</strong>
-                  )}{" "}
-                  {changeText}
-                </span>
-                <button
-                  type="button"
-                  className="timestamp"
-                  title={`${timeInfo.date} at ${timeInfo.time}`}
-                  onClick={() => setShowEventModal(true)}
-                  style={{ background: "none", border: "none", padding: 0 }}
-                >
-                  {timeInfo.relative}
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-between w-full py-2">
+          <span className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            {event.actor && event.actor !== "system" && (
+              <strong style={{ color: "var(--text-primary)" }}>
+                {event.actor}
+              </strong>
+            )}{" "}
+            {changeText}
+          </span>
+          <button
+            type="button"
+            className="text-xs hover:underline bg-transparent border-none p-0 cursor-pointer transition-colors duration-150"
+            style={{ color: "var(--text-tertiary)" }}
+            title={`${timeInfo.date} at ${timeInfo.time}`}
+            onClick={() => setShowEventModal(true)}
+          >
+            {timeInfo.relative}
+          </button>
         </div>
 
         <Modal
@@ -200,96 +212,139 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
           title="CloudEvent"
           maxWidth="800px"
         >
-          <pre className="event-data-json">
+          <pre
+            className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+            style={{
+              backgroundColor: "var(--bg-tertiary)",
+              borderColor: "var(--border-primary)",
+              color: "var(--text-primary)",
+            }}
+          >
             {JSON.stringify(event.originalEvent, null, 2)}
           </pre>
+        </Modal>
+      </>
+    );
+  }
 
-          <style>{`
-            .event-data-json {
-              background: #f6f8fa;
-              border: 1px solid #d1d9e0;
-              border-radius: 6px;
-              padding: 1rem;
-              font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
-              font-size: 0.75rem;
-              line-height: 1.5;
-              overflow-x: auto;
-              color: #24292f;
-              margin: 0;
-              white-space: pre-wrap;
-              word-wrap: break-word;
-            }
+  // For comments, render as cards but without headers
+  if (itemType === "comment") {
+    return (
+      <>
+        <Card>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4 w-full mb-3">
+              {event.actor && event.actor !== "system" && (
+                <span
+                  className="font-semibold text-sm"
+                  style={{ color: "var(--link-primary)" }}
+                >
+                  {event.actor}
+                </span>
+              )}
+              <button
+                type="button"
+                className="text-sm hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
+                style={{ color: "var(--text-tertiary)" }}
+                title={`${timeInfo.date} at ${timeInfo.time}`}
+                onClick={() => setShowEventModal(true)}
+              >
+                {timeInfo.relative}
+              </button>
+            </div>
+            {renderEventContent()}
+          </CardContent>
+        </Card>
 
-            @media (prefers-color-scheme: dark) {
-              .event-data-json {
-                background: #161b22;
-                color: #f0f6fc;
-                border-color: #30363d;
-              }
-            }
-          `}</style>
+        <Modal
+          isOpen={showEventModal}
+          onClose={() => setShowEventModal(false)}
+          title="CloudEvent"
+          maxWidth="800px"
+        >
+          <pre
+            className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+            style={{
+              backgroundColor: "var(--bg-tertiary)",
+              borderColor: "var(--border-primary)",
+              color: "var(--text-primary)",
+            }}
+          >
+            {JSON.stringify(event.originalEvent, null, 2)}
+          </pre>
         </Modal>
       </>
     );
   }
 
   return (
-    <div
-      className={`timeline-item ${itemType} event-${event.type} ${isFirst ? "first" : ""} ${isLast ? "last" : ""}`}
-    >
-      <div className="timeline-marker">
-        <div className="timeline-icon">{icon}</div>
-        {!isLast && <div className="timeline-line" />}
-      </div>
-
-      <div className="timeline-body">
+    <>
+      <Card>
         {title && (
-          <div className="timeline-header">
-            <h4 className="timeline-title">{title}</h4>
-            <div className="timeline-meta">
-              {event.actor && event.actor !== "system" && (
-                <span className="actor">{event.actor}</span>
-              )}
-              <button
-                type="button"
-                className="timestamp"
-                title={`${timeInfo.date} at ${timeInfo.time}`}
-                onClick={() => setShowEventModal(true)}
-                style={{ background: "none", border: "none", padding: 0 }}
-              >
-                {timeInfo.relative}
-              </button>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-4 w-full">
+              <div className="flex items-center gap-3">
+                <span className="text-base">{icon}</span>
+                <h4
+                  className="text-base font-semibold m-0"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {title}
+                </h4>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                {event.actor && event.actor !== "system" && (
+                  <span
+                    className="font-semibold"
+                    style={{ color: "var(--link-primary)" }}
+                  >
+                    {event.actor}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
+                  style={{ color: "var(--text-tertiary)" }}
+                  title={`${timeInfo.date} at ${timeInfo.time}`}
+                  onClick={() => setShowEventModal(true)}
+                >
+                  {timeInfo.relative}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-        {!title && (
-          <button
-            type="button"
-            className="timeline-header-minimal"
-            onClick={() => setShowEventModal(true)}
-            style={{
-              cursor: "pointer",
-              background: "none",
-              border: "none",
-              width: "100%",
-            }}
-          >
-            <div className="timeline-meta">
-              {event.actor && event.actor !== "system" && (
-                <span className="actor">{event.actor}</span>
-              )}
-              <span
-                className="timestamp"
-                title={`${timeInfo.date} at ${timeInfo.time}`}
-              >
-                {timeInfo.relative}
-              </span>
-            </div>
-          </button>
+          </CardHeader>
         )}
 
-        <div className="timeline-content">{renderEventContent()}</div>
-      </div>
+        {!title && (
+          <CardHeader>
+            <button
+              type="button"
+              className="timeline-header-hover w-full cursor-pointer transition-colors duration-150 bg-transparent border-none p-0"
+              onClick={() => setShowEventModal(true)}
+            >
+              <div className="flex items-center justify-between gap-4 w-full">
+                {event.actor && event.actor !== "system" && (
+                  <span
+                    className="font-semibold text-sm"
+                    style={{ color: "var(--link-primary)" }}
+                  >
+                    {event.actor}
+                  </span>
+                )}
+                <span
+                  className="text-sm hover:underline"
+                  style={{ color: "var(--text-tertiary)" }}
+                  title={`${timeInfo.date} at ${timeInfo.time}`}
+                >
+                  {timeInfo.relative}
+                </span>
+              </div>
+            </button>
+          </CardHeader>
+        )}
+
+        <CardContent>{renderEventContent()}</CardContent>
+      </Card>
 
       <Modal
         isOpen={showEventModal}
@@ -297,36 +352,18 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
         title="CloudEvent"
         maxWidth="800px"
       >
-        <pre className="event-data-json">
+        <pre
+          className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+          style={{
+            backgroundColor: "var(--bg-tertiary)",
+            borderColor: "var(--border-primary)",
+            color: "var(--text-primary)",
+          }}
+        >
           {JSON.stringify(event.originalEvent, null, 2)}
         </pre>
-
-        <style>{`
-          .event-data-json {
-            background: #f6f8fa;
-            border: 1px solid #d1d9e0;
-            border-radius: 6px;
-            padding: 1rem;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace;
-            font-size: 0.75rem;
-            line-height: 1.5;
-            overflow-x: auto;
-            color: #24292f;
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-          }
-
-          @media (prefers-color-scheme: dark) {
-            .event-data-json {
-              background: #161b22;
-              color: #f0f6fc;
-              border-color: #30363d;
-            }
-          }
-        `}</style>
       </Modal>
-    </div>
+    </>
   );
 };
 

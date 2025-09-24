@@ -66,20 +66,39 @@ const ZakenDashboard: React.FC = () => {
   });
 
   return (
-    <div className="app">
-      <header>
-        <h1>Mijn Zaken</h1>
-        <p>
+    <div
+      className="min-h-screen p-4 md:p-2"
+      style={{
+        backgroundColor: "var(--bg-primary)",
+        color: "var(--text-primary)",
+      }}
+    >
+      <header
+        className="text-center mb-8 py-8 md:py-4 border-b"
+        style={{ borderColor: "var(--border-secondary)" }}
+      >
+        <h1
+          className="mb-4 text-4xl md:text-3xl font-semibold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Mijn Zaken
+        </h1>
+        <p
+          className="text-base leading-relaxed max-w-3xl mx-auto"
+          style={{ color: "var(--text-secondary)" }}
+        >
           {issueEntries.length} {issueEntries.length !== 1 ? "zaken" : "zaak"}{" "}
           opgebouwd uit events
         </p>
         <ConnectionStatus status={connectionStatus} />
       </header>
 
-      <main>
-        <div className="zaken-list">
+      <main className="max-w-4xl mx-auto">
+        <div className="flex flex-col gap-2 md:gap-1.5 mb-8">
           {issueEntries.length === 0 ? (
-            <p>Geen zaken gevonden.</p>
+            <p style={{ color: "var(--text-secondary)" }}>
+              Geen zaken gevonden.
+            </p>
           ) : (
             issueEntries.map(([id, issue]) => {
               const latestTask = getLatestTaskForIssue(events, id);
@@ -87,14 +106,29 @@ const ZakenDashboard: React.FC = () => {
               return (
                 <div
                   key={id}
-                  className={`zaak-item ${animatingIssues.has(id) ? "new" : ""}`}
+                  className={`zaak-item-hover rounded-md p-4 md:p-3 border transition-all duration-150 block no-underline ${
+                    animatingIssues.has(id) ? "animate-timeline-appear" : ""
+                  }`}
+                  style={{
+                    backgroundColor: "var(--bg-primary)",
+                    borderColor: "var(--border-primary)",
+                  }}
                   data-issue-id={id}
                 >
-                  <Link to={`/zaak/${id}`} className="zaak-content">
-                    <div className="zaak-link">
+                  <Link
+                    to={`/zaak/${id}`}
+                    className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-1 no-underline group"
+                  >
+                    <div
+                      className="zaak-link font-medium text-base md:text-sm leading-snug flex-1 min-w-0 no-underline"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {issue.title || "Zaak zonder titel"}
                     </div>
-                    <div className="zaak-time">
+                    <div
+                      className="text-xs font-normal whitespace-nowrap flex-shrink-0 opacity-80 group-hover:opacity-100 md:self-end"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       {formatRelativeTime(
                         issue.lastActivity ||
                           issue.created_at ||
@@ -105,33 +139,23 @@ const ZakenDashboard: React.FC = () => {
 
                   {latestTask && !latestTask.completed && (
                     <div
-                      className="zaak-task-indicator"
+                      className="mt-2 md:mt-1.5"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "0.5rem",
-                        }}
-                      >
+                      <div className="flex items-center gap-2 text-xs">
                         <span
-                          className="task-indicator-badge"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium"
                           style={{
-                            fontSize: "0.75rem",
+                            backgroundColor: "var(--bg-secondary)",
                             color: "var(--text-secondary)",
                           }}
                         >
                           📋 {latestTask.description}
                         </span>
-                        <div
-                          style={{
-                            fontSize: "0.75rem",
-                          }}
-                        >
+                        <div className="text-xs">
                           <ActionButton
                             variant="secondary"
                             onClick={() => {
@@ -152,9 +176,13 @@ const ZakenDashboard: React.FC = () => {
 
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn-primary-hover inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed mt-8"
+          style={{
+            backgroundColor: "var(--button-primary-bg)",
+            color: "var(--text-inverse)",
+            borderColor: "var(--button-primary-bg)",
+          }}
           onClick={() => setIsCreateModalOpen(true)}
-          style={{ marginTop: "2rem" }}
         >
           + Nieuwe Zaak Aanmaken
         </button>
