@@ -1110,14 +1110,14 @@ fn generate_random_planning_event(issue_id: &str) -> Value {
             ],
         ),
         (
-            "Projectplanning",
-            "Overzicht van alle fasen in het project",
+            "Verhuisprocedure",
+            "Bij het verhuizen houden we ons aan de regels en richtlijnen van de gemeente.",
             vec![
-                ("Voorbereiding", "completed"),
-                ("Uitvoering fase 1", "current"),
-                ("Uitvoering fase 2", "planned"),
-                ("Oplevering", "planned"),
-                ("Evaluatie", "planned"),
+                ("Doorgeven adreswijziging", "completed"),
+                ("Update kadaster", "current"),
+                ("Update gemeentedata", "planned"),
+                ("Diensten wijzigen", "planned"),
+                ("Informeren nieuwe bewoners", "planned"),
             ],
         ),
         (

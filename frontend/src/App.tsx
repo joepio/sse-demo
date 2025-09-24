@@ -141,51 +141,53 @@ const ZakenDashboard: React.FC = () => {
                     </div>
                   </Link>
 
-                  <div className="mt-4 md:mt-3 space-y-3">
-                    {/* Planning Status */}
-                    {showPlanning && (
-                      <div
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <PlanningStatusBadge
-                          events={events}
-                          issueId={id}
-                          variant="compact"
-                        />
-                      </div>
-                    )}
-
-                    {/* Active Task */}
-                    {latestTask && !latestTask.completed && (
-                      <div
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <div className="flex items-center gap-2 text-xs">
-                          <div className="text-xs">
-                            <ActionButton
-                              variant="secondary"
-                              onClick={() => {
-                                completeTask(latestTask.id, id);
-                              }}
-                            >
-                              {latestTask.cta}
-                            </ActionButton>
-                          </div>
-                          <DeadlineBadge
-                            deadline={latestTask.deadline}
-                            variant="full"
-                            showLabel={false}
+                  {(showPlanning || (latestTask && !latestTask.completed)) && (
+                    <div className="mt-4 md:mt-3 space-y-3">
+                      {/* Planning Status */}
+                      {showPlanning && (
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <PlanningStatusBadge
+                            events={events}
+                            issueId={id}
+                            variant="compact"
                           />
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+
+                      {/* Active Task */}
+                      {latestTask && !latestTask.completed && (
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="text-xs">
+                              <ActionButton
+                                variant="secondary"
+                                onClick={() => {
+                                  completeTask(latestTask.id, id);
+                                }}
+                              >
+                                {latestTask.cta}
+                              </ActionButton>
+                            </div>
+                            <DeadlineBadge
+                              deadline={latestTask.deadline}
+                              variant="full"
+                              showLabel={false}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })

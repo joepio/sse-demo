@@ -251,12 +251,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
           <CardContent>
             <div className="flex items-center justify-between gap-4 w-full mb-3">
               {event.actor && event.actor !== "system" && (
-                <span
-                  className="font-semibold text-sm"
-                  style={{ color: "var(--link-primary)" }}
-                >
-                  {event.actor}
-                </span>
+                <span className="font-semibold text-sm">{event.actor}</span>
               )}
               <button
                 type="button"
@@ -310,12 +305,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
               </div>
               <div className="flex items-center gap-3 text-sm">
                 {event.actor && event.actor !== "system" && (
-                  <span
-                    className="font-semibold"
-                    style={{ color: "var(--link-primary)" }}
-                  >
-                    {event.actor}
-                  </span>
+                  <span className="font-semibold">{event.actor}</span>
                 )}
                 <button
                   type="button"

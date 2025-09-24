@@ -37,7 +37,7 @@ const TimelineEventsList: React.FC<TimelineEventsListProps> = ({
               <div
                 className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
                 style={{
-                  backgroundColor: "var(--link-primary)",
+                  backgroundColor: "var(--text-primary)",
                   color: "var(--text-inverse)",
                   borderColor: "var(--bg-primary)",
                 }}
