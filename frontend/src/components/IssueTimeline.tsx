@@ -17,7 +17,7 @@ import { getLatestPlanningForIssue } from "../utils/planningUtils";
 import TaskPlugin from "../plugins/eventTypes/TaskPlugin";
 import PlanningPlugin from "../plugins/eventTypes/PlanningPlugin";
 
-const GitHubTimeline: React.FC = () => {
+const IssueTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
   const { events, issues, sendEvent } = useSSE();
@@ -598,4 +598,4 @@ const GitHubTimeline: React.FC = () => {
   );
 };
 
-export default GitHubTimeline;
+export default IssueTimeline;

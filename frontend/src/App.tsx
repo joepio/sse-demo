@@ -8,7 +8,8 @@ import IssueTimeline from "./components/IssueTimeline";
 import Modal from "./components/Modal";
 import ActionButton from "./components/ActionButton";
 import { formatRelativeTime } from "./utils/time";
-import { getLatestTaskForIssue, formatTaskDeadline } from "./utils/taskUtils";
+import { getLatestTaskForIssue } from "./utils/taskUtils";
+import DeadlineBadge from "./components/DeadlineBadge";
 
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
@@ -156,15 +157,11 @@ const ZakenDashboard: React.FC = () => {
                             {latestTask.cta}
                           </ActionButton>
                         </div>
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium text-xs"
-                          style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            color: "var(--text-secondary)",
-                          }}
-                        >
-                          doe voor {formatTaskDeadline(latestTask.deadline)}
-                        </span>
+                        <DeadlineBadge
+                          deadline={latestTask.deadline}
+                          variant="full"
+                          showLabel={false}
+                        />
                       </div>
                     </div>
                   )}

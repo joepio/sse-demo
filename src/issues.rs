@@ -7,7 +7,7 @@ use uuid::Uuid;
 pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
     let mut events = Vec::new();
     let mut issues = HashMap::new();
-    let base_time = Utc::now() - Duration::hours(2);
+    let base_time = Utc::now() - Duration::hours(3);
 
     // Create 10 initial zaken using predefined templates
     let issue_templates = [
@@ -138,7 +138,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                 "parent_id": null,
                 "mentions": ["@bob"]
             }),
-            70,
+            105,
         ),
         (
             "2",
@@ -151,7 +151,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                 "new_value": "in_progress",
                 "reason": "Start onderzoek"
             }),
-            75,
+            110,
         ),
         (
             "1",
@@ -160,11 +160,11 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "system@example.com",
             json!({
                 "prompt": "Analyze this authentication issue and provide recommendations",
-                "response": "This appears to be related to session timeout configuration. The authentication system is likely expiring sessions too quickly, causing users to be logged out unexpectedly.",
+                "response": "This appears to be related to session timeout configuration. The llmauthentication system is likely expiring sessions too quickly, causing users to be logged out unexpectedly.",
                 "model": "gpt-4",
                 "confidence": 0.87
             }),
-            80,
+            115,
         ),
         (
             "2",
@@ -176,7 +176,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                 "parent_id": null,
                 "mentions": []
             }),
-            85,
+            120,
         ),
         (
             "1",
@@ -190,7 +190,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                 "completed": false,
                 "deadline": "2025-09-26"
             }),
-            90,
+            125,
         ),
         (
             "2",
@@ -204,7 +204,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                 "completed": false,
                 "deadline": "2025-09-24"
             }),
-            95,
+            130,
         ),
         (
             "3",
@@ -218,9 +218,321 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                 "completed": false,
                 "deadline": "2025-09-25"
             }),
-            100,
+            135,
         ),
     ];
+
+    // Add planning events for most issues
+    let planning_operations = [
+        (
+            "1",
+            "planning",
+            "planning-1001",
+            "specialist@gemeente.nl",
+            json!({
+                "title": "Paspoort procedure",
+                "description": "Stappen voor verwerking paspoort aanvraag",
+                "moments": [
+                    {
+                        "id": "moment-1001-1",
+                        "date": "2024-12-18",
+                        "title": "Aanvraag ontvangen",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1001-2",
+                        "date": "2024-12-19",
+                        "title": "Documenten controleren",
+                        "status": "current"
+                    },
+                    {
+                        "id": "moment-1001-3",
+                        "date": "2024-12-23",
+                        "title": "Foto en vingerafdrukken",
+                        "status": "planned"
+                    },
+                    {
+                        "id": "moment-1001-4",
+                        "date": "2024-12-30",
+                        "title": "Paspoort uitreiken",
+                        "status": "planned"
+                    }
+                ]
+            }),
+            140,
+        ),
+        (
+            "2",
+            "planning",
+            "planning-1002",
+            "bob@gemeente.nl",
+            json!({
+                "title": "Overlast onderzoek",
+                "description": "Plan voor onderzoek geluidsoverlast",
+                "moments": [
+                    {
+                        "id": "moment-1002-1",
+                        "date": "2024-12-18",
+                        "title": "Melding geregistreerd",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1002-2",
+                        "date": "2024-12-20",
+                        "title": "Locatie inspectie",
+                        "status": "current"
+                    },
+                    {
+                        "id": "moment-1002-3",
+                        "date": "2024-12-27",
+                        "title": "Rapport opstellen",
+                        "status": "planned"
+                    },
+                    {
+                        "id": "moment-1002-4",
+                        "date": "2025-01-03",
+                        "title": "Besluit communiceren",
+                        "status": "planned"
+                    }
+                ]
+            }),
+            142,
+        ),
+        (
+            "4",
+            "planning",
+            "planning-1004",
+            "carol@gemeente.nl",
+            json!({
+                "title": "Parkeervergunning proces",
+                "description": "Behandeling parkeervergunning aanvraag",
+                "moments": [
+                    {
+                        "id": "moment-1004-1",
+                        "date": "2024-12-17",
+                        "title": "Aanvraag ingediend",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1004-2",
+                        "date": "2024-12-18",
+                        "title": "Administratieve check",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1004-3",
+                        "date": "2024-12-21",
+                        "title": "Locatie controle",
+                        "status": "current"
+                    },
+                    {
+                        "id": "moment-1004-4",
+                        "date": "2024-12-24",
+                        "title": "Vergunning versturen",
+                        "status": "planned"
+                    }
+                ]
+            }),
+            144,
+        ),
+        (
+            "5",
+            "planning",
+            "planning-1005",
+            "dave@gemeente.nl",
+            json!({
+                "title": "Kapvergunning procedure",
+                "description": "Verwerking aanvraag boom kappen",
+                "moments": [
+                    {
+                        "id": "moment-1005-1",
+                        "date": "2024-12-16",
+                        "title": "Aanvraag ontvangen",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1005-2",
+                        "date": "2024-12-17",
+                        "title": "Ecologisch onderzoek",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1005-3",
+                        "date": "2024-12-20",
+                        "title": "Besluit genomen",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1005-4",
+                        "date": "2024-12-21",
+                        "title": "Vergunning uitgereikt",
+                        "status": "completed"
+                    }
+                ]
+            }),
+            146,
+        ),
+        (
+            "7",
+            "planning",
+            "planning-1007",
+            "eve@gemeente.nl",
+            json!({
+                "title": "Klacht behandeling",
+                "description": "Proces voor behandeling klacht dienstverlening",
+                "moments": [
+                    {
+                        "id": "moment-1007-1",
+                        "date": "2024-12-19",
+                        "title": "Klacht geregistreerd",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1007-2",
+                        "date": "2024-12-20",
+                        "title": "Onderzoek gestart",
+                        "status": "current"
+                    },
+                    {
+                        "id": "moment-1007-3",
+                        "date": "2024-12-28",
+                        "title": "Gesprek met betrokkenen",
+                        "status": "planned"
+                    },
+                    {
+                        "id": "moment-1007-4",
+                        "date": "2025-01-08",
+                        "title": "Besluit en reactie",
+                        "status": "planned"
+                    }
+                ]
+            }),
+            148,
+        ),
+    ];
+
+    // Add initial citizen stories/requests as first comments
+    let citizen_stories = [
+        (
+            "1",
+            "comment",
+            "story-1001",
+            "pietjansen@hotmail.com",
+            json!({
+                "content": "Hallo, ik wil graag een nieuw paspoort aanvragen. Mijn huidige paspoort verloopt over 2 maanden en ik ga binnenkort op vakantie naar Spanje. Wat moet ik allemaal meebrengen naar de afspraak?",
+                "parent_id": null,
+                "mentions": []
+            }),
+            5,
+        ),
+        (
+            "2",
+            "comment",
+            "story-1002",
+            "marieke.de.vries@gmail.com",
+            json!({
+                "content": "Beste gemeente, ik wil graag melding maken van geluidsoverlast van mijn buren. Ze hebben elke avond tot laat muziek aan staan en dit begint nu echt vervelend te worden. Kunnen jullie hier iets aan doen?",
+                "parent_id": null,
+                "mentions": []
+            }),
+            7,
+        ),
+        (
+            "3",
+            "comment",
+            "story-1003",
+            "jan.klaassen@ziggo.nl",
+            json!({
+                "content": "Hallo, ik ben vorige maand verhuisd van Amsterdam naar jullie gemeente. Ik wil mijn nieuwe adres doorgeven in de BRP. Kan ik dit online regelen of moet ik langskomen?",
+                "parent_id": null,
+                "mentions": []
+            }),
+            10,
+        ),
+        (
+            "4",
+            "comment",
+            "story-1004",
+            "a.peters@live.nl",
+            json!({
+                "content": "Beste mensen, ik heb een nieuwe auto gekocht en wil graag een parkeervergunning aanvragen voor mijn straat. Ik woon op de Kerkstraat 15. Wat zijn de kosten en hoe lang duurt dit proces?",
+                "parent_id": null,
+                "mentions": []
+            }),
+            12,
+        ),
+        (
+            "5",
+            "comment",
+            "story-1005",
+            "kees.van.dijk@kpn.nl",
+            json!({
+                "content": "Hallo gemeente, ik heb een grote boom in mijn achtertuin die ik graag wil laten kappen. De boom wordt te groot en hangt over naar de buren. Heb ik hiervoor een vergunning nodig?",
+                "parent_id": null,
+                "mentions": []
+            }),
+            15,
+        ),
+        (
+            "6",
+            "comment",
+            "story-1006",
+            "susan.bakker@yahoo.com",
+            json!({
+                "content": "Beste gemeente, ik zit in financiële problemen en zou graag informatie willen over bijstandsuitkering. Ik ben onlangs werkloos geworden en weet niet goed waar ik moet beginnen. Kunnen jullie mij helpen?",
+                "parent_id": null,
+                "mentions": []
+            }),
+            18,
+        ),
+        (
+            "7",
+            "comment",
+            "story-1007",
+            "henk.groot@planet.nl",
+            json!({
+                "content": "Ik wil een klacht indienen over de behandeling die ik heb gekregen bij jullie balie vorige week. De medewerker was onvriendelijk en onbehulpzaam. Dit kan echt beter!",
+                "parent_id": null,
+                "mentions": []
+            }),
+            20,
+        ),
+        (
+            "8",
+            "comment",
+            "story-1008",
+            "annemarie@xs4all.nl",
+            json!({
+                "content": "Hallo lieve mensen van de gemeente! Mijn verloofde en ik willen graag trouwen op het gemeentehuis. Kunnen we een afspraak maken voor over 2 maanden? We houden van een simpele ceremonie.",
+                "parent_id": null,
+                "mentions": []
+            }),
+            22,
+        ),
+    ];
+
+    for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
+        citizen_stories.iter().enumerate()
+    {
+        let story_event = json!({
+            "specversion": "1.0",
+            "id": Uuid::now_v7().to_string(),
+            "source": "server-demo-event",
+            "subject": issue_id,
+            "type": "https://api.example.com/events/timeline/item/created/v1",
+            "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
+            "datacontenttype": "application/json",
+            "data": {
+                "item_type": item_type,
+                "item_id": item_id,
+                "actor": actor,
+                "timestamp": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
+                "item_data": item_data
+            }
+        });
+
+        events.push(story_event);
+    }
 
     for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
         timeline_operations.iter().enumerate()
@@ -243,6 +555,29 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         });
 
         events.push(timeline_event);
+    }
+
+    for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
+        planning_operations.iter().enumerate()
+    {
+        let planning_event = json!({
+            "specversion": "1.0",
+            "id": Uuid::now_v7().to_string(),
+            "source": "server-demo-event",
+            "subject": issue_id,
+            "type": "https://api.example.com/events/timeline/item/created/v1",
+            "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
+            "datacontenttype": "application/json",
+            "data": {
+                "item_type": item_type,
+                "item_id": item_id,
+                "actor": actor,
+                "timestamp": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
+                "item_data": item_data
+            }
+        });
+
+        events.push(planning_event);
     }
 
     // Add a timeline update event
@@ -407,9 +742,9 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     let operation_type = fastrand::usize(0..100);
 
     match operation_type {
-        0..40 => Some(generate_random_comment_event(random_issue_id)),
-        40..65 => Some(generate_random_task_event(random_issue_id)),
-        65..85 => Some(generate_random_planning_event(random_issue_id)),
+        0..60 => Some(generate_random_comment_event(random_issue_id)),
+        60..75 => Some(generate_random_task_event(random_issue_id)),
+        75..90 => Some(generate_random_planning_event(random_issue_id)),
         _ => Some(generate_random_patch_event(random_issue_id)),
     }
 }
@@ -547,7 +882,7 @@ fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
 }
 
 fn generate_random_comment_event(issue_id: &str) -> Value {
-    let comments = [
+    let official_comments = [
         "Status update: bezig met verwerking van deze aanvraag.",
         "Aanvullende informatie ontvangen van aanvrager.",
         "Doorverwezen naar de juiste afdeling voor behandeling.",
@@ -580,7 +915,30 @@ fn generate_random_comment_event(issue_id: &str) -> Value {
         "Consultant ingeschakeld voor specialistisch advies.",
     ];
 
-    let actors = [
+    let citizen_comments = [
+        "Hallo waarom duurt dit zo lang? Het is al 3 weken geleden!",
+        "Kan iemand mij uitleggen wat er gebeurt met mijn aanvraag?",
+        "Ik heb nog steeds niks gehoord... Is er iemand die dit oppakt?",
+        "Dit is belachelijk, waarom duurt alles bij de gemeente zo lang?",
+        "Wanneer kan ik eindelijk een reactie verwachten?",
+        "Mijn buurman had hetzelfde probleem en die kreeg binnen een week antwoord!",
+        "Kunnen jullie niet wat sneller werken? Ik heb deadline!",
+        "Is er überhaupt iemand die naar mijn zaak kijkt?",
+        "Vriendelijk verzoek om even te laten weten wat de status is 🙏",
+        "Help! Ik word gek van het wachten, wat gebeurt er nou?",
+        "Ik begrijp er helemaal niks van... kan iemand uitleg geven?",
+        "Dit is toch niet normaal? Zo lang wachten voor een simpele aanvraag?",
+        "Volgens de website zou dit binnen 2 weken afgehandeld zijn...",
+        "Ik ga een klacht indienen als dit niet snel opgelost wordt!",
+        "Hoe moeilijk kan het zijn om even te reageren?",
+        "Mijn geduld raakt op... wanneer krijg ik nou antwoord?",
+        "Dit is de 5e keer dat ik contact opneem. HELP!",
+        "Ik snap er niks van. Waarom is dit zo ingewikkeld?",
+        "Kan er niet gewoon even iemand bellen om dit uit te leggen?",
+        "Dit is echt frustrerend... ik wacht al maanden!",
+    ];
+
+    let official_actors = [
         "alice@gemeente.nl",
         "bob@gemeente.nl",
         "carol@gemeente.nl",
@@ -588,8 +946,29 @@ fn generate_random_comment_event(issue_id: &str) -> Value {
         "specialist@gemeente.nl",
     ];
 
-    let comment_text = comments[fastrand::usize(..comments.len())];
-    let actor = actors[fastrand::usize(..actors.len())];
+    let citizen_actors = [
+        "pietjansen@hotmail.com",
+        "marieke.de.vries@gmail.com",
+        "jan.klaassen@ziggo.nl",
+        "a.peters@live.nl",
+        "kees.van.dijk@kpn.nl",
+        "susan.bakker@yahoo.com",
+        "henk.groot@planet.nl",
+        "annemarie@xs4all.nl",
+    ];
+
+    // 70% chance of citizen comment to make them more common
+    let is_citizen_comment = fastrand::usize(0..100) < 70;
+
+    let (comment_text, actor) = if is_citizen_comment {
+        let comment = citizen_comments[fastrand::usize(..citizen_comments.len())];
+        let actor = citizen_actors[fastrand::usize(..citizen_actors.len())];
+        (comment, actor)
+    } else {
+        let comment = official_comments[fastrand::usize(..official_comments.len())];
+        let actor = official_actors[fastrand::usize(..official_actors.len())];
+        (comment, actor)
+    };
 
     generate_comment_event_with_data(issue_id, comment_text, actor)
 }

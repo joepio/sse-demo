@@ -172,7 +172,8 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           throw new Error(`Failed to send event: ${response.statusText}`);
         }
 
-        // Update local state immediately for responsive UI
+        // Don't add event locally - let it come back through SSE delta to avoid duplicates
+        // Only update local state for immediate UI responsiveness
         processCloudEvent(event);
       } catch (error) {
         console.error("Error sending event:", error);

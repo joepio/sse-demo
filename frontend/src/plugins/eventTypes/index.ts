@@ -4,7 +4,7 @@ import type { EventPluginComponent } from "./types";
 // Import all plugins
 import CommentPlugin from "./CommentPlugin";
 import StatusChangePlugin from "./StatusChangePlugin";
-import LLMAnalysisPlugin from "./LLMAnalysisPlugin";
+
 import IssueUpdatedPlugin from "./IssueUpdatedPlugin";
 import IssueCreatedPlugin from "./IssueCreatedPlugin";
 import IssueDeletedPlugin from "./IssueDeletedPlugin";
@@ -17,7 +17,7 @@ import PlanningPlugin from "./PlanningPlugin";
 export const eventPlugins: Record<TimelineItemType, EventPluginComponent> = {
   comment: CommentPlugin,
   status_change: StatusChangePlugin,
-  llm_analysis: LLMAnalysisPlugin,
+
   deployment: DeploymentPlugin,
   system_event: SystemEventPlugin,
   issue_created: IssueCreatedPlugin,
@@ -38,7 +38,6 @@ export const getEventPlugin = (
 export {
   CommentPlugin,
   StatusChangePlugin,
-  LLMAnalysisPlugin,
   IssueUpdatedPlugin,
   IssueCreatedPlugin,
   IssueDeletedPlugin,

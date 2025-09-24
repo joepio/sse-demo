@@ -81,22 +81,19 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
   // Show the active task interface
   return (
     <div className="p-0">
-      {deadline && (
-        <div className="mb-3">
-          <DeadlineBadge deadline={deadline} variant="full" showLabel={true} />
-        </div>
-      )}
       <p className="m-0 mb-4 leading-relaxed">{description}</p>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex gap-2 items-center">
         <ActionButton
           variant="secondary"
           onClick={() => {
-            console.log("Complete task:", currentTask.id);
             completeTask(currentTask.id, issueId);
           }}
         >
           {cta}
         </ActionButton>
+        {deadline && (
+          <DeadlineBadge deadline={deadline} variant="full" showLabel={true} />
+        )}
       </div>
     </div>
   );
