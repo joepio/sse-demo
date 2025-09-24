@@ -204,19 +204,6 @@ const GitHubTimeline: React.FC = () => {
     }
   };
 
-  const getPriorityColor = (priority?: string) => {
-    switch (priority) {
-      case "high":
-        return "var(--priority-high)";
-      case "medium":
-        return "var(--priority-medium)";
-      case "low":
-        return "var(--priority-low)";
-      default:
-        return "var(--text-secondary)";
-    }
-  };
-
   if (!zaakId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-bg-primary">
@@ -300,21 +287,6 @@ const GitHubTimeline: React.FC = () => {
                         ? "Gesloten"
                         : issue.status}
                 </span>
-                {issue.priority && (
-                  <span
-                    className="text-sm font-medium capitalize"
-                    style={{ color: getPriorityColor(issue.priority) }}
-                  >
-                    {String(issue.priority) === "high"
-                      ? "Hoge"
-                      : String(issue.priority) === "medium"
-                        ? "Gemiddelde"
-                        : String(issue.priority) === "low"
-                          ? "Lage"
-                          : String(issue.priority)}{" "}
-                    prioriteit
-                  </span>
-                )}
               </div>
             </div>
 

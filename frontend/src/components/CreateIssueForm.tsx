@@ -11,7 +11,6 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
   const [formData, setFormData] = useState<IssueFormData>({
     title: "",
     description: "",
-    priority: "",
     assignee: "",
   });
 
@@ -53,10 +52,6 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
         issueData.description = formData.description.trim();
       }
 
-      if (formData.priority) {
-        issueData.priority = formData.priority;
-      }
-
       if (formData.assignee.trim()) {
         issueData.assignee = formData.assignee.trim();
       }
@@ -81,7 +76,6 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
       setFormData({
         title: "",
         description: "",
-        priority: "",
         assignee: "",
       });
     } catch (err) {
@@ -129,23 +123,6 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
         </div>
 
         <div className="flex flex-col md:flex-row gap-2 mb-4">
-          <select
-            name="priority"
-            value={formData.priority}
-            onChange={handleInputChange}
-            disabled={isSubmitting}
-            className="form-select flex-1 px-3 py-2 text-base rounded-md border transition-colors duration-150 focus:outline-none disabled:opacity-60"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              color: "var(--text-primary)",
-              borderColor: "var(--border-primary)",
-            }}
-          >
-            <option value="">Prioriteit (optioneel)</option>
-            <option value="low">Laag</option>
-            <option value="medium">Gemiddeld</option>
-            <option value="high">Hoog</option>
-          </select>
           <input
             type="email"
             name="assignee"

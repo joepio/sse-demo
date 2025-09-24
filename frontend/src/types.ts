@@ -14,7 +14,6 @@ export interface Issue extends Record<string, unknown> {
   title: string;
   description?: string;
   status: "open" | "in_progress" | "closed";
-  priority?: "low" | "medium" | "high";
   assignee?: string;
   created_at?: string;
   resolution?: string;
@@ -51,7 +50,6 @@ export interface Planning {
 export interface IssueFormData {
   title: string;
   description: string;
-  priority: string;
   assignee: string;
 }
 
@@ -68,7 +66,6 @@ export interface IssueCreateData {
   title: string;
   description?: string;
   status: string;
-  priority?: string;
   assignee?: string;
   created_at: string;
 }

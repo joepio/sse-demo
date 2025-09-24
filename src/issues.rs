@@ -14,70 +14,60 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         (
             "Nieuw paspoort aanvragen",
             "Burger wil nieuw paspoort aanvragen",
-            "medium",
             Some("alice@gemeente.nl"),
         ),
         (
             "Melding overlast",
             "Geluidsoverlast buren gemeld",
-            "high",
             Some("bob@gemeente.nl"),
         ),
         (
             "Verhuizing doorgeven",
             "Adreswijziging registreren in BRP",
-            "medium",
             None,
         ),
         (
             "Parkeervergunning aanvraag",
             "Bewoner wil parkeervergunning voor nieuwe auto",
-            "low",
             Some("carol@gemeente.nl"),
         ),
         (
             "Kapvergunning boom",
             "Vergunning nodig voor kappen boom in achtertuin",
-            "medium",
             Some("dave@gemeente.nl"),
         ),
         (
             "Uitkering aanvragen",
             "Burger vraagt bijstandsuitkering aan",
-            "high",
             None,
         ),
         (
             "Klacht over dienstverlening",
             "Ontevreden over behandeling bij balie",
-            "medium",
             Some("eve@gemeente.nl"),
         ),
         (
             "Huwelijk voltrekken",
             "Koppel wil trouwen op gemeentehuis",
-            "low",
             Some("frank@gemeente.nl"),
         ),
         (
             "WOZ-bezwaar indienen",
             "Eigenaar niet eens met WOZ-waardering",
-            "medium",
             None,
         ),
         (
             "Hondenbelasting",
             "Registratie nieuwe hond voor hondenbelasting",
-            "low",
             Some("grace@gemeente.nl"),
         ),
     ];
 
     // Generate create events for initial issues
-    for (i, (title, description, priority, assignee)) in issue_templates.iter().enumerate() {
+    for (i, (title, description, assignee)) in issue_templates.iter().enumerate() {
         let issue_id = (i + 1).to_string();
         let mut create_event =
-            generate_create_event_with_data(&issue_id, title, description, priority, *assignee);
+            generate_create_event_with_data(&issue_id, title, description, *assignee);
 
         // Set historical timestamp
         let create_time = base_time + Duration::minutes(i as i64 * 2);
@@ -494,14 +484,12 @@ fn generate_random_create_event() -> Value {
 
     let issue_id = format!("live-{}", Uuid::now_v7().simple());
     let title = titles[fastrand::usize(..titles.len())];
-    let priority = priorities[fastrand::usize(..priorities.len())];
     let assignee = assignees[fastrand::usize(..assignees.len())];
 
     generate_create_event_with_data(
         &issue_id,
         title,
         "Live gegenereerde zaak voor demo",
-        priority,
         assignee,
     )
 }
@@ -510,7 +498,6 @@ fn generate_create_event_with_data(
     issue_id: &str,
     title: &str,
     description: &str,
-    priority: &str,
     assignee: Option<&str>,
 ) -> Value {
     let mut issue_data = json!({
@@ -518,7 +505,6 @@ fn generate_create_event_with_data(
         "title": title,
         "description": description,
         "status": "open",
-        "priority": priority,
         "created_at": Utc::now().to_rfc3339()
     });
 

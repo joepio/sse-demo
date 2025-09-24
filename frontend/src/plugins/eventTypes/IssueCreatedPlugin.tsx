@@ -20,20 +20,6 @@ const IssueCreatedPlugin: React.FC<EventPluginProps> = ({ data }) => {
             ? "Open"
             : String(data.status) || "open"}
           {(() => {
-            const priority = data.priority;
-            const priorityText =
-              priority === "high"
-                ? "Hoog"
-                : priority === "medium"
-                  ? "Gemiddeld"
-                  : priority === "low"
-                    ? "Laag"
-                    : priority;
-            return typeof priority === "string" && priority
-              ? ` • Prioriteit: ${priorityText}`
-              : "";
-          })()}
-          {(() => {
             const assignee = data.assignee;
             return typeof assignee === "string" && assignee
               ? ` • Toegewezen aan: ${String(assignee)}`
