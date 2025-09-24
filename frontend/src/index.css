@@ -36,22 +36,7 @@
     --button-danger-bg: #dc3545;
     --button-danger-hover: #c82333;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
-
-    --timeline-line: #dee2e6;
-    --timeline-icon-bg: #fff3e0;
-    --timeline-icon-border: #ff9800;
-
-    --animation-duration-fast: 0.15s;
     --animation-duration-medium: 0.2s;
-    --animation-duration-normal: 0.3s;
-    --animation-duration-slow: 0.5s;
-    --animation-easing-ease-out: ease-out;
-    --animation-easing-ease-in: ease-in;
-    --animation-easing-ease-in-out: ease-in-out;
-    --timeline-item-slide-distance: -10px;
 
     --status-open: #28a745;
     --status-progress: #ffc107;
@@ -61,7 +46,6 @@
     --priority-low: #28a745;
 
     --overlay: rgba(0, 0, 0, 0.5);
-    --overlay-light: rgba(0, 0, 0, 0.03);
 
     color-scheme: light;
 }
@@ -102,14 +86,6 @@
         --button-danger-bg: #da3633;
         --button-danger-hover: #f85149;
 
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-        --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
-
-        --timeline-line: #30363d;
-        --timeline-icon-bg: #1f1a00;
-        --timeline-icon-border: #d29922;
-
         --status-open: #3fb950;
         --status-progress: #d29922;
         --status-closed: #f85149;
@@ -118,7 +94,6 @@
         --priority-low: #3fb950;
 
         --overlay: rgba(0, 0, 0, 0.7);
-        --overlay-light: rgba(255, 255, 255, 0.05);
 
         color-scheme: dark;
     }
@@ -159,14 +134,6 @@
     --button-danger-bg: #da3633;
     --button-danger-hover: #f85149;
 
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
-
-    --timeline-line: #30363d;
-    --timeline-icon-bg: #1f1a00;
-    --timeline-icon-border: #d29922;
-
     --status-open: #3fb950;
     --status-progress: #d29922;
     --status-closed: #f85149;
@@ -175,7 +142,6 @@
     --priority-low: #3fb950;
 
     --overlay: rgba(0, 0, 0, 0.7);
-    --overlay-light: rgba(255, 255, 255, 0.05);
 
     color-scheme: dark;
 }

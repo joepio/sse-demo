@@ -381,7 +381,9 @@ const GitHubTimeline: React.FC = () => {
                       </div>
                       <ActionButton
                         variant="secondary"
-                        onClick={() => completeTask(latestTask.id, zaakId)}
+                        onClick={() =>
+                          zaakId && completeTask(latestTask.id, zaakId)
+                        }
                       >
                         {latestTask.cta}
                       </ActionButton>
@@ -431,12 +433,7 @@ const GitHubTimeline: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div>
-                    <TimelineItem
-                      event={event}
-                      itemType={itemType}
-                      isFirst={false}
-                      isLast={false}
-                    />
+                    <TimelineItem event={event} itemType={itemType} />
                   </div>
                 </div>
               </div>

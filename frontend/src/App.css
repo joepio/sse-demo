@@ -12,28 +12,9 @@
     }
 }
 
-/* Loading spinner animation for pseudo-elements */
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 /* Custom utility for new item animation */
 .animate-timeline-appear {
     animation: timelineItemAppear 0.3s ease-out;
-}
-
-/* Loading spinner utility */
-.loading-spinner::before {
-    content: "";
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--border-primary);
-    border-top-color: var(--link-primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-right: 0.5rem;
 }
 
 /* Hover effects for zaak items - keeping for compatibility during migration */

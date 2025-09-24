@@ -10,7 +10,7 @@ import {
 } from "../../utils/taskUtils";
 
 const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
-  const { events } = useSSE();
+  const { events, completeTask } = useSSE();
 
   const eventData = data as Record<string, unknown>;
   const taskId = eventData.item_id as string;
@@ -115,8 +115,8 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
         <ActionButton
           variant="secondary"
           onClick={() => {
-            // This will be handled by the parent component
             console.log("Complete task:", currentTask.id);
+            completeTask(currentTask.id, issueId);
           }}
         >
           {cta}

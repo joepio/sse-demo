@@ -11,8 +11,6 @@ import { getEventPlugin } from "../plugins/eventTypes";
 interface TimelineItemProps {
   event: TimelineEvent;
   itemType: TimelineItemType;
-  isFirst: boolean;
-  isLast: boolean;
 }
 
 const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
