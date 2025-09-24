@@ -55,6 +55,7 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
       issue_updated: "✏️",
       issue_deleted: "🗑️",
       task: "📋",
+      planning: "📅",
     };
 
     const icon = baseIcons[type] || "📋";
@@ -94,12 +95,13 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
       comment: "Opmerking",
       status_change: "Status Wijziging",
       llm_analysis: "AI Analyse",
-      deployment: "Uitrol",
+      deployment: "Deployment",
       system_event: "Systeem Event",
       issue_created: "Zaak Aangemaakt",
       issue_updated: "Zaak Bijgewerkt",
       issue_deleted: "Zaak Verwijderd",
-      task: "Nieuwe Taak",
+      task: "Taak",
+      planning: "Planning Gewijzigd",
     };
 
     const baseTitle = titles[type] || "Event";

@@ -32,6 +32,22 @@ export interface Task {
   timestamp: string;
 }
 
+export interface PlanningMoment {
+  id: string;
+  date: string;
+  title: string;
+  status: "completed" | "current" | "planned";
+}
+
+export interface Planning {
+  id: string;
+  title: string;
+  description?: string;
+  moments: PlanningMoment[];
+  actor: string;
+  timestamp: string;
+}
+
 export interface IssueFormData {
   title: string;
   description: string;
@@ -76,6 +92,9 @@ export type EventType =
   | "com.example.document.create"
   | "com.example.document.patch"
   | "com.example.document.delete"
+  | "com.example.planning.create"
+  | "com.example.planning.patch"
+  | "com.example.planning.delete"
   | "com.example.system.reset";
 
 // Generic entity interface that all entities should extend
@@ -104,6 +123,13 @@ export interface Document extends BaseEntity {
   status?: "draft" | "published" | "archived";
 }
 
+// Planning entity
+export interface PlanningEntity extends BaseEntity {
+  title: string;
+  description?: string;
+  moments: PlanningMoment[];
+}
+
 // Generic CloudEvent data types
 export type CreateCloudEventData<T extends BaseEntity> = T;
 
@@ -119,6 +145,7 @@ export type EntityTypeMap = {
   issue: Issue;
   message: Message;
   document: Document;
+  planning: PlanningEntity;
 };
 
 export type EntityType = keyof EntityTypeMap;
@@ -164,6 +191,9 @@ export interface TimelineItemData {
   completed?: boolean;
   deadline?: string;
 
+  // For planning
+  moments?: PlanningMoment[];
+
   // Generic fields
   [key: string]: unknown;
 }
@@ -177,4 +207,5 @@ export type TimelineItemType =
   | "issue_created"
   | "issue_updated"
   | "issue_deleted"
-  | "task";
+  | "task"
+  | "planning";

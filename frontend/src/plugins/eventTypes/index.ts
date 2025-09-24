@@ -11,6 +11,7 @@ import IssueDeletedPlugin from "./IssueDeletedPlugin";
 import DeploymentPlugin from "./DeploymentPlugin";
 import SystemEventPlugin from "./SystemEventPlugin";
 import TaskPlugin from "./TaskPlugin";
+import PlanningPlugin from "./PlanningPlugin";
 
 // Plugin registry - map event types to components
 export const eventPlugins: Record<TimelineItemType, EventPluginComponent> = {
@@ -23,6 +24,7 @@ export const eventPlugins: Record<TimelineItemType, EventPluginComponent> = {
   issue_updated: IssueUpdatedPlugin,
   issue_deleted: IssueDeletedPlugin,
   task: TaskPlugin,
+  planning: PlanningPlugin,
 };
 
 // Utility function to get plugin for event type
@@ -43,4 +45,5 @@ export {
   DeploymentPlugin,
   SystemEventPlugin,
   TaskPlugin,
+  PlanningPlugin,
 };

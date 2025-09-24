@@ -417,8 +417,9 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     let operation_type = fastrand::usize(0..100);
 
     match operation_type {
-        0..50 => Some(generate_random_comment_event(random_issue_id)),
-        50..75 => Some(generate_random_task_event(random_issue_id)),
+        0..40 => Some(generate_random_comment_event(random_issue_id)),
+        40..65 => Some(generate_random_task_event(random_issue_id)),
+        65..85 => Some(generate_random_planning_event(random_issue_id)),
         _ => Some(generate_random_patch_event(random_issue_id)),
     }
 }
@@ -724,6 +725,109 @@ fn generate_task_event_with_data(
                 "url": url,
                 "completed": false,
                 "deadline": deadline
+            }
+        }
+    })
+}
+
+/// Generate a random planning event for an issue
+fn generate_random_planning_event(issue_id: &str) -> Value {
+    let plannings = [
+        (
+            "Vergunningsprocedure",
+            "Proces voor het verkrijgen van de benodigde vergunningen",
+            vec![
+                ("Aanvraag indienen", "completed"),
+                ("Behandeling door gemeente", "current"),
+                ("Besluit gemeente", "planned"),
+                ("Bezwaarperiode", "planned"),
+                ("Vergunning geldig", "planned"),
+            ],
+        ),
+        (
+            "Projectplanning",
+            "Overzicht van alle fasen in het project",
+            vec![
+                ("Voorbereiding", "completed"),
+                ("Uitvoering fase 1", "current"),
+                ("Uitvoering fase 2", "planned"),
+                ("Oplevering", "planned"),
+                ("Evaluatie", "planned"),
+            ],
+        ),
+        (
+            "Juridische procedure",
+            "Stappen in de juridische behandeling",
+            vec![
+                ("Intake", "completed"),
+                ("Onderzoek", "completed"),
+                ("Advies opstellen", "current"),
+                ("Besluitvorming", "planned"),
+                ("Communicatie besluit", "planned"),
+            ],
+        ),
+    ];
+
+    let actors = [
+        "specialist@gemeente.nl",
+        "projectleider@gemeente.nl",
+        "juridisch@gemeente.nl",
+        "vergunningen@gemeente.nl",
+    ];
+
+    let (title, description, moments_data) = &plannings[fastrand::usize(..plannings.len())];
+    let actor = actors[fastrand::usize(..actors.len())];
+
+    generate_planning_event_with_data(issue_id, title, description, moments_data, actor)
+}
+
+fn generate_planning_event_with_data(
+    issue_id: &str,
+    title: &str,
+    description: &str,
+    moments_data: &Vec<(&str, &str)>,
+    actor: &str,
+) -> Value {
+    // Generate moments with dates spread over the next few months
+    let mut moments = Vec::new();
+    let base_date = Utc::now();
+
+    for (index, (moment_title, status)) in moments_data.iter().enumerate() {
+        let days_offset = match status {
+            &"completed" => -(fastrand::i64(5..=30)), // Past dates
+            &"current" => fastrand::i64(-2..=2),      // Around now
+            _ => fastrand::i64(7..=(30 + index as i64 * 14)), // Future dates
+        };
+
+        let moment_date = (base_date + Duration::days(days_offset))
+            .format("%Y-%m-%d")
+            .to_string();
+
+        moments.push(json!({
+            "id": format!("moment-{}", Uuid::now_v7().simple()),
+            "date": moment_date,
+            "title": moment_title,
+            "status": status
+        }));
+    }
+
+    json!({
+        "specversion": "1.0",
+        "id": Uuid::now_v7().to_string(),
+        "source": "server-demo-event",
+        "subject": issue_id,
+        "type": "https://api.example.com/events/timeline/item/created/v1",
+        "time": Utc::now().to_rfc3339(),
+        "datacontenttype": "application/json",
+        "data": {
+            "item_type": "planning",
+            "item_id": format!("planning-{}", Uuid::now_v7().simple()),
+            "actor": actor,
+            "timestamp": Utc::now().to_rfc3339(),
+            "item_data": {
+                "title": title,
+                "description": description,
+                "moments": moments
             }
         }
     })
