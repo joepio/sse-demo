@@ -174,3 +174,21 @@ export const getPlanningCompletionPercentage = (planning: Planning): number => {
   ).length;
   return Math.round((completedCount / planning.moments.length) * 100);
 };
+
+/**
+ * Check if planning status should be shown for an issue
+ * Returns true if there's active planning (not fully completed) with at least one moment
+ */
+export const shouldShowPlanningStatus = (
+  events: CloudEvent[],
+  issueId: string,
+): boolean => {
+  const latestPlanning = getLatestPlanningForIssue(events, issueId);
+
+  if (!latestPlanning || latestPlanning.moments.length === 0) {
+    return false;
+  }
+
+  // Show if there are any current or planned moments (not all completed)
+  return latestPlanning.moments.some((moment) => moment.status !== "completed");
+};
