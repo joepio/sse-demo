@@ -25,7 +25,7 @@ export const eventPlugins: Record<TimelineItemType, EventPluginComponent> = {
   issue_created: IssueCreatedPlugin,
   issue_updated: IssueUpdatedPlugin,
   issue_deleted: IssueDeletedPlugin,
-  task: TaskPlugin,
+  task: SystemEventPlugin,
   planning: SystemEventPlugin,
 };
 
