@@ -33,12 +33,24 @@ const ResourceEditor = <T extends BaseEntity>({
       const newData = JSON.parse(jsonText);
       setIsSubmitting(true);
 
+      // Map resource types to event types
+      let eventType: string;
+      switch (resourceType) {
+        case "issue":
+          eventType = "issue.updated";
+          break;
+        default:
+          // For unsupported resource types, use a generic event
+          eventType = "item.updated";
+          break;
+      }
+
       const cloudEvent: CloudEvent = {
         specversion: "1.0",
         id: crypto.randomUUID(),
         source: `/${resourceType}s`,
         subject: resource.id,
-        type: `com.example.${resourceType}.patch`,
+        type: eventType,
         time: new Date().toISOString(),
         datacontenttype: "application/merge-patch+json",
         data: newData,

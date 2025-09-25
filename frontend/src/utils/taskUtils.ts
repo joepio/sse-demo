@@ -10,10 +10,7 @@ export const getTasksForIssue = (
   // Get both created and updated task events
   const taskEvents = events.filter(
     (event) =>
-      (event.type ===
-        "https://api.example.com/events/timeline/item/created/v1" ||
-        event.type ===
-          "https://api.example.com/events/timeline/item/updated/v1") &&
+      (event.type === "item.created" || event.type === "item.updated") &&
       event.subject === issueId &&
       event.data &&
       typeof event.data === "object" &&
@@ -33,9 +30,7 @@ export const getTasksForIssue = (
       const data = event.data as Record<string, unknown>;
       const taskId = data.item_id as string;
 
-      if (
-        event.type === "https://api.example.com/events/timeline/item/created/v1"
-      ) {
+      if (event.type === "item.created") {
         // Create new task
         const itemData = data.item_data as TimelineItemData;
         if (itemData.cta && itemData.description && itemData.url) {
@@ -50,9 +45,7 @@ export const getTasksForIssue = (
             timestamp: data.timestamp || event.time || new Date().toISOString(),
           } as Task);
         }
-      } else if (
-        event.type === "https://api.example.com/events/timeline/item/updated/v1"
-      ) {
+      } else if (event.type === "item.updated") {
         // Update existing task
         const existingTask = taskMap.get(taskId);
         if (existingTask) {
@@ -116,7 +109,7 @@ export const createTaskCompletionEvent = (taskId: string): CloudEvent => {
     specversion: "1.0",
     id: `completion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     source: "frontend-user-action",
-    type: "https://api.example.com/events/timeline/item/created/v1",
+    type: "item.created",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
     data: {

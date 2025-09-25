@@ -74,15 +74,12 @@ const IssueTimeline: React.FC = () => {
 
   // Determine timeline item type from CloudEvent
   const getTimelineItemType = (event: CloudEvent): TimelineItemType => {
-    if (event.type === "com.example.issue.create") return "issue_created";
-    if (event.type === "com.example.issue.patch") return "issue_updated";
-    if (event.type === "com.example.issue.delete") return "issue_deleted";
+    if (event.type === "issue.created") return "issue_created";
+    if (event.type === "issue.updated") return "issue_updated";
+    if (event.type === "issue.deleted") return "issue_deleted";
 
     // Check for timeline-specific event types from EVENT_DESIGN.md
-    if (
-      event.type.includes("timeline/item/created") ||
-      event.type.includes("timeline/item/updated")
-    ) {
+    if (event.type === "item.created" || event.type === "item.updated") {
       if (event.data && typeof event.data === "object" && event.data !== null) {
         const data = event.data as Record<string, unknown>;
         return (data.item_type as TimelineItemType) || "system_event";
@@ -126,7 +123,7 @@ const IssueTimeline: React.FC = () => {
         id: crypto.randomUUID(),
         source: "frontend-demo-event",
         subject: zaakId,
-        type: "com.example.issue.delete",
+        type: "issue.deleted",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
         data: {

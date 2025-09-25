@@ -61,7 +61,7 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
         id: crypto.randomUUID(),
         source: "frontend-create",
         subject: issueId,
-        type: "com.example.issue.create",
+        type: "issue.created",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
         data: issueData,

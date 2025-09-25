@@ -25,9 +25,6 @@ const PlanningPlugin: React.FC<EventPluginProps> = ({ data }) => {
   const { title, description, moments = [] } = planningData.item_data;
 
   // Find current status
-  const currentMoment = moments.find((m) => m.status === "current");
-  const completedCount = moments.filter((m) => m.status === "completed").length;
-  const totalCount = moments.length;
 
   const getStatusColor = (status: "completed" | "current" | "planned") => {
     switch (status) {

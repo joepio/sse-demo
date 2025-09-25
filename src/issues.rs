@@ -519,7 +519,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "id": Uuid::now_v7().to_string(),
             "source": "server-demo-event",
             "subject": issue_id,
-            "type": "https://api.example.com/events/timeline/item/created/v1",
+            "type": "item.created",
             "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
             "datacontenttype": "application/json",
             "data": {
@@ -542,7 +542,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "id": Uuid::now_v7().to_string(),
             "source": "server-demo-event",
             "subject": issue_id,
-            "type": "https://api.example.com/events/timeline/item/created/v1",
+            "type": "item.created",
             "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
             "datacontenttype": "application/json",
             "data": {
@@ -565,7 +565,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             "id": Uuid::now_v7().to_string(),
             "source": "server-demo-event",
             "subject": issue_id,
-            "type": "https://api.example.com/events/timeline/item/created/v1",
+            "type": "item.created",
             "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
             "datacontenttype": "application/json",
             "data": {
@@ -586,7 +586,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": "1",
-        "type": "https://api.example.com/events/timeline/item/updated/v1",
+        "type": "item.updated",
         "time": (base_time + Duration::minutes(90)).to_rfc3339(),
         "datacontenttype": "application/merge-patch+json",
         "data": {
@@ -714,10 +714,7 @@ mod tests {
         let event_type = event["type"].as_str().unwrap();
         assert!(matches!(
             event_type,
-            "com.example.issue.create"
-                | "com.example.issue.patch"
-                | "com.example.issue.delete"
-                | "https://api.example.com/events/timeline/item/created/v1"
+            "issue.created" | "issue.updated" | "issue.deleted" | "item.created"
         ));
     }
 
@@ -792,7 +789,7 @@ fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "com.example.issue.patch",
+        "type": "issue.updated",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/merge-patch+json",
         "data": patch_data
@@ -852,7 +849,7 @@ fn generate_create_event_with_data(
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "com.example.issue.create",
+        "type": "issue.created",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
         "data": issue_data
@@ -871,7 +868,7 @@ fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "com.example.issue.delete",
+        "type": "issue.deleted",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
         "data": {
@@ -979,7 +976,7 @@ fn generate_comment_event_with_data(issue_id: &str, content: &str, actor: &str) 
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "https://api.example.com/events/timeline/item/created/v1",
+        "type": "item.created",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
         "data": {
@@ -1076,7 +1073,7 @@ fn generate_task_event_with_data(
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "https://api.example.com/events/timeline/item/created/v1",
+        "type": "item.created",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
         "data": {
@@ -1181,7 +1178,7 @@ fn generate_planning_event_with_data(
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "https://api.example.com/events/timeline/item/created/v1",
+        "type": "item.created",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
         "data": {

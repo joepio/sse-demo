@@ -177,7 +177,7 @@ async fn create_app() -> Router {
                 id: uuid::Uuid::now_v7().to_string(),
                 source: "server".to_string(),
                 subject: None,
-                event_type: "com.example.system.reset".to_string(),
+                event_type: "system.reset".to_string(),
                 time: Some(chrono::Utc::now().to_rfc3339()),
                 datacontenttype: Some("application/json".to_string()),
                 data: Some(serde_json::json!({
@@ -240,13 +240,13 @@ async fn process_cloud_event(
         event_json.get("data"),
     ) {
         match event_type {
-            "com.example.issue.create" => {
+            "issue.created" => {
                 if let Some(id) = data.get("id").and_then(|i| i.as_str()) {
                     let mut issues = issues_lock.write().await;
                     issues.insert(id.to_string(), data.clone());
                 }
             }
-            "com.example.issue.patch" => {
+            "issue.updated" => {
                 if let Some(issue_id) = event_json.get("subject").and_then(|s| s.as_str()) {
                     let mut issues = issues_lock.write().await;
                     if let Some(existing_issue) = issues.get_mut(issue_id) {
@@ -259,13 +259,13 @@ async fn process_cloud_event(
                     }
                 }
             }
-            "com.example.issue.delete" => {
+            "issue.deleted" => {
                 if let Some(id) = data.get("id").and_then(|i| i.as_str()) {
                     let mut issues = issues_lock.write().await;
                     issues.remove(id);
                 }
             }
-            "https://api.example.com/events/timeline/item/updated/v1" => {
+            "item.updated" => {
                 if let (Some(item_id), Some(patch)) = (
                     data.get("item_id").and_then(|i| i.as_str()),
                     data.get("patch"),
@@ -364,7 +364,7 @@ pub fn create_example_cloudevent() -> CloudEvent {
         specversion: "1.0".to_string(),
         id: uuid::Uuid::now_v7().to_string(),
         source: "server".to_string(),
-        event_type: "com.example.issue.patch".to_string(),
+        event_type: "issue.updated".to_string(),
         time: Some(chrono::Utc::now().to_rfc3339()),
         datacontenttype: Some("application/merge-patch+json".to_string()),
         data: Some(serde_json::json!({"status": "closed"})),
@@ -384,10 +384,7 @@ mod tests {
         assert!(event.source.contains("demo") || event.source == "server");
         assert!(matches!(
             event.event_type.as_str(),
-            "com.example.issue.create"
-                | "com.example.issue.patch"
-                | "com.example.issue.delete"
-                | "https://api.example.com/events/timeline/item/created/v1"
+            "issue.created" | "issue.updated" | "issue.deleted" | "item.created"
         ));
         assert!(event.datacontenttype.is_some());
         assert!(event.data.is_some());
@@ -413,7 +410,7 @@ mod tests {
         let (events, _) = issues::generate_initial_data();
         let create_events: Vec<_> = events
             .iter()
-            .filter(|e| e["type"] == "com.example.issue.create")
+            .filter(|e| e["type"] == "issue.created")
             .collect();
 
         assert!(!create_events.is_empty());
@@ -421,7 +418,7 @@ mod tests {
         let event = &create_events[0];
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
-        assert_eq!(event["type"], "com.example.issue.create");
+        assert_eq!(event["type"], "issue.created");
         assert_eq!(event["datacontenttype"], "application/json");
         assert!(event["data"]["title"].is_string());
         assert!(event["data"]["id"].is_string());
@@ -433,7 +430,7 @@ mod tests {
         let (events, _) = issues::generate_initial_data();
         let patch_events: Vec<_> = events
             .iter()
-            .filter(|e| e["type"] == "com.example.issue.patch")
+            .filter(|e| e["type"] == "issue.updated")
             .collect();
 
         assert!(!patch_events.is_empty());
@@ -441,7 +438,7 @@ mod tests {
         let event = &patch_events[0];
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
-        assert_eq!(event["type"], "com.example.issue.patch");
+        assert_eq!(event["type"], "issue.updated");
         assert_eq!(event["datacontenttype"], "application/merge-patch+json");
         assert!(event["data"].is_object());
     }
@@ -454,7 +451,7 @@ mod tests {
             id: uuid::Uuid::now_v7().to_string(),
             source: "server".to_string(),
             subject: None,
-            event_type: "com.example.system.reset".to_string(),
+            event_type: "system.reset".to_string(),
             time: Some(chrono::Utc::now().to_rfc3339()),
             datacontenttype: Some("application/json".to_string()),
             data: Some(serde_json::json!({
@@ -465,7 +462,7 @@ mod tests {
 
         assert_eq!(reset_event.specversion, "1.0");
         assert_eq!(reset_event.source, "server");
-        assert_eq!(reset_event.event_type, "com.example.system.reset");
+        assert_eq!(reset_event.event_type, "system.reset");
         assert_eq!(
             reset_event.datacontenttype,
             Some("application/json".to_string())
@@ -480,7 +477,7 @@ mod tests {
 
         // Verify serialization
         let json = serde_json::to_string(&reset_event).unwrap();
-        assert!(json.contains("com.example.system.reset"));
+        assert!(json.contains("system.reset"));
         assert!(json.contains("App state has been reset"));
     }
 }

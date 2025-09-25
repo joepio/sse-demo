@@ -84,7 +84,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         const eventTime = cloudEvent.time || new Date().toISOString();
 
         switch (cloudEvent.type) {
-          case "com.example.issue.create":
+          case "issue.created":
             if (
               cloudEvent.data &&
               typeof cloudEvent.data === "object" &&
@@ -100,7 +100,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
             }
             break;
 
-          case "com.example.issue.patch":
+          case "issue.updated":
             if (cloudEvent.subject && cloudEvent.data) {
               const issueId = cloudEvent.subject;
               if (newIssues[issueId]) {
@@ -127,13 +127,13 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
             }
             break;
 
-          case "com.example.issue.delete":
+          case "issue.deleted":
             if (cloudEvent.subject) {
               delete newIssues[cloudEvent.subject];
             }
             break;
 
-          case "com.example.system.reset":
+          case "system.reset":
             // System reset event - reload the page to get fresh state
             console.log("🔄 System reset event received - refreshing page");
             window.location.reload();
@@ -195,7 +195,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           id: `update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           source: "frontend-user-action",
           subject: issueId,
-          type: "https://api.example.com/events/timeline/item/updated/v1",
+          type: "item.updated",
           time: new Date().toISOString(),
           datacontenttype: "application/merge-patch+json",
           data: {
@@ -270,7 +270,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
             const eventTime = event.time || new Date().toISOString();
 
             switch (event.type) {
-              case "com.example.issue.create":
+              case "issue.created":
                 if (
                   event.data &&
                   typeof event.data === "object" &&
@@ -286,7 +286,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                 }
                 break;
 
-              case "com.example.issue.patch":
+              case "issue.updated":
                 if (event.subject && event.data) {
                   const issueId = event.subject;
                   if (initialIssues[issueId]) {
@@ -312,7 +312,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                 }
                 break;
 
-              case "com.example.issue.delete":
+              case "issue.deleted":
                 if (event.subject) {
                   delete initialIssues[event.subject];
                 }
@@ -332,7 +332,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           const cloudEvent = JSON.parse(e.data) as CloudEvent;
 
           // Check for system reset event before processing
-          if (cloudEvent.type === "com.example.system.reset") {
+          if (cloudEvent.type === "system.reset") {
             console.log("🔄 System reset event received - refreshing page");
             window.location.reload();
             return;

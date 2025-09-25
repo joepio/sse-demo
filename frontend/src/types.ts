@@ -81,19 +81,12 @@ export interface IssueDeleteData {
 }
 
 export type EventType =
-  | "com.example.issue.create"
-  | "com.example.issue.patch"
-  | "com.example.issue.delete"
-  | "com.example.message.create"
-  | "com.example.message.patch"
-  | "com.example.message.delete"
-  | "com.example.document.create"
-  | "com.example.document.patch"
-  | "com.example.document.delete"
-  | "com.example.planning.create"
-  | "com.example.planning.patch"
-  | "com.example.planning.delete"
-  | "com.example.system.reset";
+  | "issue.created"
+  | "issue.updated"
+  | "issue.deleted"
+  | "item.created"
+  | "item.updated"
+  | "system.reset";
 
 // Generic entity interface that all entities should extend
 export interface BaseEntity extends Record<string, unknown> {

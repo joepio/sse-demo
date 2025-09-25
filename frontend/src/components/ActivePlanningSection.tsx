@@ -38,7 +38,7 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
       id: `active-planning-${latestPlanning.id}`,
       source: "frontend-active-planning",
       subject: zaakId,
-      type: "https://api.example.com/events/timeline/item/created/v1",
+      type: "item.created",
       time: latestPlanning.timestamp,
       datacontenttype: "application/json",
       data: {
@@ -71,11 +71,16 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
           event={mockEvent}
           data={mockEvent.data}
           timeInfo={{
-            date: new Date(latestPlanning.timestamp).toLocaleDateString("nl-NL"),
-            time: new Date(latestPlanning.timestamp).toLocaleTimeString("nl-NL", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            date: new Date(latestPlanning.timestamp).toLocaleDateString(
+              "nl-NL",
+            ),
+            time: new Date(latestPlanning.timestamp).toLocaleTimeString(
+              "nl-NL",
+              {
+                hour: "2-digit",
+                minute: "2-digit",
+              },
+            ),
             relative: "planning",
           }}
         />

@@ -40,7 +40,7 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
       id: `active-task-${latestTask.id}`,
       source: "frontend-active-task",
       subject: zaakId,
-      type: "https://api.example.com/events/timeline/item/created/v1",
+      type: "item.created",
       time: latestTask.timestamp,
       datacontenttype: "application/json",
       data: {

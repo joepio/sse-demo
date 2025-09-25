@@ -13,10 +13,7 @@ export const getPlanningForIssue = (
   const relevantEvents = events.filter(
     (event) =>
       event.subject === issueId &&
-      (event.type ===
-        "https://api.example.com/events/timeline/item/created/v1" ||
-        event.type ===
-          "https://api.example.com/events/timeline/item/updated/v1") &&
+      (event.type === "item.created" || event.type === "item.updated") &&
       event.data &&
       typeof event.data === "object" &&
       event.data !== null &&
@@ -27,7 +24,7 @@ export const getPlanningForIssue = (
     const data = event.data as Record<string, unknown>;
     const planningId = String(data.item_id);
 
-    if (event.type.includes("created")) {
+    if (event.type === "item.created") {
       // Create new planning
       const itemData = (data.item_data || {}) as Record<string, unknown>;
       planningMap.set(planningId, {
@@ -39,7 +36,7 @@ export const getPlanningForIssue = (
         timestamp:
           String(data.timestamp) || event.time || new Date().toISOString(),
       } as Planning);
-    } else if (event.type.includes("updated")) {
+    } else if (event.type === "item.updated") {
       // Update existing planning
       const existingPlanning = planningMap.get(planningId);
       if (existingPlanning) {

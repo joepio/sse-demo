@@ -26,7 +26,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
         id: crypto.randomUUID(),
         source: `frontend-demo-event`,
         subject: zaakId,
-        type: "https://api.example.com/events/timeline/item/created/v1",
+        type: "item.created",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
         data: {
