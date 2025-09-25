@@ -1,13 +1,16 @@
 {
-  "name": "frontend",
+  "name": "sse-demo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "cd frontend && vite",
+    "build": "cd frontend && tsc -b && vite build",
+    "lint": "cd frontend && eslint .",
+    "preview": "cd frontend && vite preview",
+    "spec-studio": "docker run --rm -it --user=root --network=host --init -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli start studio /app/asyncapi.yml",
+    "spec-html": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" -v \"$(pwd)/asyncapi-docs:/app/output\" asyncapi/cli generate fromTemplate /app/asyncapi.yml @asyncapi/html-template --output /app/output --force-write",
+    "spec-validate": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli validate /app/asyncapi.yml"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
