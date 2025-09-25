@@ -84,52 +84,62 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         const eventTime = cloudEvent.time || new Date().toISOString();
 
         switch (cloudEvent.type) {
-          case "issue.created":
+          case "item.created":
             if (
               cloudEvent.data &&
               typeof cloudEvent.data === "object" &&
               cloudEvent.data !== null
             ) {
               const data = cloudEvent.data as Record<string, unknown>;
-              if (data.id && typeof data.id === "string") {
-                newIssues[data.id] = {
-                  ...(data as Issue),
-                  lastActivity: eventTime,
-                };
+              if (data.item_type === "issue" && data.item_data) {
+                const issueData = data.item_data as Record<string, unknown>;
+                if (issueData.id && typeof issueData.id === "string") {
+                  newIssues[issueData.id] = {
+                    ...(issueData as Issue),
+                    lastActivity: eventTime,
+                  };
+                }
               }
             }
             break;
 
-          case "issue.updated":
+          case "item.updated":
             if (cloudEvent.subject && cloudEvent.data) {
+              const data = cloudEvent.data as Record<string, unknown>;
               const issueId = cloudEvent.subject;
-              if (newIssues[issueId]) {
-                const patchedIssue = applyMergePatch(
-                  newIssues[issueId],
-                  cloudEvent.data,
-                ) as IssueWithActivity;
-                newIssues[issueId] = {
-                  ...patchedIssue,
-                  lastActivity: eventTime,
-                };
-              } else {
-                // Create new issue if it doesn't exist
-                const newIssue = { id: issueId };
-                const patchedNewIssue = applyMergePatch(
-                  newIssue,
-                  cloudEvent.data,
-                ) as IssueWithActivity;
-                newIssues[issueId] = {
-                  ...patchedNewIssue,
-                  lastActivity: eventTime,
-                };
+
+              if (data.item_type === "issue" && data.item_data) {
+                if (newIssues[issueId]) {
+                  const patchedIssue = applyMergePatch(
+                    newIssues[issueId],
+                    data.item_data,
+                  ) as IssueWithActivity;
+                  newIssues[issueId] = {
+                    ...patchedIssue,
+                    lastActivity: eventTime,
+                  };
+                } else {
+                  // Create new issue if it doesn't exist
+                  const newIssue = { id: issueId };
+                  const patchedNewIssue = applyMergePatch(
+                    newIssue,
+                    data.item_data,
+                  ) as IssueWithActivity;
+                  newIssues[issueId] = {
+                    ...patchedNewIssue,
+                    lastActivity: eventTime,
+                  };
+                }
               }
             }
             break;
 
-          case "issue.deleted":
-            if (cloudEvent.subject) {
-              delete newIssues[cloudEvent.subject];
+          case "item.deleted":
+            if (cloudEvent.subject && cloudEvent.data) {
+              const data = cloudEvent.data as Record<string, unknown>;
+              if (data.item_type === "issue") {
+                delete newIssues[cloudEvent.subject];
+              }
             }
             break;
 
@@ -270,51 +280,62 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
             const eventTime = event.time || new Date().toISOString();
 
             switch (event.type) {
-              case "issue.created":
+              case "item.created":
                 if (
                   event.data &&
                   typeof event.data === "object" &&
                   event.data !== null
                 ) {
                   const data = event.data as Record<string, unknown>;
-                  if (data.id && typeof data.id === "string") {
-                    initialIssues[data.id] = {
-                      ...(data as Issue),
-                      lastActivity: issueActivityMap[data.id] || eventTime,
-                    };
+                  if (data.item_type === "issue" && data.item_data) {
+                    const issueData = data.item_data as Record<string, unknown>;
+                    if (issueData.id && typeof issueData.id === "string") {
+                      initialIssues[issueData.id] = {
+                        ...(issueData as Issue),
+                        lastActivity: eventTime,
+                      };
+                    }
                   }
                 }
                 break;
 
-              case "issue.updated":
+              case "item.updated":
                 if (event.subject && event.data) {
+                  const data = event.data as Record<string, unknown>;
                   const issueId = event.subject;
-                  if (initialIssues[issueId]) {
-                    const patchedExisting = applyMergePatch(
-                      initialIssues[issueId],
-                      event.data,
-                    ) as IssueWithActivity;
-                    initialIssues[issueId] = {
-                      ...patchedExisting,
-                      lastActivity: issueActivityMap[issueId] || eventTime,
-                    };
-                  } else {
-                    const newIssue = { id: issueId };
-                    const patchedNew = applyMergePatch(
-                      newIssue,
-                      event.data,
-                    ) as IssueWithActivity;
-                    initialIssues[issueId] = {
-                      ...patchedNew,
-                      lastActivity: issueActivityMap[issueId] || eventTime,
-                    };
+
+                  if (data.item_type === "issue" && data.item_data) {
+                    if (initialIssues[issueId]) {
+                      const patchedIssue = applyMergePatch(
+                        initialIssues[issueId],
+                        data.item_data,
+                      ) as IssueWithActivity;
+                      initialIssues[issueId] = {
+                        ...patchedIssue,
+                        lastActivity: eventTime,
+                      };
+                    } else {
+                      // Create new issue if it doesn't exist
+                      const newIssue = { id: issueId };
+                      const patchedNewIssue = applyMergePatch(
+                        newIssue,
+                        data.item_data,
+                      ) as IssueWithActivity;
+                      initialIssues[issueId] = {
+                        ...patchedNewIssue,
+                        lastActivity: eventTime,
+                      };
+                    }
                   }
                 }
                 break;
 
-              case "issue.deleted":
-                if (event.subject) {
-                  delete initialIssues[event.subject];
+              case "item.deleted":
+                if (event.subject && event.data) {
+                  const data = event.data as Record<string, unknown>;
+                  if (data.item_type === "issue") {
+                    delete initialIssues[event.subject];
+                  }
                 }
                 break;
             }

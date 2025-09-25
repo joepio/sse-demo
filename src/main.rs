@@ -11,7 +11,7 @@ use shuttle_axum::axum::{
     routing::{get, post},
     Json, Router,
 };
-use std::{convert::Infallible, path::Path, sync::Arc, time::Duration};
+use std::{collections::HashMap, convert::Infallible, path::Path, sync::Arc, time::Duration};
 use tokio::{
     sync::{broadcast, RwLock},
     time::sleep,
@@ -129,7 +129,12 @@ async fn create_app() -> Router {
                 // Convert JSON to our CloudEvent struct
                 if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
                     // Process the event using the same handle_event logic
-                    process_cloud_event(&demo.issues, &demo.events, &demo_event_json).await;
+                    process_cloud_event(
+                        Arc::clone(&demo.issues),
+                        Arc::clone(&demo.events),
+                        &demo_event_json,
+                    )
+                    .await;
 
                     // Add to events list
                     {
@@ -231,58 +236,92 @@ async fn sse_handler(
 
 /// Process a CloudEvent JSON and update the zaken state
 async fn process_cloud_event(
-    issues_lock: &Arc<RwLock<std::collections::HashMap<String, Value>>>,
-    events_lock: &Arc<RwLock<Vec<Value>>>,
+    issues_lock: Arc<RwLock<HashMap<String, Value>>>,
+    events_lock: Arc<RwLock<Vec<Value>>>,
     event_json: &Value,
 ) {
     if let (Some(event_type), Some(data)) = (
         event_json.get("type").and_then(|t| t.as_str()),
         event_json.get("data"),
     ) {
+        // Validate event type
         match event_type {
-            "issue.created" => {
-                if let Some(id) = data.get("id").and_then(|i| i.as_str()) {
-                    let mut issues = issues_lock.write().await;
-                    issues.insert(id.to_string(), data.clone());
-                }
+            "item.created" | "item.updated" | "item.deleted" | "system.reset" => {
+                // Valid event type, continue processing
             }
-            "issue.updated" => {
-                if let Some(issue_id) = event_json.get("subject").and_then(|s| s.as_str()) {
-                    let mut issues = issues_lock.write().await;
-                    if let Some(existing_issue) = issues.get_mut(issue_id) {
-                        issues::apply_merge_patch(existing_issue, data);
-                    } else {
-                        // Create new zaak if it doesn't exist
-                        let mut new_issue = serde_json::json!({"id": issue_id});
-                        issues::apply_merge_patch(&mut new_issue, data);
-                        issues.insert(issue_id.to_string(), new_issue);
+            _ => {
+                eprintln!("❌ Invalid event type received: {}", event_type);
+                return;
+            }
+        }
+        match event_type {
+            "item.created" => {
+                if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
+                    if item_type == "issue" {
+                        if let Some(item_data) = data.get("item_data") {
+                            if let Some(id) = item_data.get("id").and_then(|i| i.as_str()) {
+                                let mut issues = issues_lock.write().await;
+                                issues.insert(id.to_string(), item_data.clone());
+                            }
+                        }
                     }
                 }
             }
-            "issue.deleted" => {
-                if let Some(id) = data.get("id").and_then(|i| i.as_str()) {
-                    let mut issues = issues_lock.write().await;
-                    issues.remove(id);
+            "item.updated" => {
+                if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
+                    match item_type {
+                        "issue" => {
+                            if let Some(issue_id) =
+                                event_json.get("subject").and_then(|s| s.as_str())
+                            {
+                                if let Some(item_data) = data.get("item_data") {
+                                    let mut issues = issues_lock.write().await;
+                                    if let Some(existing_issue) = issues.get_mut(issue_id) {
+                                        // Apply merge patch to existing issue
+                                        crate::issues::apply_merge_patch(existing_issue, item_data);
+                                    } else {
+                                        // If issue doesn't exist, create it with the patch data
+                                        issues.insert(issue_id.to_string(), item_data.clone());
+                                    }
+                                }
+                            }
+                        }
+                        _ => {
+                            // Handle timeline item updates (tasks, comments, etc.)
+                            if let (Some(item_id), Some(patch)) = (
+                                data.get("item_id").and_then(|i| i.as_str()),
+                                data.get("patch"),
+                            ) {
+                                let mut events = events_lock.write().await;
+
+                                // Find and update the timeline item
+                                for event in events.iter_mut() {
+                                    if let Some(event_data) = event.get("data") {
+                                        if event_data.get("item_id").and_then(|id| id.as_str())
+                                            == Some(item_id)
+                                        {
+                                            if let Some(item_data) = event
+                                                .get_mut("data")
+                                                .and_then(|d| d.get_mut("item_data"))
+                                            {
+                                                issues::apply_merge_patch(item_data, patch);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            "item.updated" => {
-                if let (Some(item_id), Some(patch)) = (
-                    data.get("item_id").and_then(|i| i.as_str()),
-                    data.get("patch"),
-                ) {
-                    let mut events = events_lock.write().await;
-
-                    // Find and update the timeline item
-                    for event in events.iter_mut() {
-                        if let Some(event_data) = event.get("data") {
-                            if event_data.get("item_id").and_then(|id| id.as_str()) == Some(item_id)
-                            {
-                                if let Some(item_data) =
-                                    event.get_mut("data").and_then(|d| d.get_mut("item_data"))
-                                {
-                                    issues::apply_merge_patch(item_data, patch);
-                                    break;
-                                }
+            "item.deleted" => {
+                if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
+                    if item_type == "issue" {
+                        if let Some(item_data) = data.get("item_data") {
+                            if let Some(id) = item_data.get("id").and_then(|i| i.as_str()) {
+                                let mut issues = issues_lock.write().await;
+                                issues.remove(id);
                             }
                         }
                     }
@@ -313,7 +352,12 @@ async fn handle_event(
     }
 
     // Process the event
-    process_cloud_event(&state.issues, &state.events, &event_json).await;
+    process_cloud_event(
+        Arc::clone(&state.issues),
+        Arc::clone(&state.events),
+        &event_json,
+    )
+    .await;
 
     // Convert incoming event to our CloudEvent format
     let cloud_event = CloudEvent {
@@ -364,10 +408,14 @@ pub fn create_example_cloudevent() -> CloudEvent {
         specversion: "1.0".to_string(),
         id: uuid::Uuid::now_v7().to_string(),
         source: "server".to_string(),
-        event_type: "issue.updated".to_string(),
+        event_type: "item.updated".to_string(),
         time: Some(chrono::Utc::now().to_rfc3339()),
         datacontenttype: Some("application/merge-patch+json".to_string()),
-        data: Some(serde_json::json!({"status": "closed"})),
+        data: Some(serde_json::json!({
+            "item_type": "issue",
+            "item_id": "123",
+            "item_data": {"status": "closed"}
+        })),
     }
 }
 
@@ -384,7 +432,7 @@ mod tests {
         assert!(event.source.contains("demo") || event.source == "server");
         assert!(matches!(
             event.event_type.as_str(),
-            "issue.created" | "issue.updated" | "issue.deleted" | "item.created"
+            "item.created" | "item.updated" | "item.deleted" | "system.reset"
         ));
         assert!(event.datacontenttype.is_some());
         assert!(event.data.is_some());
@@ -410,7 +458,7 @@ mod tests {
         let (events, _) = issues::generate_initial_data();
         let create_events: Vec<_> = events
             .iter()
-            .filter(|e| e["type"] == "issue.created")
+            .filter(|e| e["type"] == "item.created" && e["data"]["item_type"] == "issue")
             .collect();
 
         assert!(!create_events.is_empty());
@@ -418,10 +466,10 @@ mod tests {
         let event = &create_events[0];
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
-        assert_eq!(event["type"], "issue.created");
+        assert_eq!(event["type"], "item.created");
         assert_eq!(event["datacontenttype"], "application/json");
-        assert!(event["data"]["title"].is_string());
-        assert!(event["data"]["id"].is_string());
+        assert!(event["data"]["item_data"]["title"].is_string());
+        assert!(event["data"]["item_data"]["id"].is_string());
     }
 
     #[test]
@@ -430,7 +478,7 @@ mod tests {
         let (events, _) = issues::generate_initial_data();
         let patch_events: Vec<_> = events
             .iter()
-            .filter(|e| e["type"] == "issue.updated")
+            .filter(|e| e["type"] == "item.updated" && e["data"]["item_type"] == "issue")
             .collect();
 
         assert!(!patch_events.is_empty());
@@ -438,9 +486,9 @@ mod tests {
         let event = &patch_events[0];
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
-        assert_eq!(event["type"], "issue.updated");
+        assert_eq!(event["type"], "item.updated");
         assert_eq!(event["datacontenttype"], "application/merge-patch+json");
-        assert!(event["data"].is_object());
+        assert!(event["data"]["item_data"].is_object());
     }
 
     #[test]

@@ -81,11 +81,9 @@ export interface IssueDeleteData {
 }
 
 export type EventType =
-  | "issue.created"
-  | "issue.updated"
-  | "issue.deleted"
   | "item.created"
   | "item.updated"
+  | "item.deleted"
   | "system.reset";
 
 // Generic entity interface that all entities should extend

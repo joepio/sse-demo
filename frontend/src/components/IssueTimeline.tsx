@@ -74,15 +74,24 @@ const IssueTimeline: React.FC = () => {
 
   // Determine timeline item type from CloudEvent
   const getTimelineItemType = (event: CloudEvent): TimelineItemType => {
-    if (event.type === "issue.created") return "issue_created";
-    if (event.type === "issue.updated") return "issue_updated";
-    if (event.type === "issue.deleted") return "issue_deleted";
-
-    // Check for timeline-specific event types from EVENT_DESIGN.md
-    if (event.type === "item.created" || event.type === "item.updated") {
+    // Check for item events
+    if (
+      event.type === "item.created" ||
+      event.type === "item.updated" ||
+      event.type === "item.deleted"
+    ) {
       if (event.data && typeof event.data === "object" && event.data !== null) {
         const data = event.data as Record<string, unknown>;
-        return (data.item_type as TimelineItemType) || "system_event";
+        const itemType = data.item_type as string;
+
+        // Map item types to timeline types
+        if (itemType === "issue") {
+          if (event.type === "item.created") return "issue_created";
+          if (event.type === "item.updated") return "issue_updated";
+          if (event.type === "item.deleted") return "issue_deleted";
+        }
+
+        return (itemType as TimelineItemType) || "system_event";
       }
     }
 
@@ -123,12 +132,16 @@ const IssueTimeline: React.FC = () => {
         id: crypto.randomUUID(),
         source: "frontend-demo-event",
         subject: zaakId,
-        type: "issue.deleted",
+        type: "item.deleted",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
         data: {
-          id: zaakId,
-          reason: "Verwijderd vanuit tijdlijn weergave",
+          item_type: "issue",
+          item_id: zaakId,
+          item_data: {
+            id: zaakId,
+            reason: "Verwijderd vanuit tijdlijn weergave",
+          },
         },
       };
 

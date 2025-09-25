@@ -74,8 +74,10 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         create_event["time"] = json!(create_time.to_rfc3339());
 
         // Extract issue data and add to issues state
-        if let Some(issue_data) = create_event.get("data").cloned() {
-            issues.insert(issue_id, issue_data);
+        if let Some(data) = create_event.get("data") {
+            if let Some(item_data) = data.get("item_data").cloned() {
+                issues.insert(issue_id, item_data);
+            }
         }
 
         events.push(create_event);
@@ -104,12 +106,16 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         let patch_time = base_time + Duration::minutes(30 + (i as i64 * 3));
         patch_event["time"] = json!(patch_time.to_rfc3339());
 
-        events.push(patch_event);
-
         // Apply patch to issues state
         if let Some(existing_issue) = issues.get_mut(&issue_id.to_string()) {
-            apply_merge_patch(existing_issue, patch_data);
+            if let Some(data) = patch_event.get("data") {
+                if let Some(item_data) = data.get("item_data") {
+                    apply_merge_patch(existing_issue, item_data);
+                }
+            }
         }
+
+        events.push(patch_event);
     }
 
     // Add delete events using existing logic
@@ -714,7 +720,7 @@ mod tests {
         let event_type = event["type"].as_str().unwrap();
         assert!(matches!(
             event_type,
-            "issue.created" | "issue.updated" | "issue.deleted" | "item.created"
+            "item.created" | "item.updated" | "item.deleted"
         ));
     }
 
@@ -789,41 +795,15 @@ fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "issue.updated",
+        "type": "item.updated",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/merge-patch+json",
-        "data": patch_data
+        "data": {
+            "item_type": "issue",
+            "item_id": issue_id,
+            "item_data": patch_data
+        }
     })
-}
-
-fn generate_random_create_event() -> Value {
-    let titles = [
-        "Vergunning dakkapel",
-        "Melding geluidsoverlast",
-        "Bezwaarschrift bijstandsverzoek",
-        "WOO Informatieverzoek bomen",
-        "Parkeervergunning",
-        "Verhuizing doorgeven",
-    ];
-
-    let priorities = ["low", "medium", "high"];
-    let assignees = [
-        None,
-        Some("alice@gemeente.nl"),
-        Some("bob@gemeente.nl"),
-        Some("demo@gemeente.nl"),
-    ];
-
-    let issue_id = format!("live-{}", Uuid::now_v7().simple());
-    let title = titles[fastrand::usize(..titles.len())];
-    let assignee = assignees[fastrand::usize(..assignees.len())];
-
-    generate_create_event_with_data(
-        &issue_id,
-        title,
-        "Live gegenereerde zaak voor demo",
-        assignee,
-    )
 }
 
 fn generate_create_event_with_data(
@@ -849,17 +829,15 @@ fn generate_create_event_with_data(
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "issue.created",
+        "type": "item.created",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
-        "data": issue_data
+        "data": {
+            "item_type": "issue",
+            "item_id": issue_id,
+            "item_data": issue_data
+        }
     })
-}
-
-fn generate_random_delete_event(issue_id: &str) -> Value {
-    let reasons = ["duplicate", "invalid", "resolved elsewhere", "outdated"];
-    let reason = reasons[fastrand::usize(..reasons.len())];
-    generate_delete_event_with_data(issue_id, reason)
 }
 
 fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
@@ -868,12 +846,16 @@ fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
         "id": Uuid::now_v7().to_string(),
         "source": "server-demo-event",
         "subject": issue_id,
-        "type": "issue.deleted",
+        "type": "item.deleted",
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": "application/json",
         "data": {
-            "id": issue_id,
-            "reason": reason
+            "item_type": "issue",
+            "item_id": issue_id,
+            "item_data": {
+                "id": issue_id,
+                "reason": reason
+            }
         }
     })
 }

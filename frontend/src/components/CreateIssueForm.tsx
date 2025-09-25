@@ -61,10 +61,14 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
         id: crypto.randomUUID(),
         source: "frontend-create",
         subject: issueId,
-        type: "issue.created",
+        type: "item.created",
         time: new Date().toISOString(),
         datacontenttype: "application/json",
-        data: issueData,
+        data: {
+          item_type: "issue",
+          item_id: issueId,
+          item_data: issueData,
+        },
       };
 
       await onCreateIssue(cloudEvent);
