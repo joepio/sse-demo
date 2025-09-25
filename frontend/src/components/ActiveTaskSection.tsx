@@ -60,12 +60,12 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
   };
 
   return (
-    <div className="mb-8" style={{ position: "relative", zIndex: 1 }}>
-      <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-2 ml-0">
+    <div className="mb-6 md:mb-8" style={{ position: "relative", zIndex: 1 }}>
+      <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-3 ml-0">
         Mijn taak
       </div>
       <div
-        className="border rounded-xl p-8 md:p-6"
+        className="border rounded-xl p-6 md:p-8"
         style={{
           backgroundColor: "var(--bg-primary)",
           borderColor: "var(--border-primary)",

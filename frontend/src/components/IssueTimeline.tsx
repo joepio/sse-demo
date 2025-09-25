@@ -194,9 +194,9 @@ const IssueTimeline: React.FC = () => {
       </div>
 
       {/* Main content */}
-      <div className="max-w-5xl mx-auto p-8 md:p-4">
+      <div className="max-w-5xl mx-auto p-4 md:p-8">
         {/* Zaak header - show as standalone section like active task and planning */}
-        <div className="mb-8 md:mb-6 relative">
+        <div className="mb-6 md:mb-8 relative">
           {issue && (
             <IssueHeader
               issue={issue}
@@ -214,8 +214,8 @@ const IssueTimeline: React.FC = () => {
 
         {/* Timeline section */}
         {timelineEvents.length > 0 && (
-          <div className="mb-8">
-            <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-4 ml-0">
+          <div className="mb-6">
+            <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-3 ml-0">
               Tijdlijn
             </div>
             <TimelineEventsList
