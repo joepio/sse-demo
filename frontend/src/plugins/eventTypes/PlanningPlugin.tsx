@@ -69,22 +69,6 @@ const PlanningPlugin: React.FC<EventPluginProps> = ({ data }) => {
         {description && (
           <p className="text-sm text-text-secondary m-0 mb-3">{description}</p>
         )}
-
-        {/* Progress indicator */}
-        <div className="flex items-center gap-2 text-xs text-text-secondary mb-3">
-          <span>Voortgang:</span>
-          <span className="font-medium">
-            {completedCount} van {totalCount} afgerond
-          </span>
-          {currentMoment && (
-            <>
-              <span>•</span>
-              <span className="text-text-primary">
-                Huidig: {currentMoment.title}
-              </span>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Mini timeline */}

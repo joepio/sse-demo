@@ -74,7 +74,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
         <Card>
           <CardHeader>
             <h3 className="m-0 text-sm font-semibold text-text-primary">
-              Opmerking toevoegen
+              Bericht schrijven
             </h3>
           </CardHeader>
 
@@ -109,7 +109,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border bg-button-primary-bg text-text-inverse border-button-primary-bg hover:bg-button-primary-hover hover:border-button-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={!commentText.trim() || isSubmittingComment}
                 >
-                  {isSubmittingComment ? "Verzenden..." : "Opmerking toevoegen"}
+                  Verzenden
                 </button>
               </div>
             </CardHeader>

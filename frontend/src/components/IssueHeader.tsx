@@ -1,6 +1,5 @@
-import React from "react";
+import type React from "react";
 import type { Issue } from "../types";
-import ActionButton from "./ActionButton";
 
 interface IssueHeaderProps {
   issue: Issue;
@@ -30,63 +29,83 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
 }) => {
   return (
     <div
-      className="mb-8 p-6 rounded-xl border"
+      className="p-4 rounded-lg border"
       style={{
         backgroundColor: "var(--bg-primary)",
         borderColor: "var(--border-primary)",
       }}
     >
-      <div className="mb-6 md:mb-4">
-        <h1 className="text-3xl md:text-2xl font-semibold text-text-primary mb-3 leading-tight flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
-          {String(issue.title) || "Zaak zonder titel"}
-        </h1>
-
-        <div className="flex items-center gap-3 mb-4">
-          <span
-            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold text-text-inverse capitalize"
-            style={{ backgroundColor: getStatusColor(issue.status) }}
-          >
-            {issue.status === "in_progress"
-              ? "In Behandeling"
-              : issue.status === "open"
-                ? "Open"
-                : issue.status === "closed"
-                  ? "Gesloten"
-                  : issue.status}
-          </span>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <p className="text-base leading-relaxed text-text-primary m-0">
-          {String(issue.description) || "Geen beschrijving beschikbaar."}
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-6 md:gap-3 mb-6 md:flex-col">
-        <div className="text-sm text-text-tertiary">
-          <strong className="text-text-primary">Toegewezen aan:</strong>{" "}
-          {String(issue.assignee) || "Niet toegewezen"}
-        </div>
-        {issue.created_at && (
-          <div className="text-sm text-text-tertiary">
-            <strong className="text-text-primary">Aangemaakt:</strong>{" "}
-            {new Date(String(issue.created_at)).toLocaleDateString("nl-NL")}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-semibold text-text-primary mb-2 leading-tight">
+            {String(issue.title) || "Zaak zonder titel"}
+          </h2>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-text-inverse capitalize"
+              style={{ backgroundColor: getStatusColor(issue.status) }}
+            >
+              {issue.status === "in_progress"
+                ? "In Behandeling"
+                : issue.status === "open"
+                  ? "Open"
+                  : issue.status === "closed"
+                    ? "Gesloten"
+                    : issue.status}
+            </span>
           </div>
-        )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
+            style={{
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+            onClick={onEdit}
+            title="Bewerken"
+          >
+            ✏️
+          </button>
+          <button
+            type="button"
+            className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
+            style={{
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+              e.currentTarget.style.color = "var(--text-error)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+            onClick={onDelete}
+            disabled={isDeleting}
+            title={isDeleting ? "Verwijderen..." : "Verwijderen"}
+          >
+            🗑️
+          </button>
+        </div>
       </div>
 
-      <div className="flex gap-3">
-        <ActionButton variant="secondary" onClick={onEdit}>
-          Bewerken
-        </ActionButton>
-        <ActionButton
-          variant="secondary"
-          onClick={onDelete}
-          disabled={isDeleting}
-        >
-          {isDeleting ? "Verwijderen..." : "Verwijderen"}
-        </ActionButton>
+      <p className="text-sm leading-relaxed text-text-primary mb-3">
+        {String(issue.description) || "Geen beschrijving beschikbaar."}
+      </p>
+
+      <div className="text-xs text-text-tertiary">
+        <strong className="text-text-primary">Toegewezen aan:</strong>{" "}
+        {String(issue.assignee) || "Niet toegewezen"}
       </div>
     </div>
   );

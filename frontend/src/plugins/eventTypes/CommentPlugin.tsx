@@ -24,7 +24,7 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
             )}
             <button
               type="button"
-              className="text-sm hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
+              className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
               style={{ color: "var(--text-tertiary)" }}
               title={`${timeInfo.date} at ${timeInfo.time}`}
               onClick={() => setShowEventModal(true)}

@@ -62,7 +62,7 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
   return (
     <div className="mb-8" style={{ position: "relative", zIndex: 1 }}>
       <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-2 ml-0">
-        Actieve Taak
+        Mijn taak
       </div>
       <div
         className="border rounded-xl p-8 md:p-6"
