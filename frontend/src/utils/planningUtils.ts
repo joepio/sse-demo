@@ -1,4 +1,4 @@
-import type { CloudEvent, Planning, PlanningMoment } from "../types";
+import type { CloudEvent, PlanningMoment, ExtendedPlanning } from "../types";
 
 /**
  * Extract planning items from events for a specific issue
@@ -6,8 +6,8 @@ import type { CloudEvent, Planning, PlanningMoment } from "../types";
 export const getPlanningForIssue = (
   events: CloudEvent[],
   issueId: string,
-): Map<string, Planning> => {
-  const planningMap = new Map<string, Planning>();
+): Map<string, ExtendedPlanning> => {
+  const planningMap = new Map<string, ExtendedPlanning>();
 
   // Filter events for this issue and planning-related events
   const relevantEvents = events.filter(
@@ -33,9 +33,8 @@ export const getPlanningForIssue = (
         description: String(itemData.description) || "",
         moments: (itemData.moments as PlanningMoment[]) || [],
         actor: String(data.actor) || "system",
-        timestamp:
-          String(data.timestamp) || event.time || new Date().toISOString(),
-      } as Planning);
+        timestamp: event.time || new Date().toISOString(),
+      } as ExtendedPlanning);
     } else if (event.type === "item.updated") {
       // Update existing planning
       const existingPlanning = planningMap.get(planningId);
@@ -55,8 +54,7 @@ export const getPlanningForIssue = (
         }
 
         // Update timestamp
-        updatedPlanning.timestamp =
-          String(data.timestamp) || event.time || new Date().toISOString();
+        updatedPlanning.timestamp = event.time || new Date().toISOString();
 
         planningMap.set(planningId, updatedPlanning);
       }
@@ -72,7 +70,7 @@ export const getPlanningForIssue = (
 export const getLatestPlanningForIssue = (
   events: CloudEvent[],
   issueId: string,
-): Planning | null => {
+): ExtendedPlanning | null => {
   const planningItems = getPlanningForIssue(events, issueId);
   const planningArray = Array.from(planningItems.values());
 
@@ -93,7 +91,7 @@ export const getLatestPlanningForIssue = (
  * Get progress information for a planning
  */
 export const getPlanningProgress = (
-  planning: Planning,
+  planning: ExtendedPlanning,
 ): {
   completed: number;
   current: number;
@@ -127,7 +125,7 @@ export const getPlanningProgress = (
 /**
  * Check if a planning has any active (current or planned) moments
  */
-export const isPlanningActive = (planning: Planning): boolean => {
+export const isPlanningActive = (planning: ExtendedPlanning): boolean => {
   return planning.moments.some((moment) => moment.status !== "completed");
 };
 
@@ -163,7 +161,9 @@ export const getPlanningMomentStatusText = (
 /**
  * Calculate planning completion percentage
  */
-export const getPlanningCompletionPercentage = (planning: Planning): number => {
+export const getPlanningCompletionPercentage = (
+  planning: ExtendedPlanning,
+): number => {
   if (planning.moments.length === 0) return 0;
 
   const completedCount = planning.moments.filter(

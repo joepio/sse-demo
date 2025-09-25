@@ -1,4 +1,5 @@
 mod issues;
+mod schemas;
 
 use chrono;
 use futures_util::stream::{self, Stream};
@@ -6,12 +7,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use shuttle_axum::axum::{
-    extract::State,
+    extract::{Path, State},
+    http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
     routing::{get, post},
     Json, Router,
 };
-use std::{collections::HashMap, convert::Infallible, path::Path, sync::Arc, time::Duration};
+use std::{collections::HashMap, convert::Infallible, sync::Arc, time::Duration};
 use tokio::{
     sync::{broadcast, RwLock},
     time::sleep,
@@ -30,48 +32,34 @@ struct AppState {
     issues: Arc<RwLock<std::collections::HashMap<String, Value>>>,
     // Broadcast deltas to all subscribers
     tx: broadcast::Sender<CloudEvent>,
+    // Base URL for generating schema URLs
+    base_url: String,
+    // NL-GOV organization identifier (OIN)
+    org_identifier: String,
+    // System identifier for CloudEvents source
+    system_identifier: String,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         let (tx, _) = broadcast::channel(256);
 
-        // Generate initial zaken and events using the issues module
-        let (events, issues) = issues::generate_initial_data();
+        // Generate initial data
+        let (initial_events, initial_issues) = issues::generate_initial_data();
 
         Self {
-            events: Arc::new(RwLock::new(events)),
-            issues: Arc::new(RwLock::new(issues)),
+            events: Arc::new(RwLock::new(initial_events)),
+            issues: Arc::new(RwLock::new(initial_issues)),
             tx,
+            base_url: "http://localhost:8000".to_string(),
+            org_identifier: "00000001823288444000".to_string(), // Demo OIN
+            system_identifier: "sse-demo-systeem".to_string(),
         }
     }
 }
 
 /// CloudEvent following the CloudEvents specification v1.0
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CloudEvent {
-    /// The version of the CloudEvents specification
-    pub specversion: String,
-    /// Identifies the event
-    pub id: String,
-    /// Identifies the context in which an event happened
-    pub source: String,
-    /// Identifies the subject of the event in the context of the event producer
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub subject: Option<String>,
-    /// The type of event related to the originating occurrence
-    #[serde(rename = "type")]
-    pub event_type: String,
-    /// Timestamp of when the occurrence happened
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
-    /// Content type of the data value
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub datacontenttype: Option<String>,
-    /// The event payload
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub data: Option<Value>,
-}
+pub use schemas::CloudEvent;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct IncomingCloudEvent {
@@ -106,11 +94,16 @@ async fn main() {
 }
 
 async fn create_app() -> Router {
-    if !Path::new("dist").exists() {
+    if !std::path::Path::new("dist").exists() {
         panic!("Frontend dist folder is missing! Please build the frontend first with: cd frontend && pnpm run build");
     }
 
-    let state = AppState::default();
+    // Get base URL from environment or use default
+    let base_url =
+        std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:8000".to_string());
+
+    let mut state = AppState::default();
+    state.base_url = base_url;
 
     // Optional: emit demo events every 20s that randomly update existing zaken
     let demo = state.clone();
@@ -185,6 +178,10 @@ async fn create_app() -> Router {
                 event_type: "system.reset".to_string(),
                 time: Some(chrono::Utc::now().to_rfc3339()),
                 datacontenttype: Some("application/json".to_string()),
+                dataschema: None,
+                dataref: None,
+                sequence: None,
+                sequencetype: None,
                 data: Some(serde_json::json!({
                     "message": "App state has been reset",
                     "timestamp": chrono::Utc::now().to_rfc3339()
@@ -203,6 +200,8 @@ async fn create_app() -> Router {
     let app = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
+        .route("/schemas", get(get_schemas_index))
+        .route("/schemas/{name}", get(get_schema))
         .with_state(state)
         .layer(CorsLayer::permissive())
         .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
@@ -336,8 +335,11 @@ async fn handle_event(
     State(state): State<AppState>,
     Json(incoming_event): Json<IncomingCloudEvent>,
 ) -> Json<&'static str> {
-    // Convert to JSON for processing
-    let event_json = serde_json::to_value(&incoming_event).unwrap();
+    // Convert to JSON Value for processing
+    let mut event_json = serde_json::to_value(&incoming_event).unwrap();
+
+    // Add NL-GOV compliance fields if not present
+    add_dataschema_to_event(&mut event_json, &state.base_url);
 
     // Debug logging
     println!(
@@ -368,6 +370,10 @@ async fn handle_event(
         event_type: incoming_event.event_type,
         time: incoming_event.time,
         datacontenttype: incoming_event.datacontenttype,
+        dataschema: None,
+        dataref: None,
+        sequence: None,
+        sequencetype: None,
         data: incoming_event.data,
     };
 
@@ -380,6 +386,19 @@ async fn handle_event(
     // Broadcast the event
     let _ = state.tx.send(cloud_event);
     Json("ok")
+}
+
+/// Get all available schemas as an index
+async fn get_schemas_index() -> Json<Value> {
+    Json(schemas::get_schema_index())
+}
+
+/// Get a specific schema by name
+async fn get_schema(Path(name): Path<String>) -> Result<Json<Value>, StatusCode> {
+    match schemas::get_schema(&name) {
+        Some(schema) => Ok(Json(schema)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }
 
 /// Example function demonstrating CloudEvent creation
@@ -402,19 +421,27 @@ pub fn create_example_cloudevent() -> CloudEvent {
         }
     }
 
-    // Fallback CloudEvent (should rarely be reached)
+    // Fallback NL-GOV compliant CloudEvent
     CloudEvent {
-        subject: Some("123".to_string()),
+        subject: Some("zaak-123".to_string()),
         specversion: "1.0".to_string(),
         id: uuid::Uuid::now_v7().to_string(),
-        source: "server".to_string(),
-        event_type: "item.updated".to_string(),
+        source: "urn:nld:oin:00000001823288444000:systeem:sse-demo-systeem".to_string(),
+        event_type: "nl.gemeente.demo.zaken.zaak-status-gewijzigd".to_string(),
         time: Some(chrono::Utc::now().to_rfc3339()),
-        datacontenttype: Some("application/merge-patch+json".to_string()),
+        datacontenttype: Some("application/json".to_string()),
+        dataschema: Some("http://localhost:8000/schemas/ItemEventData".to_string()),
+        dataref: Some("http://localhost:8000/api/zaken/zaak-123".to_string()),
+        sequence: Some("1".to_string()),
+        sequencetype: Some("integer".to_string()),
         data: Some(serde_json::json!({
             "item_type": "issue",
-            "item_id": "123",
-            "item_data": {"status": "closed"}
+            "item_id": "zaak-123",
+            "item_data": {
+                "status": "in_behandeling",
+                "assignee": "alice@gemeente.nl"
+            },
+            "itemschema": "http://localhost:8000/schemas/Issue"
         })),
     }
 }
@@ -422,6 +449,7 @@ pub fn create_example_cloudevent() -> CloudEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_cloudevent_creation() {
@@ -502,6 +530,10 @@ mod tests {
             event_type: "system.reset".to_string(),
             time: Some(chrono::Utc::now().to_rfc3339()),
             datacontenttype: Some("application/json".to_string()),
+            dataschema: None,
+            dataref: None,
+            sequence: None,
+            sequencetype: None,
             data: Some(serde_json::json!({
                 "message": "App state has been reset",
                 "timestamp": chrono::Utc::now().to_rfc3339()
@@ -527,5 +559,157 @@ mod tests {
         let json = serde_json::to_string(&reset_event).unwrap();
         assert!(json.contains("system.reset"));
         assert!(json.contains("App state has been reset"));
+    }
+
+    #[tokio::test]
+    async fn test_schema_endpoints() {
+        // Test get_schemas_index function
+        let index = get_schemas_index().await;
+        let index_value = index.0; // Extract the Json wrapper
+
+        assert!(index_value.is_object());
+        assert!(index_value.get("schemas").is_some());
+        assert!(index_value.get("base_url").is_some());
+        assert_eq!(
+            index_value.get("base_url").unwrap().as_str().unwrap(),
+            "/schemas"
+        );
+
+        let schemas_array = index_value.get("schemas").unwrap().as_array().unwrap();
+        assert!(schemas_array.len() > 0);
+
+        // Check that key schemas are present
+        let schema_names: Vec<String> = schemas_array
+            .iter()
+            .map(|v| v.as_str().unwrap().to_string())
+            .collect();
+
+        assert!(schema_names.contains(&"CloudEvent".to_string()));
+        assert!(schema_names.contains(&"Issue".to_string()));
+        assert!(schema_names.contains(&"Task".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_get_specific_schema_endpoint() {
+        use shuttle_axum::axum::extract::Path;
+
+        // Test getting CloudEvent schema
+        let path = Path("CloudEvent".to_string());
+        let result = get_schema(path).await;
+
+        assert!(result.is_ok());
+        let schema = result.unwrap().0; // Extract Json wrapper
+
+        assert!(schema.is_object());
+        assert!(schema.get("properties").is_some());
+
+        let properties = schema.get("properties").unwrap().as_object().unwrap();
+        assert!(properties.contains_key("specversion"));
+        assert!(properties.contains_key("id"));
+        assert!(properties.contains_key("source"));
+        assert!(properties.contains_key("dataschema"));
+        assert!(properties.contains_key("dataref"));
+    }
+
+    #[tokio::test]
+    async fn test_get_nonexistent_schema_endpoint() {
+        use shuttle_axum::axum::extract::Path;
+        use shuttle_axum::axum::http::StatusCode;
+
+        // Test getting non-existent schema
+        let path = Path("NonExistentSchema".to_string());
+        let result = get_schema(path).await;
+
+        assert!(result.is_err());
+        let status = result.unwrap_err();
+        assert_eq!(status, StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn test_add_dataschema_to_event() {
+        let base_url = "http://localhost:8000";
+
+        // Test event with data payload
+        let mut event_with_data = json!({
+            "specversion": "1.0",
+            "id": "test-123",
+            "source": "test-source",
+            "type": "item.created",
+            "data": {
+                "item_type": "issue",
+                "item_id": "issue-123"
+            }
+        });
+
+        add_dataschema_to_event(&mut event_with_data, base_url);
+
+        assert_eq!(
+            event_with_data.get("dataschema").unwrap().as_str().unwrap(),
+            "http://localhost:8000/schemas/ItemEventData"
+        );
+
+        // Test event without data payload
+        let mut event_without_data = json!({
+            "specversion": "1.0",
+            "id": "test-456",
+            "source": "test-source",
+            "type": "system.reset"
+        });
+
+        add_dataschema_to_event(&mut event_without_data, base_url);
+
+        assert_eq!(
+            event_without_data
+                .get("dataschema")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "http://localhost:8000/schemas/CloudEvent"
+        );
+
+        // Test event that already has dataschema (should not be overwritten)
+        let mut event_with_existing_schema = json!({
+            "specversion": "1.0",
+            "id": "test-789",
+            "source": "test-source",
+            "type": "item.updated",
+            "dataschema": "http://example.com/custom-schema",
+            "data": {
+                "item_type": "task"
+            }
+        });
+
+        add_dataschema_to_event(&mut event_with_existing_schema, base_url);
+
+        // Should not change existing dataschema
+        assert_eq!(
+            event_with_existing_schema
+                .get("dataschema")
+                .unwrap()
+                .as_str()
+                .unwrap(),
+            "http://example.com/custom-schema"
+        );
+    }
+}
+
+/// Add dataschema URL to CloudEvent based on the event type and data
+fn add_dataschema_to_event(event: &mut Value, base_url: &str) {
+    // Only add dataschema if not already present
+    if event.get("dataschema").is_none() {
+        let schema_url = if event.get("data").is_some() {
+            // The dataschema describes the structure of the "data" payload
+            // In our case, that's always ItemEventData which contains:
+            // - item_type
+            // - item_id
+            // - item_data (the actual item content)
+            format!("{}/schemas/ItemEventData", base_url)
+        } else {
+            // No data payload, so no schema needed for data
+            // Could potentially point to a minimal CloudEvent schema
+            format!("{}/schemas/CloudEvent", base_url)
+        };
+
+        event["dataschema"] = Value::String(schema_url);
     }
 }

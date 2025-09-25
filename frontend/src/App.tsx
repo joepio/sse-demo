@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import ApiDocumentationView from "./components/ApiDocumentationView";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
@@ -80,6 +81,26 @@ const ZakenDashboard: React.FC = () => {
         className="text-center mb-12 py-12 md:py-8 border-b"
         style={{ borderColor: "var(--border-secondary)" }}
       >
+        {/* Navigation */}
+        <nav className="mb-6">
+          <div className="flex justify-center gap-6">
+            <Link
+              to="/"
+              className="text-sm font-medium hover:underline"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/api-docs"
+              className="text-sm font-medium hover:underline"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              API Documentatie
+            </Link>
+          </div>
+        </nav>
+
         <h1
           className="mb-6 text-5xl md:text-4xl font-bold"
           style={{ color: "var(--text-primary)" }}
@@ -178,11 +199,13 @@ const ZakenDashboard: React.FC = () => {
                                 {latestTask.cta}
                               </ActionButton>
                             </div>
-                            <DeadlineBadge
-                              deadline={latestTask.deadline}
-                              variant="full"
-                              showLabel={false}
-                            />
+                            {latestTask.deadline && (
+                              <DeadlineBadge
+                                deadline={latestTask.deadline}
+                                variant="full"
+                                showLabel={false}
+                              />
+                            )}
                           </div>
                         </div>
                       )}
@@ -228,6 +251,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<ZakenDashboard />} />
           <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
+          <Route path="/api-docs" element={<ApiDocumentationView />} />
         </Routes>
       </Router>
     </SSEProvider>

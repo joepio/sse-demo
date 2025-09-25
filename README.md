@@ -5,8 +5,8 @@ Dit is een simpele front-end applicatie om te demonstreren hoe Server-Sent Event
 Dit project bevat:
 
 - **Front-end voor MijnZaken**, met real-time updates, commenting, planningen, acties en overzichtweergave.
-- **Back-end** met een `/events` endpoint.
-- **AsyncAPI specificatie** voor het protocol, met daarin schemas voor de verschillende berichten.
+- **Back-end** met een `/events` endpoint en `/schemas` endpoints voor JSON schema serving.
+- **AsyncAPI specificatie** voor het protocol op basis van CloudEvents + SSE, met daarin schemas voor de verschillende berichten.
 
 ## Lokaal draaien
 

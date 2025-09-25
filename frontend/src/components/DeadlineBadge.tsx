@@ -2,7 +2,7 @@ import React from "react";
 import { formatTaskDeadline, getTaskUrgencyClass } from "../utils/taskUtils";
 
 interface DeadlineBadgeProps {
-  deadline: string;
+  deadline: string | null;
   variant?: "full" | "compact";
   showLabel?: boolean;
 }
@@ -12,7 +12,9 @@ const DeadlineBadge: React.FC<DeadlineBadgeProps> = ({
   variant = "full",
   showLabel = true,
 }) => {
-  if (!deadline) return null;
+  if (!deadline) {
+    return null;
+  }
 
   const urgencyClass = getTaskUrgencyClass(deadline);
   const formattedDeadline = formatTaskDeadline(deadline);

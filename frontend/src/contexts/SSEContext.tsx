@@ -95,7 +95,24 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                 const issueData = data.item_data as Record<string, unknown>;
                 if (issueData.id && typeof issueData.id === "string") {
                   newIssues[issueData.id] = {
-                    ...(issueData as Issue),
+                    id: String(issueData.id),
+                    title: String(issueData.title || ""),
+                    description: issueData.description
+                      ? String(issueData.description)
+                      : null,
+                    status: String(issueData.status || "open") as
+                      | "open"
+                      | "in_progress"
+                      | "closed",
+                    assignee: issueData.assignee
+                      ? String(issueData.assignee)
+                      : null,
+                    created_at: String(
+                      issueData.created_at || new Date().toISOString(),
+                    ),
+                    resolution: issueData.resolution
+                      ? String(issueData.resolution)
+                      : null,
                     lastActivity: eventTime,
                   };
                 }
@@ -212,7 +229,6 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
             item_type: "task",
             item_id: taskId,
             actor: "user@gemeente.nl",
-            timestamp: new Date().toISOString(),
             patch: {
               completed: true,
               completed_at: new Date().toISOString(),
@@ -291,7 +307,24 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                     const issueData = data.item_data as Record<string, unknown>;
                     if (issueData.id && typeof issueData.id === "string") {
                       initialIssues[issueData.id] = {
-                        ...(issueData as Issue),
+                        id: String(issueData.id),
+                        title: String(issueData.title || ""),
+                        description: issueData.description
+                          ? String(issueData.description)
+                          : null,
+                        status: String(issueData.status || "open") as
+                          | "open"
+                          | "in_progress"
+                          | "closed",
+                        assignee: issueData.assignee
+                          ? String(issueData.assignee)
+                          : null,
+                        created_at: String(
+                          issueData.created_at || new Date().toISOString(),
+                        ),
+                        resolution: issueData.resolution
+                          ? String(issueData.resolution)
+                          : null,
                         lastActivity: eventTime,
                       };
                     }

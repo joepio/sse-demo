@@ -21,7 +21,7 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
     id: `active-task-${latestTask.id}`,
     type: "created" as const,
     timestamp: latestTask.timestamp,
-    actor: latestTask.actor,
+    actor: latestTask.actor || undefined,
     data: {
       item_type: "task",
       item_id: latestTask.id,
@@ -53,7 +53,7 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
           completed: latestTask.completed,
           deadline: latestTask.deadline,
         },
-        actor: latestTask.actor,
+        actor: latestTask.actor || undefined,
         timestamp: latestTask.timestamp,
       },
     },

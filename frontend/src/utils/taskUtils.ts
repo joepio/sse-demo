@@ -1,4 +1,9 @@
-import type { CloudEvent, Task, TimelineItemData } from "../types";
+import type {
+  CloudEvent,
+  Task,
+  ExtendedTask,
+  TimelineItemData,
+} from "../types";
 
 /**
  * Extract tasks from events for a specific issue
@@ -6,7 +11,7 @@ import type { CloudEvent, Task, TimelineItemData } from "../types";
 export const getTasksForIssue = (
   events: CloudEvent[],
   issueId: string,
-): Task[] => {
+): ExtendedTask[] => {
   // Get both created and updated task events
   const taskEvents = events.filter(
     (event) =>
@@ -18,7 +23,7 @@ export const getTasksForIssue = (
   );
 
   // Group events by task ID to handle updates
-  const taskMap = new Map<string, Task>();
+  const taskMap = new Map<string, ExtendedTask>();
 
   // Process events in chronological order
   taskEvents
@@ -38,12 +43,12 @@ export const getTasksForIssue = (
             id: taskId,
             cta: itemData.cta,
             description: itemData.description,
-            url: itemData.url,
+            url: itemData.url || null,
             completed: itemData.completed || false,
-            deadline: itemData.deadline || "",
-            actor: data.actor || "system",
-            timestamp: data.timestamp || event.time || new Date().toISOString(),
-          } as Task);
+            deadline: itemData.deadline || null,
+            actor: String(data.actor || "system"),
+            timestamp: event.time || new Date().toISOString(),
+          } as ExtendedTask);
         }
       } else if (event.type === "item.updated") {
         // Update existing task
@@ -85,7 +90,7 @@ export const getTasksForIssue = (
 export const getLatestTaskForIssue = (
   events: CloudEvent[],
   issueId: string,
-): Task | null => {
+): ExtendedTask | null => {
   const tasks = getTasksForIssue(events, issueId);
   return tasks.find((task) => !task.completed) || null;
 };
@@ -116,7 +121,6 @@ export const createTaskCompletionEvent = (taskId: string): CloudEvent => {
       item_type: "task_completed",
       item_id: `completion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       actor: "user@gemeente.nl",
-      timestamp: new Date().toISOString(),
       item_data: {
         original_task_id: taskId,
         completed_at: new Date().toISOString(),

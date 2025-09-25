@@ -11,7 +11,7 @@ server.log
 *.log
 
 # React/Node.js
-frontend/node_modules/
+node_modules/
 frontend/dist/
 dist/
 *.tsbuildinfo
@@ -29,3 +29,10 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Generated files (build.rs output)
+asyncapi.yaml
+asyncapi.json
+asyncapi-docs/
+frontend/src/types/*.schema.json
+frontend/src/types/schemas.ts

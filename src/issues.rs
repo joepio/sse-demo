@@ -1,90 +1,95 @@
+//! Issue management and CloudEvent generation for the demo application.
+//!
+//! This module provides functionality to:
+//! - Generate initial demo issues with various statuses
+//! - Create CloudEvents for different issue operations (create, update, delete)
+//! - Generate timeline events (comments, tasks, planning, etc.)
+//! - Apply JSON Merge Patch operations to issue data
+
 use chrono::{Duration, Utc};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-/// Generate initial issues and their CloudEvents
-pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
-    let mut events = Vec::new();
-    let mut issues = HashMap::new();
-    let base_time = Utc::now() - Duration::hours(3);
+// Constants for event generation
+const DEFAULT_SOURCE: &str = "server-demo-event";
+const HOURS_BACK_FOR_INITIAL_DATA: i64 = 3;
 
-    // Create 10 initial zaken using predefined templates
-    let issue_templates = [
-        (
-            "Nieuw paspoort aanvragen",
-            "Burger wil nieuw paspoort aanvragen",
-            Some("alice@gemeente.nl"),
-        ),
-        (
-            "Melding overlast",
-            "Geluidsoverlast buren gemeld",
-            Some("bob@gemeente.nl"),
-        ),
-        (
-            "Verhuizing doorgeven",
-            "Adreswijziging registreren in BRP",
-            None,
-        ),
-        (
-            "Parkeervergunning aanvraag",
-            "Bewoner wil parkeervergunning voor nieuwe auto",
-            Some("carol@gemeente.nl"),
-        ),
-        (
-            "Kapvergunning boom",
-            "Vergunning nodig voor kappen boom in achtertuin",
-            Some("dave@gemeente.nl"),
-        ),
-        (
-            "Uitkering aanvragen",
-            "Burger vraagt bijstandsuitkering aan",
-            None,
-        ),
-        (
-            "Klacht over dienstverlening",
-            "Ontevreden over behandeling bij balie",
-            Some("eve@gemeente.nl"),
-        ),
-        (
-            "Huwelijk voltrekken",
-            "Koppel wil trouwen op gemeentehuis",
-            Some("frank@gemeente.nl"),
-        ),
-        (
-            "WOZ-bezwaar indienen",
-            "Eigenaar niet eens met WOZ-waardering",
-            None,
-        ),
-        (
-            "Hondenbelasting",
-            "Registratie nieuwe hond voor hondenbelasting",
-            Some("grace@gemeente.nl"),
-        ),
-    ];
+// Event type constants
+const EVENT_TYPE_ITEM_CREATED: &str = "item.created";
+const EVENT_TYPE_ITEM_UPDATED: &str = "item.updated";
+const EVENT_TYPE_ITEM_DELETED: &str = "item.deleted";
 
-    // Generate create events for initial issues
-    for (i, (title, description, assignee)) in issue_templates.iter().enumerate() {
-        let issue_id = (i + 1).to_string();
-        let mut create_event =
-            generate_create_event_with_data(&issue_id, title, description, *assignee);
+// Content type constants
+const CONTENT_TYPE_JSON: &str = "application/json";
+const CONTENT_TYPE_MERGE_PATCH: &str = "application/merge-patch+json";
 
-        // Set historical timestamp
-        let create_time = base_time + Duration::minutes(i as i64 * 2);
-        create_event["time"] = json!(create_time.to_rfc3339());
+// Event schema constants
+const ITEM_EVENT_DATA_SCHEMA: &str = "http://localhost:8000/schemas/ItemEventData";
+const ISSUE_SCHEMA: &str = "http://localhost:8000/schemas/Issue";
+const COMMENT_SCHEMA: &str = "http://localhost:8000/schemas/Comment";
+const TASK_SCHEMA: &str = "http://localhost:8000/schemas/Task";
+const PLANNING_SCHEMA: &str = "http://localhost:8000/schemas/Planning";
+const LLM_ANALYSIS_SCHEMA: &str = "http://localhost:8000/schemas/LLMAnalysis";
+const STATUS_CHANGE_SCHEMA: &str = "http://localhost:8000/schemas/StatusChange";
 
-        // Extract issue data and add to issues state
-        if let Some(data) = create_event.get("data") {
-            if let Some(item_data) = data.get("item_data").cloned() {
-                issues.insert(issue_id, item_data);
-            }
-        }
+// Issue templates for initial data generation
+const ISSUE_TEMPLATES: &[(&str, &str, Option<&str>)] = &[
+    (
+        "Nieuw paspoort aanvragen",
+        "Burger wil nieuw paspoort aanvragen",
+        Some("alice@gemeente.nl"),
+    ),
+    (
+        "Melding overlast",
+        "Geluidsoverlast buren gemeld",
+        Some("bob@gemeente.nl"),
+    ),
+    (
+        "Verhuizing doorgeven",
+        "Adreswijziging registreren in BRP",
+        None,
+    ),
+    (
+        "Parkeervergunning aanvraag",
+        "Bewoner wil parkeervergunning voor nieuwe auto",
+        Some("carol@gemeente.nl"),
+    ),
+    (
+        "Kapvergunning boom",
+        "Vergunning nodig voor kappen boom in achtertuin",
+        Some("dave@gemeente.nl"),
+    ),
+    (
+        "Uitkering aanvragen",
+        "Burger vraagt bijstandsuitkering aan",
+        None,
+    ),
+    (
+        "Klacht over dienstverlening",
+        "Ontevreden over behandeling bij balie",
+        Some("eve@gemeente.nl"),
+    ),
+    (
+        "Huwelijk voltrekken",
+        "Koppel wil trouwen op gemeentehuis",
+        Some("frank@gemeente.nl"),
+    ),
+    (
+        "WOZ-bezwaar indienen",
+        "Eigenaar niet eens met WOZ-waardering",
+        None,
+    ),
+    (
+        "Hondenbelasting",
+        "Registratie nieuwe hond voor hondenbelasting",
+        Some("grace@gemeente.nl"),
+    ),
+];
 
-        events.push(create_event);
-    }
-
-    // Add some patch events using existing logic
-    let patch_operations = [
+// Patch operations for initial data
+fn get_patch_operations() -> Vec<(&'static str, serde_json::Value)> {
+    vec![
         (
             "1",
             json!({"status": "in_progress", "assignee": "alice@gemeente.nl"}),
@@ -97,8 +102,103 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         ("4", json!({"assignee": null, "status": "open"})),
         ("7", json!({"status": "in_progress"})),
         ("8", json!({"status": "closed", "resolution": "completed"})),
-    ];
+    ]
+}
 
+// Delete operations for initial data
+const DELETE_OPERATIONS: &[(&str, &str)] = &[("9", "duplicate"), ("10", "invalid request")];
+
+/// Represents a timeline operation for generating demo data
+#[derive(Debug, Clone)]
+struct TimelineOperation {
+    issue_id: &'static str,
+    item_type: &'static str,
+    item_id: &'static str,
+    actor: &'static str,
+    item_data: serde_json::Value,
+    minute_offset: i64,
+}
+
+impl TimelineOperation {
+    fn new(
+        issue_id: &'static str,
+        item_type: &'static str,
+        item_id: &'static str,
+        actor: &'static str,
+        item_data: serde_json::Value,
+        minute_offset: i64,
+    ) -> Self {
+        Self {
+            issue_id,
+            item_type,
+            item_id,
+            actor,
+            item_data,
+            minute_offset,
+        }
+    }
+}
+
+/// Generate initial issues and their CloudEvents
+pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
+    let mut events = Vec::new();
+    let mut issues = HashMap::new();
+    let base_time = Utc::now() - Duration::hours(HOURS_BACK_FOR_INITIAL_DATA);
+
+    // Generate initial issues
+    generate_initial_issues(&mut events, &mut issues, base_time);
+
+    // Add patch events
+    add_patch_events(&mut events, &mut issues, base_time);
+
+    // Add delete events
+    add_delete_events(&mut events, &mut issues, base_time);
+
+    // Add timeline events
+    add_timeline_events(&mut events, base_time);
+
+    // Add planning events
+    add_planning_events(&mut events, base_time);
+
+    // Add final update event
+    add_timeline_update_event(&mut events, base_time);
+
+    (events, issues)
+}
+
+/// Generate create events for initial issues
+fn generate_initial_issues(
+    events: &mut Vec<Value>,
+    issues: &mut HashMap<String, Value>,
+    base_time: chrono::DateTime<chrono::Utc>,
+) {
+    for (i, (title, description, assignee)) in ISSUE_TEMPLATES.iter().enumerate() {
+        let issue_id = (i + 1).to_string();
+        let mut create_event =
+            generate_create_event_with_data(&issue_id, title, description, *assignee);
+
+        // Set historical timestamp
+        let create_time = base_time + Duration::minutes(i as i64 * 2);
+        create_event["time"] = json!(create_time.to_rfc3339());
+
+        // Extract issue data and add to issues state
+        if let Some(data) = create_event.get("data") {
+            if let Some(item_data) = data.get("item_data").cloned() {
+                issues.insert(issue_id.clone(), item_data);
+            }
+        }
+
+        events.push(create_event);
+    }
+}
+
+/// Add patch events to modify existing issues
+fn add_patch_events(
+    events: &mut Vec<Value>,
+    issues: &mut HashMap<String, Value>,
+    base_time: chrono::DateTime<chrono::Utc>,
+) {
+    let patch_operations = get_patch_operations();
     for (i, (issue_id, patch_data)) in patch_operations.iter().enumerate() {
         let mut patch_event = generate_patch_event_with_data(issue_id, patch_data);
 
@@ -117,11 +217,15 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
 
         events.push(patch_event);
     }
+}
 
-    // Add delete events using existing logic
-    let delete_operations = [("9", "duplicate"), ("10", "invalid request")];
-
-    for (i, (issue_id, reason)) in delete_operations.iter().enumerate() {
+/// Add delete events for some issues
+fn add_delete_events(
+    events: &mut Vec<Value>,
+    issues: &mut HashMap<String, Value>,
+    base_time: chrono::DateTime<chrono::Utc>,
+) {
+    for (i, (issue_id, reason)) in DELETE_OPERATIONS.iter().enumerate() {
         let mut delete_event = generate_delete_event_with_data(issue_id, reason);
 
         // Set historical timestamp
@@ -131,10 +235,110 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
         events.push(delete_event);
         issues.remove(&issue_id.to_string());
     }
+}
 
-    // Add sample timeline events according to EVENT_DESIGN.md
-    let timeline_operations = [
-        (
+/// Add timeline events (comments, tasks, etc.)
+fn add_timeline_events(events: &mut Vec<Value>, base_time: chrono::DateTime<chrono::Utc>) {
+    let timeline_operations = get_timeline_operations();
+    for operation in timeline_operations.iter() {
+        let schema = get_schema_for_item_type(operation.item_type);
+        let mut timeline_event = create_cloud_event(
+            EVENT_TYPE_ITEM_CREATED,
+            DEFAULT_SOURCE,
+            Some(operation.issue_id),
+            CONTENT_TYPE_JSON,
+            operation.item_type,
+            operation.item_id,
+            Some(&operation.item_data),
+            None,
+            schema,
+        );
+
+        // Override time and add timeline-specific data
+        let event_time = (base_time + Duration::minutes(operation.minute_offset)).to_rfc3339();
+        timeline_event["time"] = json!(event_time);
+        if let Some(data) = timeline_event.get_mut("data") {
+            data["actor"] = json!(operation.actor);
+            data["timestamp"] = json!(event_time);
+        }
+
+        events.push(timeline_event);
+    }
+}
+
+/// Add planning events
+fn add_planning_events(events: &mut Vec<Value>, base_time: chrono::DateTime<chrono::Utc>) {
+    let planning_operations = get_planning_operations();
+    for operation in planning_operations.iter() {
+        let mut planning_event = create_cloud_event(
+            EVENT_TYPE_ITEM_CREATED,
+            DEFAULT_SOURCE,
+            Some(operation.issue_id),
+            CONTENT_TYPE_JSON,
+            operation.item_type,
+            operation.item_id,
+            Some(&operation.item_data),
+            None,
+            PLANNING_SCHEMA,
+        );
+
+        // Override time and add timeline-specific data
+        let event_time = (base_time + Duration::minutes(operation.minute_offset)).to_rfc3339();
+        planning_event["time"] = json!(event_time);
+        if let Some(data) = planning_event.get_mut("data") {
+            data["actor"] = json!(operation.actor);
+            data["timestamp"] = json!(event_time);
+        }
+
+        events.push(planning_event);
+    }
+}
+
+/// Add a final timeline update event
+fn add_timeline_update_event(events: &mut Vec<Value>, base_time: chrono::DateTime<chrono::Utc>) {
+    let patch_data = json!({
+        "content": "Update: Formulier is nu compleet ingevuld."
+    });
+
+    let mut timeline_update_event = create_cloud_event(
+        EVENT_TYPE_ITEM_UPDATED,
+        DEFAULT_SOURCE,
+        Some("1"),
+        CONTENT_TYPE_MERGE_PATCH,
+        "comment",
+        "comment-1001",
+        None,
+        Some(&patch_data),
+        COMMENT_SCHEMA,
+    );
+
+    // Override time and add timeline-specific data
+    let event_time = (base_time + Duration::minutes(90)).to_rfc3339();
+    timeline_update_event["time"] = json!(event_time);
+    if let Some(data) = timeline_update_event.get_mut("data") {
+        data["actor"] = json!("alice@example.com");
+        data["timestamp"] = json!(event_time);
+    }
+
+    events.push(timeline_update_event);
+}
+
+/// Get the appropriate schema for an item type
+fn get_schema_for_item_type(item_type: &str) -> &'static str {
+    match item_type {
+        "task" => TASK_SCHEMA,
+        "comment" => COMMENT_SCHEMA,
+        "llm_analysis" => LLM_ANALYSIS_SCHEMA,
+        "status_change" => STATUS_CHANGE_SCHEMA,
+        "planning" => PLANNING_SCHEMA,
+        _ => ITEM_EVENT_DATA_SCHEMA,
+    }
+}
+
+/// Get predefined timeline operations for initial data
+fn get_timeline_operations() -> Vec<TimelineOperation> {
+    vec![
+        TimelineOperation::new(
             "1",
             "comment",
             "comment-1001",
@@ -146,7 +350,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             105,
         ),
-        (
+        TimelineOperation::new(
             "2",
             "status_change",
             "status-1002",
@@ -159,20 +363,20 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             110,
         ),
-        (
+        TimelineOperation::new(
             "1",
             "llm_analysis",
             "llm-1003",
             "system@example.com",
             json!({
                 "prompt": "Analyze this authentication issue and provide recommendations",
-                "response": "This appears to be related to session timeout configuration. The llmauthentication system is likely expiring sessions too quickly, causing users to be logged out unexpectedly.",
+                "response": "This appears to be related to session timeout configuration. The authentication system is likely expiring sessions too quickly, causing users to be logged out unexpectedly.",
                 "model": "gpt-4",
                 "confidence": 0.87
             }),
             115,
         ),
-        (
+        TimelineOperation::new(
             "2",
             "comment",
             "comment-1004",
@@ -184,7 +388,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             120,
         ),
-        (
+        TimelineOperation::new(
             "1",
             "task",
             "task-1005",
@@ -198,7 +402,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             125,
         ),
-        (
+        TimelineOperation::new(
             "2",
             "task",
             "task-1006",
@@ -212,7 +416,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             130,
         ),
-        (
+        TimelineOperation::new(
             "3",
             "task",
             "task-1007",
@@ -226,11 +430,12 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             135,
         ),
-    ];
-
-    // Add planning events for most issues
-    let planning_operations = [
-        (
+    ]
+}
+/// Get predefined planning operations for initial data
+fn get_planning_operations() -> Vec<TimelineOperation> {
+    vec![
+        TimelineOperation::new(
             "1",
             "planning",
             "planning-1001",
@@ -267,7 +472,7 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
             }),
             140,
         ),
-        (
+        TimelineOperation::new(
             "2",
             "planning",
             "planning-1002",
@@ -302,316 +507,72 @@ pub fn generate_initial_data() -> (Vec<Value>, HashMap<String, Value>) {
                     }
                 ]
             }),
-            142,
+            145,
         ),
-        (
+        TimelineOperation::new(
+            "3",
+            "planning",
+            "planning-1003",
+            "system@gemeente.nl",
+            json!({
+                "title": "Adreswijziging verwerking",
+                "description": "Stappen voor verwerken verhuizing",
+                "moments": [
+                    {
+                        "id": "moment-1003-1",
+                        "date": "2024-12-18",
+                        "title": "Verhuizing gemeld",
+                        "status": "completed"
+                    },
+                    {
+                        "id": "moment-1003-2",
+                        "date": "2024-12-21",
+                        "title": "Gegevens verifiëren",
+                        "status": "current"
+                    },
+                    {
+                        "id": "moment-1003-3",
+                        "date": "2024-12-28",
+                        "title": "BRP bijwerken",
+                        "status": "planned"
+                    }
+                ]
+            }),
+            150,
+        ),
+        TimelineOperation::new(
             "4",
             "planning",
             "planning-1004",
             "carol@gemeente.nl",
             json!({
                 "title": "Parkeervergunning proces",
-                "description": "Behandeling parkeervergunning aanvraag",
+                "description": "Verwerking parkeervergunning aanvraag",
                 "moments": [
                     {
                         "id": "moment-1004-1",
-                        "date": "2024-12-17",
-                        "title": "Aanvraag ingediend",
-                        "status": "completed"
-                    },
-                    {
-                        "id": "moment-1004-2",
                         "date": "2024-12-18",
-                        "title": "Administratieve check",
-                        "status": "completed"
-                    },
-                    {
-                        "id": "moment-1004-3",
-                        "date": "2024-12-21",
-                        "title": "Locatie controle",
-                        "status": "current"
-                    },
-                    {
-                        "id": "moment-1004-4",
-                        "date": "2024-12-24",
-                        "title": "Vergunning versturen",
-                        "status": "planned"
-                    }
-                ]
-            }),
-            144,
-        ),
-        (
-            "5",
-            "planning",
-            "planning-1005",
-            "dave@gemeente.nl",
-            json!({
-                "title": "Kapvergunning procedure",
-                "description": "Verwerking aanvraag boom kappen",
-                "moments": [
-                    {
-                        "id": "moment-1005-1",
-                        "date": "2024-12-16",
                         "title": "Aanvraag ontvangen",
                         "status": "completed"
                     },
                     {
-                        "id": "moment-1005-2",
-                        "date": "2024-12-17",
-                        "title": "Ecologisch onderzoek",
-                        "status": "completed"
-                    },
-                    {
-                        "id": "moment-1005-3",
-                        "date": "2024-12-20",
-                        "title": "Besluit genomen",
-                        "status": "completed"
-                    },
-                    {
-                        "id": "moment-1005-4",
-                        "date": "2024-12-21",
-                        "title": "Vergunning uitgereikt",
-                        "status": "completed"
-                    }
-                ]
-            }),
-            146,
-        ),
-        (
-            "7",
-            "planning",
-            "planning-1007",
-            "eve@gemeente.nl",
-            json!({
-                "title": "Klacht behandeling",
-                "description": "Proces voor behandeling klacht dienstverlening",
-                "moments": [
-                    {
-                        "id": "moment-1007-1",
-                        "date": "2024-12-19",
-                        "title": "Klacht geregistreerd",
-                        "status": "completed"
-                    },
-                    {
-                        "id": "moment-1007-2",
-                        "date": "2024-12-20",
-                        "title": "Onderzoek gestart",
-                        "status": "current"
-                    },
-                    {
-                        "id": "moment-1007-3",
-                        "date": "2024-12-28",
-                        "title": "Gesprek met betrokkenen",
+                        "id": "moment-1004-2",
+                        "date": "2024-12-22",
+                        "title": "Locatie controleren",
                         "status": "planned"
                     },
                     {
-                        "id": "moment-1007-4",
-                        "date": "2025-01-08",
-                        "title": "Besluit en reactie",
+                        "id": "moment-1004-3",
+                        "date": "2024-12-29",
+                        "title": "Vergunning uitgeven",
                         "status": "planned"
                     }
                 ]
             }),
-            148,
+            155,
         ),
-    ];
-
-    // Add initial citizen stories/requests as first comments
-    let citizen_stories = [
-        (
-            "1",
-            "comment",
-            "story-1001",
-            "pietjansen@hotmail.com",
-            json!({
-                "content": "Hallo, ik wil graag een nieuw paspoort aanvragen. Mijn huidige paspoort verloopt over 2 maanden en ik ga binnenkort op vakantie naar Spanje. Wat moet ik allemaal meebrengen naar de afspraak?",
-                "parent_id": null,
-                "mentions": []
-            }),
-            5,
-        ),
-        (
-            "2",
-            "comment",
-            "story-1002",
-            "marieke.de.vries@gmail.com",
-            json!({
-                "content": "Beste gemeente, ik wil graag melding maken van geluidsoverlast van mijn buren. Ze hebben elke avond tot laat muziek aan staan en dit begint nu echt vervelend te worden. Kunnen jullie hier iets aan doen?",
-                "parent_id": null,
-                "mentions": []
-            }),
-            7,
-        ),
-        (
-            "3",
-            "comment",
-            "story-1003",
-            "jan.klaassen@ziggo.nl",
-            json!({
-                "content": "Hallo, ik ben vorige maand verhuisd van Amsterdam naar jullie gemeente. Ik wil mijn nieuwe adres doorgeven in de BRP. Kan ik dit online regelen of moet ik langskomen?",
-                "parent_id": null,
-                "mentions": []
-            }),
-            10,
-        ),
-        (
-            "4",
-            "comment",
-            "story-1004",
-            "a.peters@live.nl",
-            json!({
-                "content": "Beste mensen, ik heb een nieuwe auto gekocht en wil graag een parkeervergunning aanvragen voor mijn straat. Ik woon op de Kerkstraat 15. Wat zijn de kosten en hoe lang duurt dit proces?",
-                "parent_id": null,
-                "mentions": []
-            }),
-            12,
-        ),
-        (
-            "5",
-            "comment",
-            "story-1005",
-            "kees.van.dijk@kpn.nl",
-            json!({
-                "content": "Hallo gemeente, ik heb een grote boom in mijn achtertuin die ik graag wil laten kappen. De boom wordt te groot en hangt over naar de buren. Heb ik hiervoor een vergunning nodig?",
-                "parent_id": null,
-                "mentions": []
-            }),
-            15,
-        ),
-        (
-            "6",
-            "comment",
-            "story-1006",
-            "susan.bakker@yahoo.com",
-            json!({
-                "content": "Beste gemeente, ik zit in financiële problemen en zou graag informatie willen over bijstandsuitkering. Ik ben onlangs werkloos geworden en weet niet goed waar ik moet beginnen. Kunnen jullie mij helpen?",
-                "parent_id": null,
-                "mentions": []
-            }),
-            18,
-        ),
-        (
-            "7",
-            "comment",
-            "story-1007",
-            "henk.groot@planet.nl",
-            json!({
-                "content": "Ik wil een klacht indienen over de behandeling die ik heb gekregen bij jullie balie vorige week. De medewerker was onvriendelijk en onbehulpzaam. Dit kan echt beter!",
-                "parent_id": null,
-                "mentions": []
-            }),
-            20,
-        ),
-        (
-            "8",
-            "comment",
-            "story-1008",
-            "annemarie@xs4all.nl",
-            json!({
-                "content": "Hallo lieve mensen van de gemeente! Mijn verloofde en ik willen graag trouwen op het gemeentehuis. Kunnen we een afspraak maken voor over 2 maanden? We houden van een simpele ceremonie.",
-                "parent_id": null,
-                "mentions": []
-            }),
-            22,
-        ),
-    ];
-
-    for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
-        citizen_stories.iter().enumerate()
-    {
-        let story_event = json!({
-            "specversion": "1.0",
-            "id": Uuid::now_v7().to_string(),
-            "source": "server-demo-event",
-            "subject": issue_id,
-            "type": "item.created",
-            "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
-            "datacontenttype": "application/json",
-            "data": {
-                "item_type": item_type,
-                "item_id": item_id,
-                "actor": actor,
-                "timestamp": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
-                "item_data": item_data
-            }
-        });
-
-        events.push(story_event);
-    }
-
-    for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
-        timeline_operations.iter().enumerate()
-    {
-        let timeline_event = json!({
-            "specversion": "1.0",
-            "id": Uuid::now_v7().to_string(),
-            "source": "server-demo-event",
-            "subject": issue_id,
-            "type": "item.created",
-            "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
-            "datacontenttype": "application/json",
-            "data": {
-                "item_type": item_type,
-                "item_id": item_id,
-                "actor": actor,
-                "timestamp": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
-                "item_data": item_data
-            }
-        });
-
-        events.push(timeline_event);
-    }
-
-    for (_i, (issue_id, item_type, item_id, actor, item_data, minute_offset)) in
-        planning_operations.iter().enumerate()
-    {
-        let planning_event = json!({
-            "specversion": "1.0",
-            "id": Uuid::now_v7().to_string(),
-            "source": "server-demo-event",
-            "subject": issue_id,
-            "type": "item.created",
-            "time": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
-            "datacontenttype": "application/json",
-            "data": {
-                "item_type": item_type,
-                "item_id": item_id,
-                "actor": actor,
-                "timestamp": (base_time + Duration::minutes(*minute_offset)).to_rfc3339(),
-                "item_data": item_data
-            }
-        });
-
-        events.push(planning_event);
-    }
-
-    // Add a timeline update event
-    let timeline_update_event = json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
-        "subject": "1",
-        "type": "item.updated",
-        "time": (base_time + Duration::minutes(90)).to_rfc3339(),
-        "datacontenttype": "application/merge-patch+json",
-        "data": {
-            "item_type": "comment",
-            "item_id": "comment-1001",
-            "actor": "alice@example.com",
-            "timestamp": (base_time + Duration::minutes(90)).to_rfc3339(),
-            "patch": {
-                "content": "I'm investigating this authentication issue. Will check the session timeout settings. UPDATE: Found some relevant logs in the auth service.",
-                "edited_at": (base_time + Duration::minutes(90)).to_rfc3339()
-            }
-        }
-    });
-
-    events.push(timeline_update_event);
-
-    (events, issues)
+    ]
 }
-
 /// Apply JSON Merge Patch (RFC 7396) to a target JSON value
 pub fn apply_merge_patch(target: &mut Value, patch: &Value) {
     if let (Value::Object(target_obj), Value::Object(patch_obj)) = (target, patch) {
@@ -752,6 +713,73 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     }
 }
 
+/// Helper function to create a base CloudEvent structure
+fn create_base_cloud_event(
+    event_type: &str,
+    source: &str,
+    subject: Option<&str>,
+    datacontenttype: &str,
+) -> Value {
+    let mut event = json!({
+        "specversion": "1.0",
+        "id": Uuid::now_v7().to_string(),
+        "type": event_type,
+        "source": source,
+        "time": Utc::now().to_rfc3339(),
+        "datacontenttype": datacontenttype,
+        "dataschema": ITEM_EVENT_DATA_SCHEMA
+    });
+
+    if let Some(subj) = subject {
+        event["subject"] = json!(subj);
+    }
+
+    event
+}
+
+/// Helper function to create event data payload
+fn create_event_data(
+    item_type: &str,
+    item_id: &str,
+    item_data: Option<&Value>,
+    patch_data: Option<&Value>,
+    item_schema: &str,
+) -> Value {
+    let mut data = json!({
+        "item_type": item_type,
+        "item_id": item_id,
+        "itemschema": format!("http://localhost:8000/schemas/{}", item_schema)
+    });
+
+    if let Some(item_data) = item_data {
+        data["item_data"] = item_data.clone();
+    }
+
+    if let Some(patch_data) = patch_data {
+        data["patch"] = patch_data.clone();
+    }
+
+    data
+}
+
+/// Helper function to create a complete CloudEvent
+fn create_cloud_event(
+    event_type: &str,
+    source: &str,
+    subject: Option<&str>,
+    data_content_type: &str,
+    item_type: &str,
+    item_id: &str,
+    item_data: Option<&Value>,
+    patch_data: Option<&Value>,
+    item_schema: &str,
+) -> Value {
+    let mut event = create_base_cloud_event(event_type, source, subject, data_content_type);
+    let data = create_event_data(item_type, item_id, item_data, patch_data, item_schema);
+    event["data"] = data;
+    event
+}
+
 fn generate_random_patch_event(issue_id: &str) -> Value {
     let patch_operations = [
         json!({"status": "open"}),
@@ -790,20 +818,17 @@ fn generate_random_patch_event(issue_id: &str) -> Value {
 }
 
 fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
-        "subject": issue_id,
-        "type": "item.updated",
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": "application/merge-patch+json",
-        "data": {
-            "item_type": "issue",
-            "item_id": issue_id,
-            "item_data": patch_data
-        }
-    })
+    create_cloud_event(
+        EVENT_TYPE_ITEM_UPDATED,
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_MERGE_PATCH,
+        "issue",
+        issue_id,
+        None,
+        Some(patch_data),
+        ISSUE_SCHEMA,
+    )
 }
 
 fn generate_create_event_with_data(
@@ -824,40 +849,36 @@ fn generate_create_event_with_data(
         issue_data["assignee"] = json!(assignee_email);
     }
 
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
-        "subject": issue_id,
-        "type": "item.created",
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": "application/json",
-        "data": {
-            "item_type": "issue",
-            "item_id": issue_id,
-            "item_data": issue_data
-        }
-    })
+    create_cloud_event(
+        EVENT_TYPE_ITEM_CREATED,
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_JSON,
+        "issue",
+        issue_id,
+        Some(&issue_data),
+        None,
+        ISSUE_SCHEMA,
+    )
 }
 
 fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
-        "subject": issue_id,
-        "type": "item.deleted",
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": "application/json",
-        "data": {
-            "item_type": "issue",
-            "item_id": issue_id,
-            "item_data": {
-                "id": issue_id,
-                "reason": reason
-            }
-        }
-    })
+    let delete_data = json!({
+        "id": issue_id,
+        "reason": reason
+    });
+
+    create_cloud_event(
+        EVENT_TYPE_ITEM_DELETED,
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_JSON,
+        "issue",
+        issue_id,
+        None,
+        Some(&delete_data),
+        ISSUE_SCHEMA,
+    )
 }
 
 fn generate_random_comment_event(issue_id: &str) -> Value {
@@ -953,26 +974,34 @@ fn generate_random_comment_event(issue_id: &str) -> Value {
 }
 
 fn generate_comment_event_with_data(issue_id: &str, content: &str, actor: &str) -> Value {
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
-        "subject": issue_id,
-        "type": "item.created",
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": "application/json",
-        "data": {
-            "item_type": "comment",
-            "item_id": format!("comment-{}", Uuid::now_v7().simple()),
-            "actor": actor,
-            "timestamp": Utc::now().to_rfc3339(),
-            "item_data": {
-                "content": content,
-                "parent_id": null,
-                "mentions": []
-            }
-        }
-    })
+    let comment_id = format!("comment-{}", Uuid::now_v7().simple());
+    let comment_data = json!({
+        "id": comment_id,
+        "content": content,
+        "author": actor,
+        "parent_id": null,
+        "mentions": []
+    });
+
+    let mut event = create_cloud_event(
+        EVENT_TYPE_ITEM_CREATED,
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_JSON,
+        "comment",
+        &comment_id,
+        Some(&comment_data),
+        None,
+        COMMENT_SCHEMA,
+    );
+
+    // Add actor and timestamp to data level for timeline display
+    if let Some(data) = event.get_mut("data") {
+        data["actor"] = json!(actor);
+        data["timestamp"] = json!(Utc::now().to_rfc3339());
+    }
+
+    event
 }
 
 /// Generate a random task timeline item for an issue
@@ -1053,11 +1082,12 @@ fn generate_task_event_with_data(
     json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
+        "source": DEFAULT_SOURCE,
         "subject": issue_id,
-        "type": "item.created",
+        "type": EVENT_TYPE_ITEM_CREATED,
         "time": Utc::now().to_rfc3339(),
-        "datacontenttype": "application/json",
+        "datacontenttype": CONTENT_TYPE_JSON,
+        "dataschema": ITEM_EVENT_DATA_SCHEMA,
         "data": {
             "item_type": "task",
             "item_id": format!("task-{}", Uuid::now_v7().simple()),
@@ -1069,7 +1099,8 @@ fn generate_task_event_with_data(
                 "url": url,
                 "completed": false,
                 "deadline": deadline
-            }
+            },
+            "itemschema": TASK_SCHEMA
         }
     })
 }
@@ -1158,11 +1189,12 @@ fn generate_planning_event_with_data(
     json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "source": "server-demo-event",
+        "source": DEFAULT_SOURCE,
         "subject": issue_id,
-        "type": "item.created",
+        "type": EVENT_TYPE_ITEM_CREATED,
         "time": Utc::now().to_rfc3339(),
-        "datacontenttype": "application/json",
+        "datacontenttype": CONTENT_TYPE_JSON,
+        "dataschema": ITEM_EVENT_DATA_SCHEMA,
         "data": {
             "item_type": "planning",
             "item_id": format!("planning-{}", Uuid::now_v7().simple()),
@@ -1172,7 +1204,8 @@ fn generate_planning_event_with_data(
                 "title": title,
                 "description": description,
                 "moments": moments
-            }
+            },
+            "itemschema": PLANNING_SCHEMA
         }
     })
 }
@@ -1194,6 +1227,22 @@ pub fn json_to_cloudevent(json_event: &Value) -> Option<super::CloudEvent> {
             .map(|s| s.to_string()),
         datacontenttype: json_event
             .get("datacontenttype")
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string()),
+        dataschema: json_event
+            .get("dataschema")
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string()),
+        dataref: json_event
+            .get("dataref")
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string()),
+        sequence: json_event
+            .get("sequence")
+            .and_then(|t| t.as_str())
+            .map(|s| s.to_string()),
+        sequencetype: json_event
+            .get("sequencetype")
             .and_then(|t| t.as_str())
             .map(|s| s.to_string()),
         data: json_event.get("data").cloned(),

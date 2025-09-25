@@ -86,7 +86,9 @@ const TaskPlugin: React.FC<EventPluginProps> = ({ event, data }) => {
         <ActionButton
           variant="secondary"
           onClick={() => {
-            completeTask(currentTask.id, issueId);
+            if (issueId) {
+              completeTask(currentTask.id, issueId);
+            }
           }}
         >
           {cta}

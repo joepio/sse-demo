@@ -3,7 +3,7 @@ import type { Issue } from "../types";
 
 interface IssueHeaderProps {
   issue: Issue;
-  onEdit: () => void;
+  onEdit?: () => void;
   onDelete: () => void;
   isDeleting?: boolean;
 }
@@ -57,25 +57,27 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
         </div>
 
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
-            style={{
-              color: "var(--text-secondary)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--bg-hover)";
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "var(--text-secondary)";
-            }}
-            onClick={onEdit}
-            title="Bewerken"
-          >
-            ✏️
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
+              style={{
+                color: "var(--text-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+              onClick={onEdit}
+              title="Bewerken"
+            >
+              ✏️
+            </button>
+          )}
           <button
             type="button"
             className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"

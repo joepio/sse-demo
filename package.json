@@ -8,9 +8,10 @@
     "build": "cd frontend && tsc -b && vite build",
     "lint": "cd frontend && eslint .",
     "preview": "cd frontend && vite preview",
-    "spec-studio": "docker run --rm -it --user=root --network=host --init -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli start studio /app/asyncapi.yml",
+    "spec-studio": "docker run --rm --user=root --network=host --init -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli start studio /app/asyncapi.yml",
     "spec-html": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" -v \"$(pwd)/asyncapi-docs:/app/output\" asyncapi/cli generate fromTemplate /app/asyncapi.yml @asyncapi/html-template --output /app/output --force-write",
-    "spec-validate": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli validate /app/asyncapi.yml"
+    "spec-validate": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli validate /app/asyncapi.yml",
+    "generate": "cargo build && echo '✅ Generated: AsyncAPI spec + JSON schemas for frontend'"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

@@ -33,7 +33,6 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
           item_type: "comment",
           item_id: `comment-${Date.now()}`,
           actor: "user@example.com", // In a real app, this would come from auth
-          timestamp: new Date().toISOString(),
           item_data: {
             content: commentText.trim(),
             parent_id: null,

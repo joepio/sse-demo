@@ -1,26 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
-import type {
-  CloudEvent,
-  TimelineEvent,
-  TimelineItemType,
-  Issue,
-} from "../types";
-import ResourceEditor from "./ResourceEditor";
+import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
+
 import NotificationBell from "./NotificationBell";
 import IssueHeader from "./IssueHeader";
 import ActiveTaskSection from "./ActiveTaskSection";
 import ActivePlanningSection from "./ActivePlanningSection";
 import CommentForm from "./CommentForm";
 import TimelineEventsList from "./TimelineEventsList";
+import SchemaForm from "./SchemaForm";
 
 const IssueTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
   const { events, issues, sendEvent } = useSSE();
 
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const issue = zaakId ? issues[zaakId] : null;
@@ -98,21 +93,8 @@ const IssueTimeline: React.FC = () => {
     return "system_event";
   };
 
-  const handleEditIssue = () => {
-    setIsEditorOpen(true);
-  };
-
   const handleCommentSubmit = async (event: CloudEvent) => {
     await sendEvent(event);
-  };
-
-  const handleEditorClose = () => {
-    setIsEditorOpen(false);
-  };
-
-  const handlePatchIssue = async (event: CloudEvent) => {
-    await sendEvent(event);
-    setIsEditorOpen(false);
   };
 
   const handleDeleteIssue = async () => {
@@ -218,7 +200,6 @@ const IssueTimeline: React.FC = () => {
           {issue && (
             <IssueHeader
               issue={issue}
-              onEdit={handleEditIssue}
               onDelete={handleDeleteIssue}
               isDeleting={isDeleting}
             />
@@ -248,15 +229,12 @@ const IssueTimeline: React.FC = () => {
         {zaakId && (
           <CommentForm zaakId={zaakId} onSubmit={handleCommentSubmit} />
         )}
-      </div>
 
-      <ResourceEditor<Issue>
-        isOpen={isEditorOpen}
-        onClose={handleEditorClose}
-        resource={issue}
-        resourceType="issue"
-        onSave={handlePatchIssue}
-      />
+        {/* Schema-driven form for creating new items */}
+        {zaakId && (
+          <SchemaForm zaakId={zaakId} onSubmit={handleCommentSubmit} />
+        )}
+      </div>
     </div>
   );
 };
