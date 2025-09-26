@@ -13,19 +13,54 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [newEventsCount, setNewEventsCount] = useState(0);
   const [lastEventId, setLastEventId] = useState<string | null>(null);
+  const [lastSeenTime, setLastSeenTime] = useState<string>(
+    new Date().toISOString(),
+  );
   const notificationRef = useRef<HTMLDivElement>(null);
 
-  // Get recent issues (excluding current one) sorted by lastActivity
-  const recentIssues = useMemo(() => {
-    return Object.entries(issues)
-      .filter(([id]) => id !== currentZaakId)
-      .sort((a, b) => {
-        const timeA = a[1].lastActivity || a[1].created_at || "1970-01-01";
-        const timeB = b[1].lastActivity || b[1].created_at || "1970-01-01";
-        return new Date(timeB).getTime() - new Date(timeA).getTime();
-      })
-      .slice(0, 5); // Show only top 5 recent issues
-  }, [issues, currentZaakId]);
+  // Get recent activities (events for other issues) to show in dropdown
+  const recentActivities = useMemo(() => {
+    const recentEvents = events
+      .filter((event) => event.subject && event.subject !== currentZaakId)
+      .slice(-10) // Get last 10 events
+      .reverse(); // Most recent first
+
+    // Group by issue and show the most recent activity per issue
+    const activitiesByIssue = new Map();
+
+    recentEvents.forEach((event) => {
+      const issueId = event.subject;
+      const issue = issueId ? issues[issueId] : null;
+
+      if (issue && !activitiesByIssue.has(issueId)) {
+        let activityDescription = "Activiteit";
+
+        if (event.type === "item.created" && event.data) {
+          const data = event.data as any;
+          if (data.item_type === "comment") {
+            activityDescription = "Nieuwe reactie";
+          } else if (data.item_type === "task") {
+            activityDescription = "Nieuwe taak";
+          } else if (data.item_type === "issue") {
+            activityDescription = "Nieuwe zaak";
+          }
+        } else if (event.type === "item.updated") {
+          activityDescription = "Update";
+        }
+
+        activitiesByIssue.set(issueId, {
+          issueId,
+          issue,
+          event,
+          activityDescription,
+          timestamp: event.time || new Date().toISOString(),
+          isNew: (event.time || new Date().toISOString()) > lastSeenTime,
+        });
+      }
+    });
+
+    return Array.from(activitiesByIssue.values()).slice(0, 5);
+  }, [events, issues, currentZaakId]);
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -83,6 +118,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     // Reset counter when opening notifications
     if (!isNotificationOpen) {
       setNewEventsCount(0);
+      setLastSeenTime(new Date().toISOString());
     }
   };
 
@@ -123,51 +159,75 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
               className="m-0 text-sm md:text-xs font-semibold"
               style={{ color: "var(--text-primary)" }}
             >
-              Recente Zaken
+              Recente Activiteit
             </h3>
           </div>
           <div className="max-h-[300px] overflow-y-auto">
-            {recentIssues.length === 0 ? (
+            {recentActivities.length === 0 ? (
               <div
                 className="block px-4 py-3 italic text-center cursor-default"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Geen andere zaken
+                Geen recente activiteit
               </div>
             ) : (
-              recentIssues.map(([id, issue]) => (
+              recentActivities.map((activity) => (
                 <Link
-                  key={id}
-                  to={`/zaak/${id}`}
-                  className="block px-4 py-3 border-b last:border-b-0 text-inherit no-underline transition-colors duration-200"
+                  key={activity.issueId}
+                  to={`/zaak/${activity.issueId}`}
+                  className={`block px-4 py-3 border-b last:border-b-0 text-inherit no-underline transition-colors duration-200 ${
+                    activity.isNew ? "relative" : ""
+                  }`}
                   style={{
                     borderBottomColor: "var(--border-primary)",
+                    backgroundColor: activity.isNew
+                      ? "rgba(59, 130, 246, 0.05)"
+                      : "",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                    e.currentTarget.style.backgroundColor = activity.isNew
+                      ? "rgba(59, 130, 246, 0.1)"
+                      : "var(--bg-hover)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "";
+                    e.currentTarget.style.backgroundColor = activity.isNew
+                      ? "rgba(59, 130, 246, 0.05)"
+                      : "";
                   }}
                   onClick={() => setIsNotificationOpen(false)}
                 >
+                  {activity.isNew && (
+                    <div
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full"
+                      style={{ backgroundColor: "rgb(59, 130, 246)" }}
+                    />
+                  )}
                   <div
-                    className="font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap md:text-sm"
+                    className={`font-medium mb-1 overflow-hidden text-ellipsis whitespace-nowrap md:text-sm ${
+                      activity.isNew ? "ml-2" : ""
+                    }`}
                     style={{ color: "var(--text-primary)" }}
                   >
-                    {issue.title || "Zaak zonder titel"}
+                    {activity.issue.title || "Zaak zonder titel"}
                   </div>
                   <div
-                    className="text-xs md:text-xs capitalize"
+                    className={`text-xs md:text-xs flex items-center gap-1 ${
+                      activity.isNew ? "ml-2" : ""
+                    }`}
                     style={{ color: "var(--text-secondary)" }}
                   >
-                    {issue.status === "in_progress"
-                      ? "In Behandeling"
-                      : issue.status === "open"
-                        ? "Open"
-                        : issue.status === "closed"
-                          ? "Gesloten"
-                          : issue.status}
+                    {activity.activityDescription}
+                    {activity.isNew && (
+                      <span
+                        className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: "rgb(59, 130, 246)",
+                          color: "white",
+                        }}
+                      >
+                        Nieuw
+                      </span>
+                    )}
                   </div>
                 </Link>
               ))
