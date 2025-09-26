@@ -106,15 +106,15 @@ const ZakenDashboard: React.FC = () => {
           style={{ color: "var(--text-primary)" }}
         >
           Mijn Zaken
+          <ConnectionStatus status={connectionStatus} />
         </h1>
         <p
           className="text-lg leading-relaxed max-w-3xl mx-auto mb-4"
           style={{ color: "var(--text-secondary)" }}
         >
-          {issueEntries.length} {issueEntries.length !== 1 ? "zaken" : "zaak"}{" "}
-          opgebouwd uit events
+          Een simpel zaaksysteem met realtime updates en interactieve
+          visualisaties.
         </p>
-        <ConnectionStatus status={connectionStatus} />
       </header>
 
       <main className="max-w-4xl mx-auto">

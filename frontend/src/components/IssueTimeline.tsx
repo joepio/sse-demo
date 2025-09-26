@@ -10,6 +10,7 @@ import ActivePlanningSection from "./ActivePlanningSection";
 import CommentForm from "./CommentForm";
 import TimelineEventsList from "./TimelineEventsList";
 import SchemaForm from "./SchemaForm";
+import SectionLabel from "./SectionLabel";
 
 const IssueTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
@@ -215,9 +216,7 @@ const IssueTimeline: React.FC = () => {
         {/* Timeline section */}
         {timelineEvents.length > 0 && (
           <div className="mb-6">
-            <div className="text-xs text-text-secondary uppercase font-semibold tracking-wider mb-3 ml-0">
-              Tijdlijn
-            </div>
+            <SectionLabel>Tijdlijn</SectionLabel>
             <TimelineEventsList
               events={timelineEvents}
               getTimelineItemType={getTimelineItemType}
