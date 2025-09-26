@@ -25,3 +25,6 @@ fastrand = "2.0"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["fs", "cors"] }
 schemars = { version = "0.8", features = ["uuid1", "chrono"] }
+utoipa = { version = "5.0", features = ["axum_extras", "chrono", "uuid", "non_strict_integers"] }
+utoipa-axum = "0.2"
+serde_yaml = "0.9"

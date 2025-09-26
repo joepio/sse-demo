@@ -1,0 +1,820 @@
+asyncapi: 3.0.0
+channels:
+  /events:
+    address: /events
+    bindings:
+      http:
+        headers:
+          properties:
+            Accept:
+              const: text/event-stream
+              type: string
+            Cache-Control:
+              const: no-cache
+              type: string
+          type: object
+        method: GET
+        type: request
+    description: Server-Sent Events stream for real-time CloudEvents delivery
+    messages:
+      CloudEvent:
+        $ref: '#/components/messages/CloudEvent'
+components:
+  messages:
+    CloudEvent:
+      contentType: application/json
+      description: A CloudEvent containing case management data following the CloudEvents specification v1.0. The event carries structured data about municipal case management operations.
+      examples:
+      - name: IssueCreated
+        payload:
+          data:
+            actor: user@gemeente.nl
+            item_data:
+              assignee: alice@gemeente.nl
+              created_at: 2025-01-15T10:30:00Z
+              description: Nieuwe paspoort aanvraag ingediend door burger
+              id: '1'
+              status: open
+              title: Paspoort aanvragen
+            item_id: '1'
+            item_type: issue
+            itemschema: http://localhost:8000/schemas/Issue
+            timestamp: 2025-01-15T10:30:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7E8
+          source: frontend-demo-event
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T10:30:00Z
+          type: item.created
+        summary: New municipal case created
+      - name: IssueUpdated
+        payload:
+          data:
+            actor: alice@gemeente.nl
+            item_id: '1'
+            item_type: issue
+            itemschema: http://localhost:8000/schemas/Issue
+            patch:
+              assignee: bob@gemeente.nl
+              status: in_progress
+            timestamp: 2025-01-15T11:15:00Z
+          datacontenttype: application/merge-patch+json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7E9
+          source: frontend-demo-event
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T11:15:00Z
+          type: item.updated
+        summary: Municipal case updated with partial changes
+      - name: IssueDeleted
+        payload:
+          data:
+            actor: admin@gemeente.nl
+            item_id: '1'
+            item_type: issue
+            reason: 'Duplicate case - merged with case #3'
+            timestamp: 2025-01-15T16:45:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F0
+          source: frontend-demo-event
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T16:45:00Z
+          type: item.deleted
+        summary: Municipal case deleted
+      - name: TaskAssigned
+        payload:
+          data:
+            actor: system@gemeente.nl
+            item_data:
+              completed: false
+              cta: Documenten Controleren
+              deadline: 2025-01-20
+              description: Controleer de ingediende paspoort aanvraag documenten
+              url: /review/passport-1
+            item_id: task-1001
+            item_type: task
+            itemschema: http://localhost:8000/schemas/Task
+            timestamp: 2025-01-15T10:35:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F1
+          source: workflow-engine
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T10:35:00Z
+          type: item.created
+        summary: Task assigned to case worker
+      - name: TaskCompleted
+        payload:
+          data:
+            actor: alice@gemeente.nl
+            item_id: task-1001
+            item_type: task
+            itemschema: http://localhost:8000/schemas/Task
+            patch:
+              completed: true
+              completed_at: 2025-01-15T14:30:00Z
+            timestamp: 2025-01-15T14:30:00Z
+          datacontenttype: application/merge-patch+json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F2
+          source: frontend-user-action
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T14:30:00Z
+          type: item.updated
+        summary: Task marked as completed
+      - name: DocumentUploaded
+        payload:
+          data:
+            actor: user@gemeente.nl
+            item_data:
+              size: 89765
+              title: Paspoortfoto_Officieel.jpg
+              url: https://example.com/documents/passport-photo-12345.jpg
+            item_id: doc-1001
+            item_type: document
+            itemschema: http://localhost:8000/schemas/Document
+            timestamp: 2025-01-15T10:40:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F3
+          source: document-service
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T10:40:00Z
+          type: item.created
+        summary: Document attached to case
+      - name: DocumentDeleted
+        payload:
+          data:
+            actor: alice@gemeente.nl
+            item_id: doc-1001
+            item_type: document
+            reason: Incorrect document uploaded
+            timestamp: 2025-01-15T15:20:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F4
+          source: document-service
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T15:20:00Z
+          type: item.deleted
+        summary: Document removed from case
+      - name: PlanningCreated
+        payload:
+          data:
+            actor: specialist@gemeente.nl
+            item_data:
+              description: Proces voor het verkrijgen van de benodigde vergunningen
+              moments:
+              - date: 2025-01-10
+                id: moment-1
+                status: completed
+                title: Aanvraag indienen
+              - date: 2025-01-15
+                id: moment-2
+                status: current
+                title: Behandeling door gemeente
+              - date: 2025-01-25
+                id: moment-3
+                status: planned
+                title: Besluit gemeente
+              title: Vergunningsprocedure
+            item_id: planning-2001
+            item_type: planning
+            itemschema: http://localhost:8000/schemas/Planning
+            timestamp: 2025-01-15T11:00:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F5
+          source: planning-service
+          specversion: '1.0'
+          subject: '2'
+          time: 2025-01-15T11:00:00Z
+          type: item.created
+        summary: Case planning timeline created
+      - name: PlanningUpdated
+        payload:
+          data:
+            actor: specialist@gemeente.nl
+            item_id: planning-2001
+            item_type: planning
+            itemschema: http://localhost:8000/schemas/Planning
+            patch:
+              moments:
+              - date: 2025-01-15
+                id: moment-2
+                status: completed
+                title: Behandeling door gemeente
+              - date: 2025-01-25
+                id: moment-3
+                status: current
+                title: Besluit gemeente
+            timestamp: 2025-01-15T16:00:00Z
+          datacontenttype: application/merge-patch+json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F6
+          source: planning-service
+          specversion: '1.0'
+          subject: '2'
+          time: 2025-01-15T16:00:00Z
+          type: item.updated
+        summary: Case planning timeline status updated
+      - name: CommentAdded
+        payload:
+          data:
+            actor: alice@gemeente.nl
+            item_data:
+              content: Documenten zijn gecontroleerd en goedgekeurd. Zaak kan worden voortgezet.
+              mentions: []
+              parent_id: null
+            item_id: comment-1001
+            item_type: comment
+            itemschema: http://localhost:8000/schemas/Comment
+            timestamp: 2025-01-15T14:20:00Z
+          datacontenttype: application/json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F7
+          source: frontend-demo-event
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T14:20:00Z
+          type: item.created
+        summary: Comment added to case
+      - name: CommentUpdated
+        payload:
+          data:
+            actor: alice@gemeente.nl
+            item_id: comment-1001
+            item_type: comment
+            itemschema: http://localhost:8000/schemas/Comment
+            patch:
+              content: 'Documenten zijn gecontroleerd en goedgekeurd. Zaak kan worden voortgezet. Update: alle vereiste bijlagen zijn aanwezig.'
+            timestamp: 2025-01-15T14:25:00Z
+          datacontenttype: application/merge-patch+json
+          dataschema: '#/components/schemas/ItemEventData'
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F8
+          source: frontend-demo-event
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T14:25:00Z
+          type: item.updated
+        summary: Comment content edited
+      - name: CommentDeleted
+        payload:
+          data:
+            actor: alice@gemeente.nl
+            item_id: comment-1001
+            item_type: comment
+            itemschema: http://localhost:8000/schemas/Comment
+            timestamp: 2025-01-15T17:10:00Z
+          datacontenttype: application/json
+          dataschema: http://localhost:8000/schemas/ItemEventData
+          id: 01HF7K8QZ9X1Y2Z3A4B5C6D7F9
+          source: frontend-demo-event
+          specversion: '1.0'
+          subject: '1'
+          time: 2025-01-15T17:10:00Z
+          type: item.deleted
+        summary: Comment removed from case
+      name: CloudEvent
+      payload:
+        $ref: '#/components/schemas/CloudEvent'
+      summary: CloudEvents 1.0 compliant event for case management
+      title: CloudEvent 1.0
+  schemas:
+    CloudEvent:
+      $schema: http://json-schema.org/draft-07/schema#
+      description: CloudEvents specification struct
+      properties:
+        data:
+          description: De eigenlijke gebeurtenis data - bevat informatie over wat er is gebeurd
+        datacontenttype:
+          description: Formaat van de data (meestal "application/json")
+          type:
+          - string
+          - 'null'
+        dataref:
+          description: Verwijzing naar externe data locatie (indien data niet inline staat)
+          type:
+          - string
+          - 'null'
+        dataschema:
+          description: URL naar het schema dat de data beschrijft
+          type:
+          - string
+          - 'null'
+        id:
+          description: Unieke identificatie van deze gebeurtenis
+          type: string
+        sequence:
+          description: Volgnummer voor het ordenen van gebeurtenissen
+          type:
+          - string
+          - 'null'
+        sequencetype:
+          description: Type van de volgnummering die gebruikt wordt
+          type:
+          - string
+          - 'null'
+        source:
+          description: Bron systeem dat de gebeurtenis heeft aangemaakt (bijv. "zaaksysteem", "frontend-demo")
+          type: string
+        specversion:
+          description: Versie van de CloudEvents specificatie (altijd "1.0")
+          type: string
+        subject:
+          description: Het onderwerp van de gebeurtenis, meestal de zaak ID waar het over gaat
+          type:
+          - string
+          - 'null'
+        time:
+          description: Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat)
+          type:
+          - string
+          - 'null'
+        type:
+          description: Type gebeurtenis (bijv. "item.created", "item.updated", "item.deleted")
+          type: string
+      required:
+      - id
+      - source
+      - specversion
+      - type
+      title: CloudEvent
+      type: object
+    Comment:
+      $schema: http://json-schema.org/draft-07/schema#
+      description: Reactie - een opmerking, vraag of toelichting bij een zaak
+      properties:
+        author:
+          description: Email van degene die de reactie heeft geschreven
+          type:
+          - string
+          - 'null'
+        content:
+          description: De tekst van de reactie (bijv. "Documenten zijn goedgekeurd", "Burger gebeld voor aanvullende info")
+          type: string
+        id:
+          description: Unieke reactie ID
+          type: string
+        mentions:
+          description: Email adressen van collega's die specifiek genoemd worden (bijv. "@alice@gemeente.nl")
+          items:
+            type: string
+          type:
+          - array
+          - 'null'
+        parent_id:
+          description: ID van de reactie waar dit een antwoord op is (voor discussies met meerdere berichten)
+          type:
+          - string
+          - 'null'
+      required:
+      - content
+      - id
+      title: Comment
+      type: object
+    Document:
+      $schema: http://json-schema.org/draft-07/schema#
+      description: Document dat bij een zaak hoort (bijv. paspoortfoto, uittreksel GBA)
+      properties:
+        id:
+          description: Unieke identificatie van het document
+          type: string
+        size:
+          description: Bestandsgrootte in bytes
+          format: uint64
+          minimum: 0.0
+          type: integer
+        title:
+          description: Bestandsnaam of titel van het document (bijv. "Paspoortfoto_Jan_Jansen.jpg")
+          type: string
+        url:
+          description: Download URL van het document - moet toegankelijk zijn voor geautoriseerde gebruikers
+          type: string
+      required:
+      - id
+      - size
+      - title
+      - url
+      title: Document
+      type: object
+    Issue:
+      $schema: http://json-schema.org/draft-07/schema#
+      definitions:
+        IssueStatus:
+          description: Status van een zaak in behandeling
+          oneOf:
+          - description: Nieuw binnengekomen, nog niet in behandeling genomen
+            enum:
+            - open
+            type: string
+          - description: Wordt momenteel behandeld door een ambtenaar
+            enum:
+            - in_progress
+            type: string
+          - description: Behandeling afgerond, zaak is gesloten
+            enum:
+            - closed
+            type: string
+      description: Zaak - een burgerzaak of aanvraag die door de gemeente behandeld wordt
+      properties:
+        assignee:
+          description: Email van de ambtenaar die de zaak behandelt (bijv. "alice@gemeente.nl")
+          type:
+          - string
+          - 'null'
+        created_at:
+          description: 'Wanneer de zaak is aangemaakt (ISO 8601 formaat: 2024-01-15T10:30:00Z)'
+          type: string
+        description:
+          description: 'Uitgebreide beschrijving: wat is de aanvraag, welke stappen zijn al ondernomen'
+          type:
+          - string
+          - 'null'
+        id:
+          description: Unieke zaaknummer
+          type: string
+        resolution:
+          description: Hoe de zaak is afgesloten (alleen bij status "gesloten")
+          type:
+          - string
+          - 'null'
+        status:
+          description: Huidige behandelstatus van de zaak
+          oneOf:
+          - description: Nieuw binnengekomen, nog niet in behandeling genomen
+            enum:
+            - open
+            type: string
+          - description: Wordt momenteel behandeld door een ambtenaar
+            enum:
+            - in_progress
+            type: string
+          - description: Behandeling afgerond, zaak is gesloten
+            enum:
+            - closed
+            type: string
+        title:
+          description: Korte, duidelijke titel van de zaak (bijv. "Paspoort aanvragen", "Kapvergunning Dorpsstraat 12")
+          type: string
+      required:
+      - created_at
+      - id
+      - status
+      - title
+      title: Issue
+      type: object
+    IssueStatus:
+      description: Status van een zaak in behandeling
+      oneOf:
+      - description: Nieuw binnengekomen, nog niet in behandeling genomen
+        enum:
+        - open
+        type: string
+      - description: Wordt momenteel behandeld door een ambtenaar
+        enum:
+        - in_progress
+        type: string
+      - description: Behandeling afgerond, zaak is gesloten
+        enum:
+        - closed
+        type: string
+    ItemEventData:
+      $schema: http://json-schema.org/draft-07/schema#
+      definitions:
+        ItemType:
+          description: Soorten items in het zaaksysteem
+          oneOf:
+          - description: Zaak - een burgerzaak of aanvraag die behandeld wordt
+            enum:
+            - issue
+            type: string
+          - description: Reactie - een opmerking of toelichting bij een zaak
+            enum:
+            - comment
+            type: string
+          - description: Taak - een actie die uitgevoerd moet worden
+            enum:
+            - task
+            type: string
+          - description: Planning - een tijdlijn met verschillende momenten/fasen
+            enum:
+            - planning
+            type: string
+          - description: Document - een bestand of document bij een zaak
+            enum:
+            - document
+            type: string
+      description: Gebeurtenis data voor zaakgerelateerde items (zaken, taken, reacties, planning)
+      properties:
+        actor:
+          description: Email van de persoon die de actie heeft uitgevoerd (bijv. "alice@gemeente.nl", "user@gemeente.nl")
+          type:
+          - string
+          - 'null'
+        item_data:
+          description: Complete item gegevens (bij aanmaken of volledige updates)
+        item_id:
+          description: Unieke identificatie van het item waar de gebeurtenis over gaat
+          type: string
+        item_type:
+          description: 'Soort item: zaak, taak, reactie of planning'
+          oneOf:
+          - description: Zaak - een burgerzaak of aanvraag die behandeld wordt
+            enum:
+            - issue
+            type: string
+          - description: Reactie - een opmerking of toelichting bij een zaak
+            enum:
+            - comment
+            type: string
+          - description: Taak - een actie die uitgevoerd moet worden
+            enum:
+            - task
+            type: string
+          - description: Planning - een tijdlijn met verschillende momenten/fasen
+            enum:
+            - planning
+            type: string
+          - description: Document - een bestand of document bij een zaak
+            enum:
+            - document
+            type: string
+        itemschema:
+          description: URL naar het schema dat de structuur van item_data beschrijft
+          type:
+          - string
+          - 'null'
+        patch:
+          description: Alleen de gewijzigde velden (bij gedeeltelijke updates)
+        timestamp:
+          description: 'Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat: 2024-01-15T10:30:00Z)'
+          type:
+          - string
+          - 'null'
+      required:
+      - item_id
+      - item_type
+      title: ItemEventData
+      type: object
+    ItemType:
+      description: Soorten items in het zaaksysteem
+      oneOf:
+      - description: Zaak - een burgerzaak of aanvraag die behandeld wordt
+        enum:
+        - issue
+        type: string
+      - description: Reactie - een opmerking of toelichting bij een zaak
+        enum:
+        - comment
+        type: string
+      - description: Taak - een actie die uitgevoerd moet worden
+        enum:
+        - task
+        type: string
+      - description: Planning - een tijdlijn met verschillende momenten/fasen
+        enum:
+        - planning
+        type: string
+      - description: Document - een bestand of document bij een zaak
+        enum:
+        - document
+        type: string
+    Planning:
+      $schema: http://json-schema.org/draft-07/schema#
+      definitions:
+        PlanningMoment:
+          description: Een specifieke stap of mijlpaal binnen een planning
+          properties:
+            date:
+              description: Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
+              type: string
+            id:
+              description: Unieke identificatie van dit moment
+              type: string
+            status:
+              description: In welke fase dit moment zich bevindt
+              oneOf:
+              - description: Afgerond - deze stap is voltooid
+                enum:
+                - completed
+                type: string
+              - description: Huidig - deze stap wordt nu uitgevoerd
+                enum:
+                - current
+                type: string
+              - description: Gepland - deze stap staat nog in de toekomst
+                enum:
+                - planned
+                type: string
+            title:
+              description: Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")
+              type: string
+          required:
+          - date
+          - id
+          - status
+          - title
+          type: object
+        PlanningStatus:
+          description: Status van een planning moment
+          oneOf:
+          - description: Afgerond - deze stap is voltooid
+            enum:
+            - completed
+            type: string
+          - description: Huidig - deze stap wordt nu uitgevoerd
+            enum:
+            - current
+            type: string
+          - description: Gepland - deze stap staat nog in de toekomst
+            enum:
+            - planned
+            type: string
+      description: Planning - een tijdlijn met verschillende stappen of fasen voor zaakbehandeling
+      properties:
+        description:
+          description: Uitleg over wat deze planning behelst en welke stappen doorlopen worden
+          type:
+          - string
+          - 'null'
+        id:
+          description: Unieke planning ID
+          type: string
+        moments:
+          description: Alle stappen/momenten in deze planning, in chronologische volgorde
+          items:
+            description: Een specifieke stap of mijlpaal binnen een planning
+            properties:
+              date:
+                description: Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
+                type: string
+              id:
+                description: Unieke identificatie van dit moment
+                type: string
+              status:
+                description: In welke fase dit moment zich bevindt
+                oneOf:
+                - description: Afgerond - deze stap is voltooid
+                  enum:
+                  - completed
+                  type: string
+                - description: Huidig - deze stap wordt nu uitgevoerd
+                  enum:
+                  - current
+                  type: string
+                - description: Gepland - deze stap staat nog in de toekomst
+                  enum:
+                  - planned
+                  type: string
+              title:
+                description: Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")
+                type: string
+            required:
+            - date
+            - id
+            - status
+            - title
+            type: object
+          type: array
+        title:
+          description: Naam van de planning (bijv. "Vergunningsprocedure", "Paspoort aanvraag proces")
+          type: string
+      required:
+      - id
+      - moments
+      - title
+      title: Planning
+      type: object
+    PlanningMoment:
+      description: Een specifieke stap of mijlpaal binnen een planning
+      properties:
+        date:
+          description: Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
+          type: string
+        id:
+          description: Unieke identificatie van dit moment
+          type: string
+        status:
+          description: In welke fase dit moment zich bevindt
+          oneOf:
+          - description: Afgerond - deze stap is voltooid
+            enum:
+            - completed
+            type: string
+          - description: Huidig - deze stap wordt nu uitgevoerd
+            enum:
+            - current
+            type: string
+          - description: Gepland - deze stap staat nog in de toekomst
+            enum:
+            - planned
+            type: string
+        title:
+          description: Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")
+          type: string
+      required:
+      - date
+      - id
+      - status
+      - title
+      type: object
+    PlanningStatus:
+      description: Status van een planning moment
+      oneOf:
+      - description: Afgerond - deze stap is voltooid
+        enum:
+        - completed
+        type: string
+      - description: Huidig - deze stap wordt nu uitgevoerd
+        enum:
+        - current
+        type: string
+      - description: Gepland - deze stap staat nog in de toekomst
+        enum:
+        - planned
+        type: string
+    Task:
+      $schema: http://json-schema.org/draft-07/schema#
+      description: Taak - een actie die uitgevoerd moet worden om een zaak te behandelen
+      properties:
+        actor:
+          description: Email van degene die de taak heeft toegewezen of aangemaakt
+          type:
+          - string
+          - 'null'
+        completed:
+          description: Is de taak voltooid? (true = klaar, false = nog te doen)
+          type: boolean
+        cta:
+          description: Korte actie-omschrijving (bijv. "Documenten controleren", "Afspraak inplannen")
+          type: string
+        deadline:
+          description: Uiterste datum voor voltooiing (YYYY-MM-DD, bijv. "2024-01-25")
+          type:
+          - string
+          - 'null'
+        description:
+          description: 'Uitgebreide uitleg: wat moet er precies gebeuren, welke voorwaarden gelden'
+          type: string
+        id:
+          description: Unieke taaknummer
+          type: string
+        url:
+          description: Link naar de plaats waar de taak uitgevoerd kan worden (bijv. formulier, overzicht)
+          type:
+          - string
+          - 'null'
+      required:
+      - completed
+      - cta
+      - description
+      - id
+      title: Task
+      type: object
+defaultContentType: application/json
+info:
+  contact:
+    name: VNG Realisatie
+    url: https://www.vngrealisatie.nl
+  description: Server-Sent Events API for real-time CloudEvents streaming with delta snapshots for Dutch municipal case management
+  license:
+    name: EUPL-1.2
+    url: https://opensource.org/licenses/EUPL-1.2
+  title: SSE Delta Snapshot API
+  version: 1.0.0
+operations:
+  sendEvent:
+    action: send
+    bindings:
+      http:
+        method: POST
+    channel:
+      $ref: '#/channels/~1events'
+    description: Submit a CloudEvent via HTTP POST to create, update, or delete case management entities like issues, tasks, planning items, documents, and comments.
+    summary: Submit a CloudEvent to trigger case management actions
+    title: Send CloudEvent
+  subscribeToEvents:
+    action: receive
+    bindings:
+      http:
+        method: GET
+    channel:
+      $ref: '#/channels/~1events'
+    description: Establishes a persistent SSE connection to receive real-time CloudEvents for case management updates including issues, tasks, planning, documents, and comments.
+    summary: Receive real-time CloudEvents via Server-Sent Events
+    title: Subscribe to CloudEvents Stream
+servers:
+  development:
+    description: Development/Production server
+    host: localhost:8000
+    protocol: http

@@ -2,265 +2,294 @@
 // Generated from Rust JSON schemas using json-schema-to-typescript
 // Run 'pnpm run generate' to regenerate
 //
-// Last generated: 2025-09-26T07:48:23.109Z
+// Last generated: 2025-09-26T11:00:47.496Z
 
 /**
- * Planning structure
+ * Document dat bij een zaak hoort (bijv. paspoortfoto, uittreksel GBA)
  */
-export interface Planning {
+export interface Document {
   /**
-   * Beschrijving van de planning
-   */
-  description?: string | null;
-  /**
-   * Unieke planning identifier
+   * Unieke identificatie van het document
    */
   id: string;
   /**
-   * Planning momenten - verschillende fasen of mijlpalen
+   * Bestandsgrootte in bytes
    */
-  moments: {
-    /**
-     * Geplande datum in YYYY-MM-DD formaat
-     */
-    date: string;
-    /**
-     * Unieke moment identifier
-     */
-    id: string;
-    /**
-     * Huidige status van dit moment
-     */
-    status: "completed" | "current" | "planned";
-    /**
-     * Titel van dit planning moment (bijv. "Intake gesprek", "Documentcheck")
-     */
-    title: string;
-  }[];
+  size: number;
   /**
-   * Titel van de planning
+   * Bestandsnaam of titel van het document (bijv. "Paspoortfoto_Jan_Jansen.jpg")
+   */
+  title: string;
+  /**
+   * Download URL van het document - moet toegankelijk zijn voor geautoriseerde gebruikers
+   */
+  url: string;
+}
+
+/**
+ * Reactie - een opmerking, vraag of toelichting bij een zaak
+ */
+export interface Comment {
+  /**
+   * Email van degene die de reactie heeft geschreven
+   */
+  author?: string | null;
+  /**
+   * De tekst van de reactie (bijv. "Documenten zijn goedgekeurd", "Burger gebeld voor aanvullende info")
+   */
+  content: string;
+  /**
+   * Unieke reactie ID
+   */
+  id: string;
+  /**
+   * Email adressen van collega's die specifiek genoemd worden (bijv. "@alice@gemeente.nl")
+   */
+  mentions?: string[] | null;
+  /**
+   * ID van de reactie waar dit een antwoord op is (voor discussies met meerdere berichten)
+   */
+  parent_id?: string | null;
+}
+
+/**
+ * Een specifieke stap of mijlpaal binnen een planning
+ */
+export interface PlanningMoment {
+  /**
+   * Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
+   */
+  date: string;
+  /**
+   * Unieke identificatie van dit moment
+   */
+  id: string;
+  /**
+   * In welke fase dit moment zich bevindt
+   */
+  status: "completed" | "current" | "planned";
+  /**
+   * Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")
    */
   title: string;
 }
 
-export type PlanningStatus = "completed" | "current" | "planned";
+/**
+ * Planning - een tijdlijn met verschillende stappen of fasen voor zaakbehandeling
+ */
+export interface Planning {
+  /**
+   * Uitleg over wat deze planning behelst en welke stappen doorlopen worden
+   */
+  description?: string | null;
+  /**
+   * Unieke planning ID
+   */
+  id: string;
+  /**
+   * Alle stappen/momenten in deze planning, in chronologische volgorde
+   */
+  moments: {
+    /**
+     * Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
+     */
+    date: string;
+    /**
+     * Unieke identificatie van dit moment
+     */
+    id: string;
+    /**
+     * In welke fase dit moment zich bevindt
+     */
+    status: "completed" | "current" | "planned";
+    /**
+     * Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")
+     */
+    title: string;
+  }[];
+  /**
+   * Naam van de planning (bijv. "Vergunningsprocedure", "Paspoort aanvraag proces")
+   */
+  title: string;
+}
+
+/**
+ * Zaak - een burgerzaak of aanvraag die door de gemeente behandeld wordt
+ */
+export interface Issue {
+  /**
+   * Email van de ambtenaar die de zaak behandelt (bijv. "alice@gemeente.nl")
+   */
+  assignee?: string | null;
+  /**
+   * Wanneer de zaak is aangemaakt (ISO 8601 formaat: 2024-01-15T10:30:00Z)
+   */
+  created_at: string;
+  /**
+   * Uitgebreide beschrijving: wat is de aanvraag, welke stappen zijn al ondernomen
+   */
+  description?: string | null;
+  /**
+   * Unieke zaaknummer
+   */
+  id: string;
+  /**
+   * Hoe de zaak is afgesloten (alleen bij status "gesloten")
+   */
+  resolution?: string | null;
+  /**
+   * Huidige behandelstatus van de zaak
+   */
+  status: "open" | "in_progress" | "closed";
+  /**
+   * Korte, duidelijke titel van de zaak (bijv. "Paspoort aanvragen", "Kapvergunning Dorpsstraat 12")
+   */
+  title: string;
+}
+
+/**
+ * Status van een zaak in behandeling
+ */
+export type IssueStatus = "open" | "in_progress" | "closed";
 
 /**
  * CloudEvents specification struct
  */
 export interface CloudEvent {
   /**
-   * The event payload
+   * De eigenlijke gebeurtenis data - bevat informatie over wat er is gebeurd
    */
   data?: {
     [k: string]: unknown;
   };
   /**
-   * Content type of the data value
+   * Formaat van de data (meestal "application/json")
    */
   datacontenttype?: string | null;
   /**
-   * Reference to external data location
+   * Verwijzing naar externe data locatie (indien data niet inline staat)
    */
   dataref?: string | null;
   /**
-   * Schema that the data adheres to
+   * URL naar het schema dat de data beschrijft
    */
   dataschema?: string | null;
   /**
-   * Identifies the event
+   * Unieke identificatie van deze gebeurtenis
    */
   id: string;
   /**
-   * Sequence number for event ordering
+   * Volgnummer voor het ordenen van gebeurtenissen
    */
   sequence?: string | null;
   /**
-   * Type of sequence numbering used
+   * Type van de volgnummering die gebruikt wordt
    */
   sequencetype?: string | null;
   /**
-   * Identifies the context in which an event happened
+   * Bron systeem dat de gebeurtenis heeft aangemaakt (bijv. "zaaksysteem", "frontend-demo")
    */
   source: string;
   /**
-   * The version of the CloudEvents specification
+   * Versie van de CloudEvents specificatie (altijd "1.0")
    */
   specversion: string;
   /**
-   * Identifies the subject of the event in the context of the event producer
+   * Het onderwerp van de gebeurtenis, meestal de zaak ID waar het over gaat
    */
   subject?: string | null;
   /**
-   * Timestamp of when the occurrence happened
+   * Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat)
    */
   time?: string | null;
   /**
-   * The type of event related to the originating occurrence
+   * Type gebeurtenis (bijv. "item.created", "item.updated", "item.deleted")
    */
   type: string;
 }
 
 /**
- * Issue/Zaak structure
+ * Status van een planning moment
  */
-export interface Issue {
-  /**
-   * Email adres van de toegewezen persoon (bijv. alice@gemeente.nl)
-   */
-  assignee?: string | null;
-  /**
-   * Aanmaak tijdstip in ISO 8601 formaat
-   */
-  created_at: string;
-  /**
-   * Uitgebreide beschrijving van de zaak - wat is er aan de hand, welke stappen zijn ondernomen
-   */
-  description?: string | null;
-  /**
-   * Unieke zaak identifier
-   */
-  id: string;
-  /**
-   * Reden voor sluiting (alleen bij gesloten zaken)
-   */
-  resolution?: string | null;
-  /**
-   * Huidige status van de zaak
-   */
-  status: "open" | "in_progress" | "closed";
-  /**
-   * Titel van de zaak - korte, duidelijke omschrijving
-   */
-  title: string;
-}
+export type PlanningStatus = "completed" | "current" | "planned";
 
 /**
- * Document
- */
-export interface Document {
-  /**
-   * Unieke document identifier
-   */
-  id: string;
-  /**
-   * Grootte in bytes
-   */
-  size: number;
-  /**
-   * Naam van het document
-   */
-  title: string;
-  /**
-   * URL naar het document. Moet downloaddbaar zijn
-   */
-  url: string;
-}
-
-export type ItemType = "issue" | "comment" | "task" | "planning";
-
-/**
- * Task/Taak structure
+ * Taak - een actie die uitgevoerd moet worden om een zaak te behandelen
  */
 export interface Task {
   /**
-   * Email van degene die de taak heeft aangemaakt of toegewezen
+   * Email van degene die de taak heeft toegewezen of aangemaakt
    */
   actor?: string | null;
   /**
-   * Of de taak voltooid is (true) of nog open staat (false)
+   * Is de taak voltooid? (true = klaar, false = nog te doen)
    */
   completed: boolean;
   /**
-   * Actie tekst - korte beschrijving van wat er gedaan moet worden
+   * Korte actie-omschrijving (bijv. "Documenten controleren", "Afspraak inplannen")
    */
   cta: string;
   /**
-   * Deadline voor deze taak in YYYY-MM-DD formaat
+   * Uiterste datum voor voltooiing (YYYY-MM-DD, bijv. "2024-01-25")
    */
   deadline?: string | null;
   /**
-   * Uitgebreide beschrijving van de taak - context, voorwaarden, instructies
+   * Uitgebreide uitleg: wat moet er precies gebeuren, welke voorwaarden gelden
    */
   description: string;
   /**
-   * Unieke taak identifier
+   * Unieke taaknummer
    */
   id: string;
   /**
-   * URL waar de taak uitgevoerd kan worden of meer informatie te vinden is
+   * Link naar de plaats waar de taak uitgevoerd kan worden (bijv. formulier, overzicht)
    */
   url?: string | null;
 }
 
 /**
- * Event data structure for item-based events
+ * Soorten items in het zaaksysteem
+ */
+export type ItemType = "issue" | "comment" | "task" | "planning" | "document";
+
+/**
+ * Gebeurtenis data voor zaakgerelateerde items (zaken, taken, reacties, planning)
  */
 export interface ItemEventData {
   /**
-   * Volledige item data (voor create/update events)
+   * Email van de persoon die de actie heeft uitgevoerd (bijv. "alice@gemeente.nl", "user@gemeente.nl")
+   */
+  actor?: string | null;
+  /**
+   * Complete item gegevens (bij aanmaken of volledige updates)
    */
   item_data?: {
     [k: string]: unknown;
   };
   /**
-   * Unieke identifier van het item
+   * Unieke identificatie van het item waar de gebeurtenis over gaat
    */
   item_id: string;
   /**
-   * Type item (issue, task, comment, planning)
+   * Soort item: zaak, taak, reactie of planning
    */
-  item_type: "issue" | "comment" | "task" | "planning";
+  item_type: "issue" | "comment" | "task" | "planning" | "document";
   /**
-   * Schema URL voor de item_data inhoud
+   * URL naar het schema dat de structuur van item_data beschrijft
    */
   itemschema?: string | null;
   /**
-   * Patch data voor updates (alleen gewijzigde velden)
+   * Alleen de gewijzigde velden (bij gedeeltelijke updates)
    */
   patch?: {
     [k: string]: unknown;
   };
+  /**
+   * Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat: 2024-01-15T10:30:00Z)
+   */
+  timestamp?: string | null;
 }
 
-/**
- * Comment/Reactie structure
- */
-export interface Comment {
-  /**
-   * Email van de auteur van de reactie
-   */
-  author?: string | null;
-  /**
-   * Inhoud van de reactie of opmerking
-   */
-  content: string;
-  /**
-   * Unieke reactie identifier
-   */
-  id: string;
-  /**
-   * Email adressen van vermelde personen (bijv. ["alice@gemeente.nl", "bob@gemeente.nl"])
-   */
-  mentions?: string[] | null;
-  /**
-   * ID van de reactie waar dit een antwoord op is (voor threading)
-   */
-  parent_id?: string | null;
-}
-
-export type IssueStatus = "open" | "in_progress" | "closed";
-
-export interface PlanningMoment {
-  /** Unieke moment identifier */
-  id: string;
-  /** Geplande datum in YYYY-MM-DD formaat */
-  date: string;
-  /** Titel van dit planning moment */
-  title: string;
-  /** Huidige status van dit moment */
-  status: "completed" | "current" | "planned";
-}
 
 // Schema metadata interface for runtime schema fetching
 export interface SchemaMetadata {

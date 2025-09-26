@@ -9,9 +9,11 @@
     "lint": "cd frontend && eslint .",
     "preview": "cd frontend && vite preview",
     "spec-studio": "docker run --rm --user=root --network=host --init -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli start studio /app/asyncapi.yml",
-    "spec-html": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" -v \"$(pwd)/asyncapi-docs:/app/output\" asyncapi/cli generate fromTemplate /app/asyncapi.yml @asyncapi/html-template --output /app/output --force-write",
+    "spec-html": "mkdir -p asyncapi-docs && docker run --rm -v \"$(pwd)/asyncapi-embedded.yaml:/app/asyncapi.yml\" -v \"$(pwd)/asyncapi-docs:/app/output\" asyncapi/cli generate fromTemplate /app/asyncapi.yml @asyncapi/html-template@2.3.0 --output /app/output --force-write",
     "spec-validate": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli validate /app/asyncapi.yml",
-    "generate": "node scripts/generate-types.js"
+    "generate": "node scripts/generate-types.js",
+    "generate-asyncapi": "cargo run --bin generate_asyncapi",
+    "generate-all": "cargo run --bin export_schemas && cargo run --bin generate_asyncapi && node scripts/generate-types.js && cd frontend && vite build"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

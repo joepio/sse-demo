@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import ApiDocumentationView from "./components/ApiDocumentationView";
+import PageHeader from "./components/PageHeader";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
@@ -77,47 +78,22 @@ const ZakenDashboard: React.FC = () => {
         color: "var(--text-primary)",
       }}
     >
-      <header
-        className="text-center mb-12 py-12 md:py-8 border-b"
-        style={{ borderColor: "var(--border-secondary)" }}
-      >
-        {/* Navigation */}
-        <nav className="mb-6">
-          <div className="flex justify-center gap-6">
-            <Link
-              to="/"
-              className="text-sm font-medium hover:underline"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/api-docs"
-              className="text-sm font-medium hover:underline"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              API Documentatie
-            </Link>
-          </div>
-        </nav>
+      <PageHeader />
 
-        <h1
-          className="mb-6 text-5xl md:text-4xl font-bold"
-          style={{ color: "var(--text-primary)" }}
-        >
+      <div className="text-center py-12 border-b border-gray-200">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Mijn Zaken
-          <ConnectionStatus status={connectionStatus} />
+          <span className="ml-4">
+            <ConnectionStatus status={connectionStatus} />
+          </span>
         </h1>
-        <p
-          className="text-lg leading-relaxed max-w-3xl mx-auto mb-4"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Een simpel zaaksysteem met realtime updates en interactieve
-          visualisaties.
+          visualisaties
         </p>
-      </header>
+      </div>
 
-      <main className="max-w-3xl mx-auto">
+      <main className="max-w-3xl mx-auto pt-8">
         <div className="flex flex-col gap-6 md:gap-4 mb-8">
           {issueEntries.length === 0 ? (
             <p style={{ color: "var(--text-secondary)" }}>

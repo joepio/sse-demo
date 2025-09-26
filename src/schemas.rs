@@ -6,184 +6,205 @@ use std::collections::HashMap;
 /// CloudEvents specification struct
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct CloudEvent {
-    /// The version of the CloudEvents specification
+    /// Versie van de CloudEvents specificatie (altijd "1.0")
     pub specversion: String,
-    /// Identifies the event
+    /// Unieke identificatie van deze gebeurtenis
     pub id: String,
-    /// Identifies the context in which an event happened
+    /// Bron systeem dat de gebeurtenis heeft aangemaakt (bijv. "zaaksysteem", "frontend-demo")
     pub source: String,
-    /// Identifies the subject of the event in the context of the event producer
+    /// Het onderwerp van de gebeurtenis, meestal de zaak ID waar het over gaat
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
-    /// The type of event related to the originating occurrence
+    /// Type gebeurtenis (bijv. "item.created", "item.updated", "item.deleted")
     #[serde(rename = "type")]
     pub event_type: String,
-    /// Timestamp of when the occurrence happened
+    /// Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
-    /// Content type of the data value
+    /// Formaat van de data (meestal "application/json")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub datacontenttype: Option<String>,
-    /// Schema that the data adheres to
+    /// URL naar het schema dat de data beschrijft
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dataschema: Option<String>,
-    /// Reference to external data location
+    /// Verwijzing naar externe data locatie (indien data niet inline staat)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dataref: Option<String>,
-    /// Sequence number for event ordering
+    /// Volgnummer voor het ordenen van gebeurtenissen
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sequence: Option<String>,
-    /// Type of sequence numbering used
+    /// Type van de volgnummering die gebruikt wordt
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sequencetype: Option<String>,
-    /// The event payload
+    /// De eigenlijke gebeurtenis data - bevat informatie over wat er is gebeurd
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Value>,
 }
 
-/// Event data structure for item-based events
+/// Gebeurtenis data voor zaakgerelateerde items (zaken, taken, reacties, planning)
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ItemEventData {
-    /// Type item (issue, task, comment, planning)
+    /// Soort item: zaak, taak, reactie of planning
     pub item_type: ItemType,
-    /// Unieke identifier van het item
+    /// Unieke identificatie van het item waar de gebeurtenis over gaat
     pub item_id: String,
-    /// Volledige item data (voor create/update events)
+    /// Email van de persoon die de actie heeft uitgevoerd (bijv. "alice@gemeente.nl", "user@gemeente.nl")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub actor: Option<String>,
+    /// Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat: 2024-01-15T10:30:00Z)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    /// Complete item gegevens (bij aanmaken of volledige updates)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub item_data: Option<Value>,
-    /// Patch data voor updates (alleen gewijzigde velden)
+    /// Alleen de gewijzigde velden (bij gedeeltelijke updates)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub patch: Option<Value>,
-    /// Schema URL voor de item_data inhoud
+    /// URL naar het schema dat de structuur van item_data beschrijft
     #[serde(skip_serializing_if = "Option::is_none")]
     pub itemschema: Option<String>,
 }
 
+/// Soorten items in het zaaksysteem
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ItemType {
+    /// Zaak - een burgerzaak of aanvraag die behandeld wordt
     Issue,
+    /// Reactie - een opmerking of toelichting bij een zaak
     Comment,
+    /// Taak - een actie die uitgevoerd moet worden
     Task,
+    /// Planning - een tijdlijn met verschillende momenten/fasen
     Planning,
+    /// Document - een bestand of document bij een zaak
+    Document,
 }
 
-/// Document
+/// Document dat bij een zaak hoort (bijv. paspoortfoto, uittreksel GBA)
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Document {
-    /// Unieke document identifier
+    /// Unieke identificatie van het document
     pub id: String,
-    /// Naam van het document
+    /// Bestandsnaam of titel van het document (bijv. "Paspoortfoto_Jan_Jansen.jpg")
     pub title: String,
-    /// URL naar het document. Moet downloaddbaar zijn
+    /// Download URL van het document - moet toegankelijk zijn voor geautoriseerde gebruikers
     pub url: String,
-    /// Grootte in bytes
+    /// Bestandsgrootte in bytes
     pub size: u64,
 }
 
-/// Issue/Zaak structure
+/// Zaak - een burgerzaak of aanvraag die door de gemeente behandeld wordt
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Issue {
-    /// Unieke zaak identifier
+    /// Unieke zaaknummer
     pub id: String,
-    /// Titel van de zaak - korte, duidelijke omschrijving
+    /// Korte, duidelijke titel van de zaak (bijv. "Paspoort aanvragen", "Kapvergunning Dorpsstraat 12")
     pub title: String,
-    /// Uitgebreide beschrijving van de zaak - wat is er aan de hand, welke stappen zijn ondernomen
+    /// Uitgebreide beschrijving: wat is de aanvraag, welke stappen zijn al ondernomen
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// Huidige status van de zaak
+    /// Huidige behandelstatus van de zaak
     pub status: IssueStatus,
-    /// Email adres van de toegewezen persoon (bijv. alice@gemeente.nl)
+    /// Email van de ambtenaar die de zaak behandelt (bijv. "alice@gemeente.nl")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assignee: Option<String>,
-    /// Aanmaak tijdstip in ISO 8601 formaat
+    /// Wanneer de zaak is aangemaakt (ISO 8601 formaat: 2024-01-15T10:30:00Z)
     pub created_at: String,
-    /// Reden voor sluiting (alleen bij gesloten zaken)
+    /// Hoe de zaak is afgesloten (alleen bij status "gesloten")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolution: Option<String>,
 }
 
-/// Task/Taak structure
+/// Taak - een actie die uitgevoerd moet worden om een zaak te behandelen
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Task {
-    /// Unieke taak identifier
+    /// Unieke taaknummer
     pub id: String,
-    /// Actie tekst - korte beschrijving van wat er gedaan moet worden
+    /// Korte actie-omschrijving (bijv. "Documenten controleren", "Afspraak inplannen")
     pub cta: String,
-    /// Uitgebreide beschrijving van de taak - context, voorwaarden, instructies
+    /// Uitgebreide uitleg: wat moet er precies gebeuren, welke voorwaarden gelden
     pub description: String,
-    /// URL waar de taak uitgevoerd kan worden of meer informatie te vinden is
+    /// Link naar de plaats waar de taak uitgevoerd kan worden (bijv. formulier, overzicht)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    /// Of de taak voltooid is (true) of nog open staat (false)
+    /// Is de taak voltooid? (true = klaar, false = nog te doen)
     pub completed: bool,
-    /// Deadline voor deze taak in YYYY-MM-DD formaat
+    /// Uiterste datum voor voltooiing (YYYY-MM-DD, bijv. "2024-01-25")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deadline: Option<String>,
-    /// Email van degene die de taak heeft aangemaakt of toegewezen
+    /// Email van degene die de taak heeft toegewezen of aangemaakt
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actor: Option<String>,
 }
 
+/// Status van een zaak in behandeling
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum IssueStatus {
+    /// Nieuw binnengekomen, nog niet in behandeling genomen
     Open,
+    /// Wordt momenteel behandeld door een ambtenaar
     #[serde(rename = "in_progress")]
     InProgress,
+    /// Behandeling afgerond, zaak is gesloten
     Closed,
 }
 
-/// Comment/Reactie structure
+/// Reactie - een opmerking, vraag of toelichting bij een zaak
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Comment {
-    /// Unieke reactie identifier
+    /// Unieke reactie ID
     pub id: String,
-    /// Inhoud van de reactie of opmerking
+    /// De tekst van de reactie (bijv. "Documenten zijn goedgekeurd", "Burger gebeld voor aanvullende info")
     pub content: String,
-    /// Email van de auteur van de reactie
+    /// Email van degene die de reactie heeft geschreven
     #[serde(skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
-    /// ID van de reactie waar dit een antwoord op is (voor threading)
+    /// ID van de reactie waar dit een antwoord op is (voor discussies met meerdere berichten)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
-    /// Email adressen van vermelde personen (bijv. ["alice@gemeente.nl", "bob@gemeente.nl"])
+    /// Email adressen van collega's die specifiek genoemd worden (bijv. "@alice@gemeente.nl")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mentions: Option<Vec<String>>,
 }
 
-/// Planning structure
+/// Planning - een tijdlijn met verschillende stappen of fasen voor zaakbehandeling
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Planning {
-    /// Unieke planning identifier
+    /// Unieke planning ID
     pub id: String,
-    /// Titel van de planning
+    /// Naam van de planning (bijv. "Vergunningsprocedure", "Paspoort aanvraag proces")
     pub title: String,
-    /// Beschrijving van de planning
+    /// Uitleg over wat deze planning behelst en welke stappen doorlopen worden
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// Planning momenten - verschillende fasen of mijlpalen
+    /// Alle stappen/momenten in deze planning, in chronologische volgorde
     pub moments: Vec<PlanningMoment>,
 }
 
-/// PlanningMoment structure
+/// Een specifieke stap of mijlpaal binnen een planning
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct PlanningMoment {
-    /// Unieke moment identifier
+    /// Unieke identificatie van dit moment
     pub id: String,
-    /// Geplande datum in YYYY-MM-DD formaat
+    /// Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
     pub date: String,
-    /// Titel van dit planning moment (bijv. "Intake gesprek", "Documentcheck")
+    /// Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")
     pub title: String,
-    /// Huidige status van dit moment
+    /// In welke fase dit moment zich bevindt
     pub status: PlanningStatus,
 }
 
+/// Status van een planning moment
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PlanningStatus {
+    /// Afgerond - deze stap is voltooid
     Completed,
+    /// Huidig - deze stap wordt nu uitgevoerd
     Current,
+    /// Gepland - deze stap staat nog in de toekomst
     Planned,
 }
 
@@ -284,8 +305,9 @@ macro_rules! generate_schemas {
             )+
 
             // Add resolved definitions
+            let definitions_for_resolving = all_definitions.clone();
             for (name, definition) in all_definitions {
-                let resolved = resolve_schema_refs(definition, &HashMap::new());
+                let resolved = resolve_schema_refs(definition, &definitions_for_resolving);
                 schemas.insert(name, resolved);
             }
 

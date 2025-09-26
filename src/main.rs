@@ -10,6 +10,7 @@ use shuttle_axum::axum::{
     extract::{Path, State},
     http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
+    response::{Html, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -202,6 +203,11 @@ async fn create_app() -> Router {
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/schemas", get(get_schemas_index))
         .route("/schemas/{name}", get(get_schema))
+        .route("/asyncapi-docs/asyncapi.yaml", get(serve_asyncapi_yaml))
+        .route("/asyncapi-docs/asyncapi.json", get(serve_asyncapi_json))
+        .route("/asyncapi-docs", get(serve_asyncapi_docs))
+        .nest_service("/asyncapi-docs/css", ServeDir::new("asyncapi-docs/css"))
+        .nest_service("/asyncapi-docs/js", ServeDir::new("asyncapi-docs/js"))
         .with_state(state)
         .layer(CorsLayer::permissive())
         .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
@@ -398,6 +404,61 @@ async fn get_schema(Path(name): Path<String>) -> Result<Json<Value>, StatusCode>
     match schemas::get_schema(&name) {
         Some(schema) => Ok(Json(schema)),
         None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+/// Serve the AsyncAPI HTML documentation with fixed paths
+async fn serve_asyncapi_docs() -> Result<Html<String>, StatusCode> {
+    let docs_path = std::path::Path::new("asyncapi-docs/index.html");
+    if !docs_path.exists() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    match tokio::fs::read_to_string(docs_path).await {
+        Ok(content) => {
+            // Fix the relative paths to work with our routing
+            let fixed_content = content
+                .replace(r#"href="css/"#, r#"href="/asyncapi-docs/css/"#)
+                .replace(r#"src="js/"#, r#"src="/asyncapi-docs/js/"#);
+            Ok(Html(fixed_content))
+        }
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+/// Serve the AsyncAPI YAML specification
+async fn serve_asyncapi_yaml() -> Result<Response, StatusCode> {
+    let yaml_path = std::path::Path::new("asyncapi.yaml");
+    if !yaml_path.exists() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    match tokio::fs::read_to_string(yaml_path).await {
+        Ok(content) => {
+            let response = Response::builder()
+                .header("Content-Type", "text/yaml")
+                .header("Content-Disposition", "inline; filename=\"asyncapi.yaml\"")
+                .body(content.into())
+                .unwrap();
+            Ok(response)
+        }
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+/// Serve the AsyncAPI JSON specification
+async fn serve_asyncapi_json() -> Result<Json<Value>, StatusCode> {
+    let json_path = std::path::Path::new("asyncapi.json");
+    if !json_path.exists() {
+        return Err(StatusCode::NOT_FOUND);
+    }
+
+    match tokio::fs::read_to_string(json_path).await {
+        Ok(content) => match serde_json::from_str::<Value>(&content) {
+            Ok(json_value) => Ok(Json(json_value)),
+            Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        },
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
 

@@ -5,6 +5,7 @@ import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
 
 import NotificationBell from "./NotificationBell";
 import IssueHeader from "./IssueHeader";
+import PageHeader from "./PageHeader";
 import ActiveTaskSection from "./ActiveTaskSection";
 import ActivePlanningSection from "./ActivePlanningSection";
 import CommentForm from "./CommentForm";
@@ -173,29 +174,30 @@ const IssueTimeline: React.FC = () => {
       className="min-h-screen font-sans"
       style={{ backgroundColor: "var(--bg-primary)" }}
     >
-      {/* Header */}
-      <div
-        className="sticky top-0 z-50 border-b p-4 md:px-8 md:py-4 flex justify-start items-center gap-4"
-        style={{
-          backgroundColor: "var(--bg-tertiary)",
-          borderBottomColor: "var(--border-primary)",
-        }}
-      >
-        <div className="flex items-center gap-2 text-sm flex-1">
+      <PageHeader currentZaakId={zaakId} />
+
+      {/* Page header with back link and title */}
+      <div className="max-w-3xl mx-auto p-4 md:px-8 pt-8 pb-0">
+        <div className="mb-8">
           <Link
             to="/"
-            className="text-link-primary hover:text-link-hover hover:underline font-medium"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium mb-4"
           >
-            Terug naar mijn Zaken
+            ← Terug naar mijn Zaken
           </Link>
+          {issue && (
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                {issue.title}
+              </h1>
+              <p className="text-sm text-gray-600">Zaak #{issue.id}</p>
+            </div>
+          )}
         </div>
-
-        {/* Notification Bell */}
-        <NotificationBell currentZaakId={zaakId} />
       </div>
 
       {/* Main content */}
-      <div className="max-w-3xl mx-auto p-4 md:p-8">
+      <div className="max-w-3xl mx-auto p-4 md:p-8 pt-0">
         {/* Zaak header - show as standalone section like active task and planning */}
         <div className="mb-6 md:mb-8 relative">
           {issue && (
