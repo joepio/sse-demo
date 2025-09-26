@@ -178,12 +178,6 @@ const IssueTimeline: React.FC = () => {
       {/* Page header with back link and title */}
       <div className="max-w-3xl mx-auto p-4 md:px-8 pt-8 pb-0">
         <div className="mb-8">
-          <Link
-            to="/"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium mb-4"
-          >
-            ← Terug naar mijn Zaken
-          </Link>
           {issue && (
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">

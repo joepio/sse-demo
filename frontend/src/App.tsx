@@ -82,7 +82,7 @@ const ZakenDashboard: React.FC = () => {
 
       <div className="text-center py-12 border-b border-gray-200">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Mijn Zaken
+          MijnZaken
           <span className="ml-4">
             <ConnectionStatus status={connectionStatus} />
           </span>

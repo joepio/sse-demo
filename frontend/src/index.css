@@ -1,113 +1,86 @@
 @import "tailwindcss";
 
+/* Rijksoverheid Fonts */
+@font-face {
+  font-family: "RijksoverheidSans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/RO-SansWebText-Regular.woff") format("woff");
+}
+
+@font-face {
+  font-family: "RijksoverheidSans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/RO-SansWebText-Bold.woff") format("woff");
+}
+
+@font-face {
+  font-family: "RijksoverheidSans";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/RO-SansWebText-Italic.woff") format("woff");
+}
+
 /* CSS Theme Variables */
 :root {
-    /* Light theme colors */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --bg-tertiary: #f6f8fa;
-    --bg-hover: #f3f4f6;
-    --bg-accent: #e3f2fd;
-    --bg-success: #d4edda;
-    --bg-error: #f8d7da;
-    --bg-warning: #fff3cd;
+  /* Light theme colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f6f8fa;
+  --bg-hover: #f3f4f6;
+  --bg-accent: #e3f2fd;
+  --bg-success: #d4edda;
+  --bg-error: #f8d7da;
+  --bg-warning: #fff3cd;
 
-    --text-primary: #24292f;
-    --text-secondary: #656d76;
-    --text-tertiary: #8b949e;
-    --text-inverse: #ffffff;
-    --text-success: #155724;
-    --text-error: #721c24;
-    --text-warning: #856404;
+  --text-primary: #24292f;
+  --text-secondary: #656d76;
+  --text-tertiary: #8b949e;
+  --text-inverse: #ffffff;
+  --text-success: #155724;
+  --text-error: #721c24;
+  --text-warning: #856404;
 
-    --border-primary: #d1d9e0;
-    --border-secondary: #e9ecef;
-    --border-hover: #afb8c1;
-    --border-focus: #0969da;
+  --border-primary: #d1d9e0;
+  --border-secondary: #e9ecef;
+  --border-hover: #afb8c1;
+  --border-focus: #0969da;
 
-    --link-primary: #0969da;
-    --link-hover: #0550ae;
-    --link-visited: #8250df;
+  --link-primary: #0969da;
+  --link-hover: #0550ae;
+  --link-visited: #8250df;
 
-    --button-primary-bg: #1f883d;
-    --button-primary-hover: #1a7f37;
-    --button-secondary-bg: #f6f8fa;
-    --button-secondary-hover: #f3f4f6;
-    --button-danger-bg: #dc3545;
-    --button-danger-hover: #c82333;
+  --button-primary-bg: #1f883d;
+  --button-primary-hover: #1a7f37;
+  --button-secondary-bg: #f6f8fa;
+  --button-secondary-hover: #f3f4f6;
+  --button-danger-bg: #dc3545;
+  --button-danger-hover: #c82333;
 
-    --animation-duration-medium: 0.2s;
+  --animation-duration-medium: 0.2s;
 
-    --status-open: #28a745;
-    --status-progress: #ffc107;
-    --status-closed: #dc3545;
+  --status-open: #28a745;
+  --status-progress: #ffc107;
+  --status-closed: #dc3545;
 
-    --overlay: rgba(0, 0, 0, 0.75);
+  --overlay: rgba(0, 0, 0, 0.75);
 
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md:
-        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg:
-        0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
-    color-scheme: light;
+  color-scheme: light;
 }
 
 /* Dark theme colors */
 @media (prefers-color-scheme: dark) {
-    :root {
-        --bg-primary: #0d1117;
-        --bg-secondary: #161b22;
-        --bg-tertiary: #21262d;
-        --bg-hover: #30363d;
-        --bg-accent: #0f2419;
-        --bg-success: #0f2419;
-        --bg-error: #2d1117;
-        --bg-warning: #1f1a00;
-
-        --text-primary: #f0f6fc;
-        --text-secondary: #8b949e;
-        --text-tertiary: #656d76;
-        --text-inverse: #24292f;
-        --text-success: #3fb950;
-        --text-error: #f85149;
-        --text-warning: #d29922;
-
-        --border-primary: #30363d;
-        --border-secondary: #21262d;
-        --border-hover: #8b949e;
-        --border-focus: #58a6ff;
-
-        --link-primary: #58a6ff;
-        --link-hover: #79c0ff;
-        --link-visited: #bc8cff;
-
-        --button-primary-bg: #238636;
-        --button-primary-hover: #2ea043;
-        --button-secondary-bg: #21262d;
-        --button-secondary-hover: #30363d;
-        --button-danger-bg: #da3633;
-        --button-danger-hover: #f85149;
-
-        --status-open: #3fb950;
-        --status-progress: #d29922;
-        --status-closed: #f85149;
-
-        --overlay: rgba(0, 0, 0, 0.85);
-
-        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-        --shadow-md:
-            0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-        --shadow-lg:
-            0 10px 15px -3px rgba(0, 0, 0, 0.3),
-            0 4px 6px -2px rgba(0, 0, 0, 0.2);
-
-        color-scheme: dark;
-    }
-}
-
-/* Force dark theme class (for manual toggle if needed) */
-.dark-theme {
+  :root {
     --bg-primary: #0d1117;
     --bg-secondary: #161b22;
     --bg-tertiary: #21262d;
@@ -144,148 +117,201 @@
     --status-open: #3fb950;
     --status-progress: #d29922;
     --status-closed: #f85149;
-    --priority-high: #f85149;
-    --priority-medium: #d29922;
-    --priority-low: #3fb950;
 
     --overlay: rgba(0, 0, 0, 0.85);
 
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
     --shadow-md:
-        0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
     --shadow-lg:
-        0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+      0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 
     color-scheme: dark;
+  }
+}
+
+/* Force dark theme class (for manual toggle if needed) */
+.dark-theme {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-hover: #30363d;
+  --bg-accent: #0f2419;
+  --bg-success: #0f2419;
+  --bg-error: #2d1117;
+  --bg-warning: #1f1a00;
+
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --text-tertiary: #656d76;
+  --text-inverse: #24292f;
+  --text-success: #3fb950;
+  --text-error: #f85149;
+  --text-warning: #d29922;
+
+  --border-primary: #30363d;
+  --border-secondary: #21262d;
+  --border-hover: #8b949e;
+  --border-focus: #58a6ff;
+
+  --link-primary: #58a6ff;
+  --link-hover: #79c0ff;
+  --link-visited: #bc8cff;
+
+  --button-primary-bg: #238636;
+  --button-primary-hover: #2ea043;
+  --button-secondary-bg: #21262d;
+  --button-secondary-hover: #30363d;
+  --button-danger-bg: #da3633;
+  --button-danger-hover: #f85149;
+
+  --status-open: #3fb950;
+  --status-progress: #d29922;
+  --status-closed: #f85149;
+  --priority-high: #f85149;
+  --priority-medium: #d29922;
+  --priority-low: #3fb950;
+
+  --overlay: rgba(0, 0, 0, 0.85);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+
+  color-scheme: dark;
 }
 
 /* Base body styles */
 @layer base {
-    body {
-        font-family:
-            -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
-            Helvetica, Arial, sans-serif;
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        transition:
-            background-color var(--animation-duration-medium) ease,
-            color var(--animation-duration-medium) ease;
-    }
+  * {
+    font-family: "RijksoverheidSans", Arial, sans-serif;
+  }
 
-    a {
-        color: var(--link-primary);
-        text-decoration: none;
-    }
+  body {
+    font-family: "RijksoverheidSans", Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition:
+      background-color var(--animation-duration-medium) ease,
+      color var(--animation-duration-medium) ease;
+  }
 
-    a:hover {
-        color: var(--link-hover);
-        text-decoration: underline;
-    }
+  a {
+    color: var(--link-primary);
+    text-decoration: none;
+  }
 
-    a:visited {
-        color: var(--link-visited);
-    }
+  a:hover {
+    color: var(--link-hover);
+    text-decoration: underline;
+  }
+
+  a:visited {
+    color: var(--link-visited);
+  }
 }
 
 /* Scrollbar styles */
 ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border-primary);
-    border-radius: 6px;
+  background: var(--border-primary);
+  border-radius: 6px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-hover);
+  background: var(--border-hover);
 }
 
 /* Selection styles */
 ::selection {
-    background-color: var(--link-primary);
-    color: var(--text-inverse);
+  background-color: var(--link-primary);
+  color: var(--text-inverse);
 }
 
 /* Focus styles for accessibility */
 :focus-visible {
-    outline: 2px solid var(--border-focus);
-    outline-offset: 2px;
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 /* Utility classes for common patterns - using CSS custom properties */
 @layer components {
-    /* Form elements with consistent styling */
-    .form-input,
-    .form-textarea,
-    .form-select {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        border-color: var(--border-primary);
-    }
+  /* Form elements with consistent styling */
+  .form-input,
+  .form-textarea,
+  .form-select {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+  }
 
-    .form-input:focus,
-    .form-textarea:focus,
-    .form-select:focus {
-        border-color: var(--border-focus);
-        box-shadow: 0 0 0 2px var(--border-focus);
-        outline: none;
-    }
+  .form-input:focus,
+  .form-textarea:focus,
+  .form-select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px var(--border-focus);
+    outline: none;
+  }
 
-    /* Button variants using CSS custom properties */
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        border: 1px solid;
-    }
+  /* Button variants using CSS custom properties */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid;
+  }
 
-    .btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-    }
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 
-    .btn-primary {
-        background-color: var(--button-primary-bg);
-        color: var(--text-inverse);
-        border-color: var(--button-primary-bg);
-    }
+  .btn-primary {
+    background-color: var(--button-primary-bg);
+    color: var(--text-inverse);
+    border-color: var(--button-primary-bg);
+  }
 
-    .btn-primary:hover:not(:disabled) {
-        background-color: var(--button-primary-hover);
-        border-color: var(--button-primary-hover);
-    }
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--button-primary-hover);
+    border-color: var(--button-primary-hover);
+  }
 
-    .btn-secondary {
-        background-color: var(--button-secondary-bg);
-        color: var(--text-primary);
-        border-color: var(--border-primary);
-    }
+  .btn-secondary {
+    background-color: var(--button-secondary-bg);
+    color: var(--text-primary);
+    border-color: var(--border-primary);
+  }
 
-    .btn-secondary:hover:not(:disabled) {
-        background-color: var(--button-secondary-hover);
-        border-color: var(--border-hover);
-    }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: var(--button-secondary-hover);
+    border-color: var(--border-hover);
+  }
 
-    .btn-danger {
-        background-color: var(--button-danger-bg);
-        color: var(--text-inverse);
-        border-color: var(--button-danger-bg);
-    }
+  .btn-danger {
+    background-color: var(--button-danger-bg);
+    color: var(--text-inverse);
+    border-color: var(--button-danger-bg);
+  }
 
-    .btn-danger:hover:not(:disabled) {
-        background-color: var(--button-danger-hover);
-        border-color: var(--button-danger-hover);
-    }
+  .btn-danger:hover:not(:disabled) {
+    background-color: var(--button-danger-hover);
+    border-color: var(--button-danger-hover);
+  }
 }
