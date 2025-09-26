@@ -14,6 +14,7 @@ import { getLatestTaskForIssue } from "./utils/taskUtils";
 import DeadlineBadge from "./components/DeadlineBadge";
 import PlanningStatusBadge from "./components/PlanningStatusBadge";
 import { shouldShowPlanningStatus } from "./utils/planningUtils";
+import Card from "./components/Card";
 
 import type { CloudEvent, Issue } from "./types";
 import "./App.css";
@@ -80,14 +81,23 @@ const ZakenDashboard: React.FC = () => {
     >
       <PageHeader />
 
-      <div className="text-center py-12 border-b border-gray-200">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+      <div
+        className="text-center py-12 border-b"
+        style={{
+          borderColor: "var(--border-primary)",
+          backgroundColor: "var(--bg-secondary)",
+        }}
+      >
+        <h1
+          className="text-4xl font-bold mb-4"
+          style={{ color: "var(--ro-lintblauw)" }}
+        >
           MijnZaken
-          <span className="ml-4">
-            <ConnectionStatus status={connectionStatus} />
-          </span>
         </h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <p
+          className="text-lg max-w-2xl mx-auto"
+          style={{ color: "var(--text-secondary)" }}
+        >
           Een simpel zaaksysteem met realtime updates en interactieve
           visualisaties
         </p>
@@ -105,15 +115,12 @@ const ZakenDashboard: React.FC = () => {
               const showPlanning = shouldShowPlanningStatus(events, id);
 
               return (
-                <div
+                <Card
                   key={id}
-                  className={`zaak-item-hover rounded-md p-6 md:p-4 border transition-all duration-150 block no-underline ${
+                  className={`zaak-item-hover transition-all duration-150 block no-underline ${
                     animatingIssues.has(id) ? "animate-timeline-appear" : ""
                   }`}
-                  style={{
-                    backgroundColor: "var(--bg-primary)",
-                    borderColor: "var(--border-primary)",
-                  }}
+                  padding="lg"
                   data-issue-id={id}
                 >
                   <Link
@@ -187,7 +194,7 @@ const ZakenDashboard: React.FC = () => {
                       )}
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })
           )}
@@ -195,7 +202,7 @@ const ZakenDashboard: React.FC = () => {
 
         <button
           type="button"
-          className="btn-primary-hover inline-flex items-center gap-2 px-6 py-3 rounded-md text-base font-semibold cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed mt-12"
+          className="btn-primary-hover inline-flex items-center gap-2 px-6 py-3 text-base font-semibold cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed mt-12"
           style={{
             backgroundColor: "var(--button-primary-bg)",
             color: "var(--text-inverse)",
@@ -214,7 +221,9 @@ const ZakenDashboard: React.FC = () => {
         title="Nieuwe Zaak Aanmaken"
         maxWidth="600px"
       >
-        <CreateIssueForm onCreateIssue={handleCreateIssue} />
+        <div style={{ backgroundColor: "var(--bg-secondary)" }}>
+          <CreateIssueForm onCreateIssue={handleCreateIssue} />
+        </div>
       </Modal>
     </div>
   );

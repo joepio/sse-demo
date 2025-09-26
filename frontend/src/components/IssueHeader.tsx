@@ -1,5 +1,6 @@
 import type React from "react";
 import type { Issue } from "../types";
+import Card from "./Card";
 
 interface IssueHeaderProps {
   issue: Issue;
@@ -28,13 +29,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
   isDeleting = false,
 }) => {
   return (
-    <div
-      className="p-4 rounded-lg border"
-      style={{
-        backgroundColor: "var(--bg-primary)",
-        borderColor: "var(--border-primary)",
-      }}
-    >
+    <Card padding="md">
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-semibold text-text-primary mb-2 leading-tight">
@@ -42,7 +37,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
           </h2>
           <div className="flex items-center gap-2">
             <span
-              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-text-inverse capitalize"
+              className="inline-flex items-center px-2 py-1 text-xs font-semibold text-text-inverse capitalize"
               style={{ backgroundColor: getStatusColor(issue.status) }}
             >
               {issue.status === "in_progress"
@@ -60,7 +55,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
           {onEdit && (
             <button
               type="button"
-              className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
               style={{
                 color: "var(--text-secondary)",
               }}
@@ -80,7 +75,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
           )}
           <button
             type="button"
-            className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center transition-colors duration-150 text-lg bg-transparent border-none cursor-pointer"
             style={{
               color: "var(--text-secondary)",
             }}
@@ -109,7 +104,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
         <strong className="text-text-primary">Toegewezen aan:</strong>{" "}
         {String(issue.assignee) || "Niet toegewezen"}
       </div>
-    </div>
+    </Card>
   );
 };
 

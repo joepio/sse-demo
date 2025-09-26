@@ -14,8 +14,16 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
           {/* Left side - Logo/Title area */}
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
-              <h1 className="text-xl font-bold text-gray-900">
-                <Link to="/">MijnZaken</Link>
+              <h1
+                className="text-xl font-bold"
+                style={{ color: "var(--ro-lintblauw)" }}
+              >
+                <Link
+                  to="/"
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
+                  MijnZaken
+                </Link>
               </h1>
             </div>
             <div className="hidden md:block">

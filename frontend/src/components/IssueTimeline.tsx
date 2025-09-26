@@ -175,22 +175,8 @@ const IssueTimeline: React.FC = () => {
     >
       <PageHeader currentZaakId={zaakId} />
 
-      {/* Page header with back link and title */}
-      <div className="max-w-3xl mx-auto p-4 md:px-8 pt-8 pb-0">
-        <div className="mb-8">
-          {issue && (
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                {issue.title}
-              </h1>
-              <p className="text-sm text-gray-600">Zaak #{issue.id}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Main content */}
-      <div className="max-w-3xl mx-auto p-4 md:p-8 pt-0">
+      <div className="max-w-3xl mx-auto p-4 md:p-8 pt-8">
         {/* Zaak header - show as standalone section like active task and planning */}
         <div className="mb-6 md:mb-8 relative">
           {issue && (

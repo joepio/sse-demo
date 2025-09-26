@@ -25,47 +25,76 @@
   src: url("/fonts/RO-SansWebText-Italic.woff") format("woff");
 }
 
-/* CSS Theme Variables */
+/* CSS Theme Variables - Rijksoverheid Colors */
 :root {
-  /* Light theme colors */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #f6f8fa;
-  --bg-hover: #f3f4f6;
-  --bg-accent: #e3f2fd;
-  --bg-success: #d4edda;
-  --bg-error: #f8d7da;
-  --bg-warning: #fff3cd;
+  /* Rijksoverheid Color Palette */
+  --ro-lintblauw: #154273;
+  --ro-paars: #42145f;
+  --ro-violet: #a90061;
+  --ro-robijnrood: #ca005d;
+  --ro-roze: #f092cd;
+  --ro-rood: #d52b1e;
+  --ro-oranje: #e17000;
+  --ro-donkergeel: #ffb612;
+  --ro-geel: #f9e11e;
+  --ro-donkerbruin: #673327;
+  --ro-bruin: #94710a;
+  --ro-donkergroen: #275937;
+  --ro-groen: #39870c;
+  --ro-mosgroen: #777b00;
+  --ro-mintgroen: #76d2b6;
+  --ro-donkerblauw: #01689b;
+  --ro-hemelblauw: #007bc7;
+  --ro-lichtblauw: #8fcae7;
 
-  --text-primary: #24292f;
-  --text-secondary: #656d76;
-  --text-tertiary: #8b949e;
+  /* Rijksoverheid Grays */
+  --ro-grijs-1: #f3f3f3;
+  --ro-grijs-2: #e6e6e6;
+  --ro-grijs-3: #cccccc;
+  --ro-grijs-4: #b4b4b4;
+  --ro-grijs-5: #999999;
+  --ro-grijs-6: #696969;
+  --ro-grijs-7: #535353;
+
+  /* Light theme colors using Rijksoverheid palette */
+  --bg-primary: var(--ro-grijs-1);
+  --bg-secondary: #ffffff;
+  --bg-tertiary: var(--ro-grijs-2);
+  --bg-hover: var(--ro-grijs-2);
+  --bg-accent: var(--ro-lichtblauw);
+  --bg-success: var(--ro-mintgroen);
+  --bg-error: #fce8e6;
+  --bg-warning: #fff7e6;
+
+  --text-primary: var(--ro-grijs-7);
+  --text-secondary: var(--ro-grijs-6);
+  --text-tertiary: var(--ro-grijs-5);
   --text-inverse: #ffffff;
-  --text-success: #155724;
-  --text-error: #721c24;
-  --text-warning: #856404;
+  --text-success: var(--ro-groen);
+  --text-error: var(--ro-rood);
+  --text-warning: var(--ro-donkergeel);
 
-  --border-primary: #d1d9e0;
-  --border-secondary: #e9ecef;
-  --border-hover: #afb8c1;
-  --border-focus: #0969da;
+  --border-primary: var(--ro-grijs-3);
+  --border-secondary: var(--ro-grijs-2);
+  --border-hover: var(--ro-grijs-4);
+  --border-focus: var(--ro-hemelblauw);
 
-  --link-primary: #0969da;
-  --link-hover: #0550ae;
-  --link-visited: #8250df;
+  --link-primary: var(--ro-hemelblauw);
+  --link-hover: var(--ro-donkerblauw);
+  --link-visited: var(--ro-paars);
 
-  --button-primary-bg: #1f883d;
-  --button-primary-hover: #1a7f37;
-  --button-secondary-bg: #f6f8fa;
-  --button-secondary-hover: #f3f4f6;
-  --button-danger-bg: #dc3545;
-  --button-danger-hover: #c82333;
+  --button-primary-bg: var(--ro-hemelblauw);
+  --button-primary-hover: var(--ro-donkerblauw);
+  --button-secondary-bg: #ffffff;
+  --button-secondary-hover: var(--ro-grijs-2);
+  --button-danger-bg: var(--ro-rood);
+  --button-danger-hover: var(--ro-robijnrood);
 
   --animation-duration-medium: 0.2s;
 
-  --status-open: #28a745;
-  --status-progress: #ffc107;
-  --status-closed: #dc3545;
+  --status-open: var(--ro-groen);
+  --status-progress: var(--ro-donkergeel);
+  --status-closed: var(--ro-rood);
 
   --overlay: rgba(0, 0, 0, 0.75);
 
@@ -78,107 +107,107 @@
   color-scheme: light;
 }
 
-/* Dark theme colors */
+/* Dark theme colors using Rijksoverheid palette */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-primary: #0d1117;
-    --bg-secondary: #161b22;
-    --bg-tertiary: #21262d;
-    --bg-hover: #30363d;
-    --bg-accent: #0f2419;
-    --bg-success: #0f2419;
-    --bg-error: #2d1117;
-    --bg-warning: #1f1a00;
+    --bg-primary: var(--ro-lintblauw);
+    --bg-secondary: #1a2a3d;
+    --bg-tertiary: #213247;
+    --bg-hover: #2a3a4d;
+    --bg-accent: rgba(118, 210, 182, 0.2);
+    --bg-success: rgba(57, 135, 12, 0.2);
+    --bg-error: rgba(213, 43, 30, 0.2);
+    --bg-warning: rgba(255, 182, 18, 0.2);
 
-    --text-primary: #f0f6fc;
-    --text-secondary: #8b949e;
-    --text-tertiary: #656d76;
-    --text-inverse: #24292f;
-    --text-success: #3fb950;
-    --text-error: #f85149;
-    --text-warning: #d29922;
+    --text-primary: #ffffff;
+    --text-secondary: var(--ro-lichtblauw);
+    --text-tertiary: var(--ro-grijs-4);
+    --text-inverse: var(--ro-lintblauw);
+    --text-success: var(--ro-mintgroen);
+    --text-error: var(--ro-roze);
+    --text-warning: var(--ro-geel);
 
-    --border-primary: #30363d;
-    --border-secondary: #21262d;
-    --border-hover: #8b949e;
-    --border-focus: #58a6ff;
+    --border-primary: #2a3a4d;
+    --border-secondary: #1a2a3d;
+    --border-hover: var(--ro-grijs-5);
+    --border-focus: var(--ro-lichtblauw);
 
-    --link-primary: #58a6ff;
-    --link-hover: #79c0ff;
-    --link-visited: #bc8cff;
+    --link-primary: var(--ro-lichtblauw);
+    --link-hover: var(--ro-hemelblauw);
+    --link-visited: var(--ro-roze);
 
-    --button-primary-bg: #238636;
-    --button-primary-hover: #2ea043;
-    --button-secondary-bg: #21262d;
-    --button-secondary-hover: #30363d;
-    --button-danger-bg: #da3633;
-    --button-danger-hover: #f85149;
+    --button-primary-bg: var(--ro-hemelblauw);
+    --button-primary-hover: var(--ro-lichtblauw);
+    --button-secondary-bg: #2a3a4d;
+    --button-secondary-hover: #3a4a5d;
+    --button-danger-bg: var(--ro-rood);
+    --button-danger-hover: var(--ro-robijnrood);
 
-    --status-open: #3fb950;
-    --status-progress: #d29922;
-    --status-closed: #f85149;
+    --status-open: var(--ro-mintgroen);
+    --status-progress: var(--ro-geel);
+    --status-closed: var(--ro-roze);
 
-    --overlay: rgba(0, 0, 0, 0.85);
+    --overlay: rgba(21, 66, 115, 0.85);
 
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
     --shadow-md:
-      0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
     --shadow-lg:
-      0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+      0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
     color-scheme: dark;
   }
 }
 
-/* Force dark theme class (for manual toggle if needed) */
+/* Force dark theme class using Rijksoverheid colors */
 .dark-theme {
-  --bg-primary: #0d1117;
-  --bg-secondary: #161b22;
-  --bg-tertiary: #21262d;
-  --bg-hover: #30363d;
-  --bg-accent: #0f2419;
-  --bg-success: #0f2419;
-  --bg-error: #2d1117;
-  --bg-warning: #1f1a00;
+  --bg-primary: var(--ro-lintblauw);
+  --bg-secondary: #1a2a3d;
+  --bg-tertiary: #213247;
+  --bg-hover: #2a3a4d;
+  --bg-accent: rgba(118, 210, 182, 0.2);
+  --bg-success: rgba(57, 135, 12, 0.2);
+  --bg-error: rgba(213, 43, 30, 0.2);
+  --bg-warning: rgba(255, 182, 18, 0.2);
 
-  --text-primary: #f0f6fc;
-  --text-secondary: #8b949e;
-  --text-tertiary: #656d76;
-  --text-inverse: #24292f;
-  --text-success: #3fb950;
-  --text-error: #f85149;
-  --text-warning: #d29922;
+  --text-primary: #ffffff;
+  --text-secondary: var(--ro-lichtblauw);
+  --text-tertiary: var(--ro-grijs-4);
+  --text-inverse: var(--ro-lintblauw);
+  --text-success: var(--ro-mintgroen);
+  --text-error: var(--ro-roze);
+  --text-warning: var(--ro-geel);
 
-  --border-primary: #30363d;
-  --border-secondary: #21262d;
-  --border-hover: #8b949e;
-  --border-focus: #58a6ff;
+  --border-primary: #2a3a4d;
+  --border-secondary: #1a2a3d;
+  --border-hover: var(--ro-grijs-5);
+  --border-focus: var(--ro-lichtblauw);
 
-  --link-primary: #58a6ff;
-  --link-hover: #79c0ff;
-  --link-visited: #bc8cff;
+  --link-primary: var(--ro-lichtblauw);
+  --link-hover: var(--ro-hemelblauw);
+  --link-visited: var(--ro-roze);
 
-  --button-primary-bg: #238636;
-  --button-primary-hover: #2ea043;
-  --button-secondary-bg: #21262d;
-  --button-secondary-hover: #30363d;
-  --button-danger-bg: #da3633;
-  --button-danger-hover: #f85149;
+  --button-primary-bg: var(--ro-hemelblauw);
+  --button-primary-hover: var(--ro-lichtblauw);
+  --button-secondary-bg: #2a3a4d;
+  --button-secondary-hover: #3a4a5d;
+  --button-danger-bg: var(--ro-rood);
+  --button-danger-hover: var(--ro-robijnrood);
 
-  --status-open: #3fb950;
-  --status-progress: #d29922;
-  --status-closed: #f85149;
-  --priority-high: #f85149;
-  --priority-medium: #d29922;
-  --priority-low: #3fb950;
+  --status-open: var(--ro-mintgroen);
+  --status-progress: var(--ro-geel);
+  --status-closed: var(--ro-roze);
+  --priority-high: var(--ro-roze);
+  --priority-medium: var(--ro-geel);
+  --priority-low: var(--ro-mintgroen);
 
-  --overlay: rgba(0, 0, 0, 0.85);
+  --overlay: rgba(21, 66, 115, 0.85);
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md:
-    0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg:
-    0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
   color-scheme: dark;
 }
@@ -269,7 +298,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
+    border-radius: 0;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;

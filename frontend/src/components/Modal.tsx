@@ -50,10 +50,10 @@ const Modal: React.FC<ModalProps> = ({
       }}
     >
       <div
-        className="rounded-lg w-full max-h-[90vh] overflow-auto animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="w-full max-h-[90vh] overflow-auto animate-in fade-in slide-in-from-bottom-4 duration-200"
         style={{
           maxWidth,
-          backgroundColor: "var(--bg-primary)",
+          backgroundColor: "var(--bg-secondary)",
           boxShadow: "var(--shadow-lg)",
           border: "1px solid var(--border-primary)",
         }}
@@ -69,7 +69,7 @@ const Modal: React.FC<ModalProps> = ({
             {title}
           </h2>
           <button
-            className="w-8 h-8 flex items-center justify-center rounded transition-colors duration-150 text-2xl leading-none p-0 border-0 bg-transparent cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center transition-colors duration-150 text-2xl leading-none p-0 border-0 bg-transparent cursor-pointer"
             style={{
               color: "var(--text-secondary)",
             }}
