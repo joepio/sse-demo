@@ -116,6 +116,12 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                     lastActivity: eventTime,
                   };
                 }
+              } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
+                // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
+                newIssues[cloudEvent.subject] = {
+                  ...newIssues[cloudEvent.subject],
+                  lastActivity: eventTime,
+                };
               }
             }
             break;
@@ -147,6 +153,12 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                     lastActivity: eventTime,
                   };
                 }
+              } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
+                // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
+                newIssues[cloudEvent.subject] = {
+                  ...newIssues[cloudEvent.subject],
+                  lastActivity: eventTime,
+                };
               }
             }
             break;
