@@ -1,8 +1,8 @@
 import React from "react";
 import type { CloudEvent } from "../types";
-import TaskPlugin from "../plugins/eventTypes/TaskPlugin";
 import { getLatestTaskForIssue } from "../utils/taskUtils";
 import SectionLabel from "./SectionLabel";
+import TaskCard from "./TaskCard";
 
 interface ActiveTaskSectionProps {
   events: CloudEvent[];
@@ -17,49 +17,6 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
 
   if (!latestTask) return null;
 
-  // Create a mock event structure for the TaskPlugin
-  const mockEvent = {
-    id: `active-task-${latestTask.id}`,
-    type: "created" as const,
-    timestamp: latestTask.timestamp,
-    actor: latestTask.actor || undefined,
-    data: {
-      item_type: "task",
-      item_id: latestTask.id,
-      item_data: {
-        cta: latestTask.cta,
-        description: latestTask.description,
-        url: latestTask.url,
-        completed: latestTask.completed,
-        deadline: latestTask.deadline,
-      },
-      actor: latestTask.actor,
-      timestamp: latestTask.timestamp,
-    },
-    originalEvent: {
-      specversion: "1.0",
-      id: `active-task-${latestTask.id}`,
-      source: "frontend-active-task",
-      subject: zaakId,
-      type: "item.created",
-      time: latestTask.timestamp,
-      datacontenttype: "application/json",
-      data: {
-        item_type: "task",
-        item_id: latestTask.id,
-        item_data: {
-          cta: latestTask.cta,
-          description: latestTask.description,
-          url: latestTask.url,
-          completed: latestTask.completed,
-          deadline: latestTask.deadline,
-        },
-        actor: latestTask.actor || undefined,
-        timestamp: latestTask.timestamp,
-      },
-    },
-  };
-
   return (
     <div className="mb-6 md:mb-8" style={{ position: "relative", zIndex: 1 }}>
       <SectionLabel>Mijn taak</SectionLabel>
@@ -70,18 +27,7 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
           borderColor: "var(--border-primary)",
         }}
       >
-        <TaskPlugin
-          event={mockEvent}
-          data={mockEvent.data}
-          timeInfo={{
-            date: new Date(latestTask.timestamp).toLocaleDateString("nl-NL"),
-            time: new Date(latestTask.timestamp).toLocaleTimeString("nl-NL", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            relative: "actief",
-          }}
-        />
+        <TaskCard task={latestTask} zaakId={zaakId} />
       </div>
     </div>
   );

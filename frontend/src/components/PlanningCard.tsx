@@ -1,30 +1,12 @@
 import React from "react";
-import type { EventPluginProps } from "./types";
-import type { PlanningMoment } from "../../types";
+import type { ExtendedPlanning } from "../types";
 
-const PlanningPlugin: React.FC<EventPluginProps> = ({ data }) => {
-  // Extract planning data from the event
-  const planningData = data as {
-    item_type: string;
-    item_id: string;
-    item_data?: {
-      title?: string;
-      description?: string;
-      moments?: PlanningMoment[];
-    };
-    actor?: string;
-    timestamp?: string;
-  };
+interface PlanningCardProps {
+  planning: ExtendedPlanning;
+}
 
-  if (!planningData.item_data) {
-    return (
-      <div className="text-text-secondary">Geen planning data beschikbaar</div>
-    );
-  }
-
-  const { title, description, moments = [] } = planningData.item_data;
-
-  // Find current status
+const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
+  const { title, description, moments = [] } = planning;
 
   const getStatusColor = (status: "completed" | "current" | "planned") => {
     switch (status) {
@@ -133,4 +115,4 @@ const PlanningPlugin: React.FC<EventPluginProps> = ({ data }) => {
   );
 };
 
-export default PlanningPlugin;
+export default PlanningCard;
