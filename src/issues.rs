@@ -6,6 +6,7 @@
 //! - Generate timeline events (comments, tasks, planning, etc.)
 //! - Apply JSON Merge Patch operations to issue data
 
+use crate::schemas::CloudEvent;
 use chrono::{Duration, Utc};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -32,6 +33,7 @@ const TASK_SCHEMA: &str = "http://localhost:8000/schemas/Task";
 const PLANNING_SCHEMA: &str = "http://localhost:8000/schemas/Planning";
 const LLM_ANALYSIS_SCHEMA: &str = "http://localhost:8000/schemas/LLMAnalysis";
 const STATUS_CHANGE_SCHEMA: &str = "http://localhost:8000/schemas/StatusChange";
+const DOCUMENT_SCHEMA: &str = "http://localhost:8000/schemas/Document";
 
 // Issue templates for initial data generation
 const ISSUE_TEMPLATES: &[(&str, &str, Option<&str>)] = &[
@@ -331,6 +333,7 @@ fn get_schema_for_item_type(item_type: &str) -> &'static str {
         "llm_analysis" => LLM_ANALYSIS_SCHEMA,
         "status_change" => STATUS_CHANGE_SCHEMA,
         "planning" => PLANNING_SCHEMA,
+        "document" => DOCUMENT_SCHEMA,
         _ => ITEM_EVENT_DATA_SCHEMA,
     }
 }
@@ -429,6 +432,42 @@ fn get_timeline_operations() -> Vec<TimelineOperation> {
                 "deadline": "2025-09-25"
             }),
             135,
+        ),
+        TimelineOperation::new(
+            "1",
+            "document",
+            "doc-1008",
+            "alice@gemeente.nl",
+            json!({
+                "title": "Paspoort_Aanvraag_Formulier.pdf",
+                "url": "https://example.com/documents/paspoort-aanvraag-12345.pdf",
+                "size": 152985
+            }),
+            140,
+        ),
+        TimelineOperation::new(
+            "2",
+            "document",
+            "doc-1009",
+            "system@gemeente.nl",
+            json!({
+                "title": "Geluidsmeting_Rapport_September.docx",
+                "url": "https://example.com/documents/geluidsmeting-sept-2024.docx",
+                "size": 2847563
+            }),
+            145,
+        ),
+        TimelineOperation::new(
+            "3",
+            "document",
+            "doc-1010",
+            "bob@gemeente.nl",
+            json!({
+                "title": "Adreswijziging_Bevestiging.pdf",
+                "url": "https://example.com/documents/adreswijziging-bevestiging.pdf",
+                "size": 89472
+            }),
+            150,
         ),
     ]
 }
@@ -706,9 +745,10 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
     let operation_type = fastrand::usize(0..100);
 
     match operation_type {
-        0..60 => Some(generate_random_comment_event(random_issue_id)),
-        60..75 => Some(generate_random_task_event(random_issue_id)),
-        75..90 => Some(generate_random_planning_event(random_issue_id)),
+        0..50 => Some(generate_random_comment_event(random_issue_id)),
+        50..65 => Some(generate_random_task_event(random_issue_id)),
+        65..80 => Some(generate_random_planning_event(random_issue_id)),
+        80..90 => Some(generate_random_document_event(random_issue_id)),
         _ => Some(generate_random_patch_event(random_issue_id)),
     }
 }
@@ -1210,9 +1250,67 @@ fn generate_planning_event_with_data(
     })
 }
 
+fn generate_random_document_event(issue_id: &str) -> Value {
+    let documents = [
+        ("Identiteitsbewijs_Kopie.pdf", 245632),
+        ("Aanvraagformulier_Ingevuld.pdf", 512847),
+        ("Bewijs_van_Adres.pdf", 189234),
+        ("Ondertekende_Verklaring.pdf", 156789),
+        ("Bijlage_Documenten.zip", 2847391),
+        ("Paspoortfoto_Officieel.jpg", 89765),
+        ("Uittreksel_BRP.pdf", 234567),
+        ("Bewijs_Inkomen.pdf", 445823),
+        ("Medische_Verklaring.pdf", 298374),
+        ("Technische_Tekening.dwg", 1847563),
+        ("Rapport_Onderzoek.docx", 756432),
+        ("Overzicht_Kosten.xlsx", 98234),
+    ];
+
+    let actors = [
+        "aanvrager@example.com",
+        "alice@gemeente.nl",
+        "bob@gemeente.nl",
+        "specialist@gemeente.nl",
+        "archief@gemeente.nl",
+    ];
+
+    let (title, size) = documents[fastrand::usize(..documents.len())];
+    let actor = actors[fastrand::usize(..actors.len())];
+
+    generate_document_event_with_data(issue_id, title, size, actor)
+}
+
+fn generate_document_event_with_data(issue_id: &str, title: &str, size: u64, actor: &str) -> Value {
+    let document_id = format!("doc-{}", Uuid::now_v7().simple());
+    let url = format!("https://example.com/documents/{}", document_id);
+
+    json!({
+        "specversion": "1.0",
+        "id": Uuid::now_v7().to_string(),
+        "source": DEFAULT_SOURCE,
+        "subject": issue_id,
+        "type": EVENT_TYPE_ITEM_CREATED,
+        "time": Utc::now().to_rfc3339(),
+        "datacontenttype": CONTENT_TYPE_JSON,
+        "dataschema": ITEM_EVENT_DATA_SCHEMA,
+        "data": {
+            "item_type": "document",
+            "item_id": document_id,
+            "actor": actor,
+            "timestamp": Utc::now().to_rfc3339(),
+            "item_data": {
+                "title": title,
+                "url": url,
+                "size": size
+            },
+            "itemschema": DOCUMENT_SCHEMA
+        }
+    })
+}
+
 /// Convert a JSON CloudEvent to a CloudEvent struct
-pub fn json_to_cloudevent(json_event: &Value) -> Option<super::CloudEvent> {
-    Some(super::CloudEvent {
+pub fn json_to_cloudevent(json_event: &Value) -> Option<CloudEvent> {
+    Some(CloudEvent {
         specversion: json_event.get("specversion")?.as_str()?.to_string(),
         id: json_event.get("id")?.as_str()?.to_string(),
         source: json_event.get("source")?.as_str()?.to_string(),

@@ -11,7 +11,7 @@
     "spec-studio": "docker run --rm --user=root --network=host --init -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli start studio /app/asyncapi.yml",
     "spec-html": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" -v \"$(pwd)/asyncapi-docs:/app/output\" asyncapi/cli generate fromTemplate /app/asyncapi.yml @asyncapi/html-template --output /app/output --force-write",
     "spec-validate": "docker run --rm --user=root -v \"$(pwd)/asyncapi.yaml:/app/asyncapi.yml\" asyncapi/cli validate /app/asyncapi.yml",
-    "generate": "cargo build && echo '✅ Generated: AsyncAPI spec + JSON schemas for frontend'"
+    "generate": "node scripts/generate-types.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -33,6 +33,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "json-schema-to-typescript": "^15.0.4",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.13",
     "typescript": "~5.8.3",

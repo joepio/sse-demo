@@ -1,52 +1,93 @@
 import React, { useState, useEffect } from "react";
-import { schemas } from "../types/schemas";
-import type { SchemaName } from "../types/schemas";
+import { fetchSchemaIndex, fetchSchema } from "../types/interfaces";
 
 interface SchemaFormProps {
   zaakId: string;
   onSubmit: (event: any) => Promise<void>;
 }
 
-type ItemType = "issue" | "task" | "comment" | "planning";
-
-const ITEM_TYPE_LABELS: Record<ItemType, string> = {
+// Default labels for known types
+const DEFAULT_LABELS: Record<string, string> = {
   issue: "Zaak",
   task: "Taak",
   comment: "Reactie",
   planning: "Planning",
+  document: "Document",
+  cloudevent: "CloudEvent",
+  itemeventdata: "ItemEventData",
+  issuestatus: "IssueStatus",
+  planningstatus: "PlanningStatus",
+  planningmoment: "PlanningMoment",
+  itemtype: "ItemType",
 };
 
-const ITEM_TYPE_DESCRIPTIONS: Record<ItemType, string> = {
+const DEFAULT_DESCRIPTIONS: Record<string, string> = {
   issue: "Een nieuwe zaak aanmaken met titel, beschrijving en status",
   task: "Een actie-item of taak toevoegen met deadline en verantwoordelijke",
   comment: "Een reactie of opmerking plaatsen bij deze zaak",
   planning: "Planning momenten definiëren met data en statussen",
+  document: "Een document toevoegen met titel, URL en grootte",
+  cloudevent: "Een CloudEvent aanmaken",
+  itemeventdata: "Event data voor item-based events",
+  issuestatus: "Status van een zaak",
+  planningstatus: "Status van een planning moment",
+  planningmoment: "Een specifiek moment in een planning",
+  itemtype: "Type van een item",
 };
 
 const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
-  const [selectedType, setSelectedType] = useState<ItemType>("comment");
+  const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string>("comment");
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [currentSchema, setCurrentSchema] = useState<any>(null);
 
-  // Get the schema for the selected type
-  const getSchemaForType = (type: ItemType) => {
-    const schemaMap: Record<ItemType, SchemaName> = {
-      issue: "Issue",
-      task: "Task",
-      comment: "Comment",
-      planning: "Planning",
+  // Fetch available schemas on component mount
+  useEffect(() => {
+    const loadAvailableSchemas = async () => {
+      try {
+        const schemaIndex = await fetchSchemaIndex();
+        // Filter out schemas that aren't suitable for creating items
+        const itemSchemas = schemaIndex.schemas.filter((name) =>
+          ["Issue", "Task", "Comment", "Planning", "Document"].includes(name),
+        );
+        setAvailableSchemas(itemSchemas);
+      } catch (error) {
+        console.error("Failed to load available schemas:", error);
+        // Fallback to default schemas
+        setAvailableSchemas([
+          "issue",
+          "task",
+          "comment",
+          "planning",
+          "document",
+        ]);
+      }
     };
-    return schemas[schemaMap[type]];
-  };
+    loadAvailableSchemas();
+  }, []);
 
-  // Reset form when type changes
+  // Load schema for the selected type and reset form when type changes
   useEffect(() => {
     setFormData({});
+    const loadSchema = async () => {
+      try {
+        const schema = await fetchSchema(selectedType);
+        setCurrentSchema(schema);
+      } catch (error) {
+        console.error(`Failed to load schema for ${selectedType}:`, error);
+        setCurrentSchema(null);
+      }
+    };
+
+    if (selectedType) {
+      loadSchema();
+    }
   }, [selectedType]);
 
-  const handleTypeChange = (type: ItemType) => {
-    setSelectedType(type);
+  const handleTypeChange = (newType: string) => {
+    setSelectedType(newType);
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -68,7 +109,7 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
         time: new Date().toISOString(),
         datacontenttype: "application/json",
         data: {
-          item_type: selectedType,
+          item_type: selectedType.toLowerCase(),
           item_id: `${selectedType}-${crypto.randomUUID()}`,
           actor: "frontend-user", // Add actor field
           item_data: {
@@ -96,7 +137,7 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
     fieldName: string,
     fieldSchema: any,
   ): React.ReactNode => {
-    const isRequired = fieldSchema.required?.includes?.(fieldName) || false;
+    const isRequired = currentSchema.required?.includes(fieldName) || false;
     const fieldProps =
       fieldSchema && "properties" in fieldSchema
         ? fieldSchema.properties?.[fieldName]
@@ -436,15 +477,18 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
       // Default to text input with smart placeholders
       const getPlaceholder = () => {
         if (fieldName === "title") {
-          return selectedType === "issue"
-            ? "Bijv. Aanvraag parkeervergunning"
-            : selectedType === "task"
+          const lowerType = selectedType.toLowerCase();
+          return lowerType === "issue"
+            ? "Bijv. Vergunningsaanvraag parkeerplaats"
+            : lowerType === "task"
               ? "Bijv. Documenten controleren"
-              : selectedType === "comment"
+              : lowerType === "comment"
                 ? "Onderwerp van uw reactie"
-                : selectedType === "planning"
+                : lowerType === "planning"
                   ? "Bijv. Vergunningsprocedure planning"
-                  : "Titel";
+                  : lowerType === "document"
+                    ? "Bijv. Vergunning document.pdf"
+                    : "Titel";
         }
         if (fieldName === "cta") {
           return "Bijv. Documenten uploaden, Formulier invullen, Contact opnemen";
@@ -514,8 +558,6 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
     );
   }
 
-  const schema = getSchemaForType(selectedType);
-
   return (
     <div className="mt-8">
       <div
@@ -541,7 +583,7 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
             Type Item
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {(Object.keys(ITEM_TYPE_LABELS) as ItemType[]).map((type) => (
+            {availableSchemas.map((type) => (
               <button
                 key={type}
                 type="button"
@@ -561,27 +603,28 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
                       }
                 }
               >
-                {ITEM_TYPE_LABELS[type]}
+                {DEFAULT_LABELS[type.toLowerCase()] || type}
               </button>
             ))}
           </div>
           <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            {ITEM_TYPE_DESCRIPTIONS[selectedType]}
+            {DEFAULT_DESCRIPTIONS[selectedType.toLowerCase()] ||
+              `Create a new ${selectedType}`}
           </p>
         </div>
 
         {/* Dynamic Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
-            {schema &&
-              "properties" in schema &&
-              schema.properties &&
-              Object.keys(schema.properties)
+            {currentSchema &&
+              "properties" in currentSchema &&
+              currentSchema.properties &&
+              Object.keys(currentSchema.properties)
                 .filter(
                   (field) =>
                     !["id", "created_at", "updated_at"].includes(field),
                 ) // Skip auto-generated fields
-                .map((fieldName) => renderFormField(fieldName, schema))}
+                .map((fieldName) => renderFormField(fieldName, currentSchema))}
           </div>
 
           {/* Form Actions */}

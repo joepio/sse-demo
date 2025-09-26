@@ -10,6 +10,7 @@ import type {
   ItemType as BaseItemType,
   IssueStatus as BaseIssueStatus,
   PlanningStatus as BasePlanningStatus,
+  Document as BaseDocument,
 } from "./types/interfaces";
 
 // Re-export base types
@@ -23,6 +24,7 @@ export type ItemEventData = BaseItemEventData;
 export type ItemType = BaseItemType;
 export type IssueStatus = BaseIssueStatus;
 export type PlanningStatus = BasePlanningStatus;
+export type Document = BaseDocument;
 
 // Extended interfaces for frontend-specific functionality
 export interface ExtendedIssue extends BaseIssue {
@@ -93,15 +95,8 @@ export interface Message extends BaseEntity {
   reactions?: Record<string, number>;
 }
 
-// Example: Document entity
-export interface Document extends BaseEntity {
-  title: string;
-  content: string;
-  author?: string;
-  tags?: string[];
-  version?: number;
-  status?: "draft" | "published" | "archived";
-}
+// Document entity (using generated schema from Rust)
+// The Document type is now imported from interfaces.ts
 
 // Planning entity
 export interface PlanningEntity extends BaseEntity {
@@ -192,4 +187,5 @@ export type TimelineItemType =
   | "issue_updated"
   | "issue_deleted"
   | "task"
-  | "planning";
+  | "planning"
+  | "document";

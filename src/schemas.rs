@@ -68,6 +68,19 @@ pub enum ItemType {
     Planning,
 }
 
+/// Document
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct Document {
+    /// Unieke document identifier
+    pub id: String,
+    /// Naam van het document
+    pub title: String,
+    /// URL naar het document. Moet downloaddbaar zijn
+    pub url: String,
+    /// Grootte in bytes
+    pub size: u64,
+}
+
 /// Issue/Zaak structure
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Issue {
@@ -179,6 +192,7 @@ fn resolve_schema_refs(mut schema: Value, all_schemas: &HashMap<String, Value>) 
     fn resolve_refs_recursive(value: &mut Value, schemas: &HashMap<String, Value>) {
         match value {
             Value::Object(map) => {
+                // Handle direct $ref
                 if let Some(ref_value) = map.get("$ref") {
                     if let Some(ref_str) = ref_value.as_str() {
                         if let Some(definition_name) = ref_str.strip_prefix("#/definitions/") {
@@ -190,6 +204,34 @@ fn resolve_schema_refs(mut schema: Value, all_schemas: &HashMap<String, Value>) 
                         }
                     }
                 }
+
+                // Handle allOf with $ref patterns
+                if let Some(Value::Array(all_of_array)) = map.get_mut("allOf") {
+                    if all_of_array.len() == 1 {
+                        if let Some(Value::Object(ref_obj)) = all_of_array.get(0) {
+                            if let Some(ref_value) = ref_obj.get("$ref") {
+                                if let Some(ref_str) = ref_value.as_str() {
+                                    if let Some(definition_name) =
+                                        ref_str.strip_prefix("#/definitions/")
+                                    {
+                                        if let Some(definition) = schemas.get(definition_name) {
+                                            // Replace the allOf with the resolved definition
+                                            map.remove("allOf");
+                                            if let Value::Object(def_map) = definition {
+                                                for (key, val) in def_map.iter() {
+                                                    if !map.contains_key(key) {
+                                                        map.insert(key.clone(), val.clone());
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 for (_, v) in map.iter_mut() {
                     resolve_refs_recursive(v, schemas);
                 }
@@ -216,62 +258,57 @@ fn extract_definitions(
     }
 }
 
+/// Macro to generate schemas for multiple types
+macro_rules! generate_schemas {
+    ($($type_name:ident),+ $(,)?) => {
+        {
+            // Generate all schemas
+            $(
+                let _schema = schema_for!($type_name);
+            )+
+
+            // Collect all definitions
+            let mut all_definitions = HashMap::new();
+            $(
+                let schema = schema_for!($type_name);
+                extract_definitions(&schema, &mut all_definitions);
+            )+
+
+            // Generate resolved schemas
+            let mut schemas = HashMap::new();
+            $(
+                let schema = schema_for!($type_name);
+                let mut schema_json = serde_json::to_value(&schema).unwrap();
+                schema_json = resolve_schema_refs(schema_json, &all_definitions);
+                schemas.insert(stringify!($type_name).to_string(), schema_json);
+            )+
+
+            // Add resolved definitions
+            for (name, definition) in all_definitions {
+                let resolved = resolve_schema_refs(definition, &HashMap::new());
+                schemas.insert(name, resolved);
+            }
+
+            schemas
+        }
+    };
+}
+
 /// Get all JSON schemas as a HashMap
 pub fn get_all_schemas() -> HashMap<String, Value> {
-    // Generate JSON schemas for our types
-    let cloud_event_schema = schema_for!(CloudEvent);
-    let item_event_data_schema = schema_for!(ItemEventData);
-    let issue_schema = schema_for!(Issue);
-    let task_schema = schema_for!(Task);
-    let comment_schema = schema_for!(Comment);
-    let planning_schema = schema_for!(Planning);
-    let planning_moment_schema = schema_for!(PlanningMoment);
-
-    // Convert schemas to JSON Values and collect all definitions
-    let mut all_schemas = HashMap::new();
-
-    extract_definitions(&cloud_event_schema, &mut all_schemas);
-    extract_definitions(&item_event_data_schema, &mut all_schemas);
-    extract_definitions(&issue_schema, &mut all_schemas);
-    extract_definitions(&task_schema, &mut all_schemas);
-    extract_definitions(&comment_schema, &mut all_schemas);
-    extract_definitions(&planning_schema, &mut all_schemas);
-    extract_definitions(&planning_moment_schema, &mut all_schemas);
-
-    // Convert main schemas to Values and resolve references
-    let mut cloud_event_json = serde_json::to_value(&cloud_event_schema).unwrap();
-    let mut item_event_data_json = serde_json::to_value(&item_event_data_schema).unwrap();
-    let mut issue_json = serde_json::to_value(&issue_schema).unwrap();
-    let mut task_json = serde_json::to_value(&task_schema).unwrap();
-    let mut comment_json = serde_json::to_value(&comment_schema).unwrap();
-    let mut planning_json = serde_json::to_value(&planning_schema).unwrap();
-    let mut planning_moment_json = serde_json::to_value(&planning_moment_schema).unwrap();
-
-    cloud_event_json = resolve_schema_refs(cloud_event_json, &all_schemas);
-    item_event_data_json = resolve_schema_refs(item_event_data_json, &all_schemas);
-    issue_json = resolve_schema_refs(issue_json, &all_schemas);
-    task_json = resolve_schema_refs(task_json, &all_schemas);
-    comment_json = resolve_schema_refs(comment_json, &all_schemas);
-    planning_json = resolve_schema_refs(planning_json, &all_schemas);
-    planning_moment_json = resolve_schema_refs(planning_moment_json, &all_schemas);
-
-    // Return all schemas with their names
-    let mut schemas = HashMap::new();
-    schemas.insert("CloudEvent".to_string(), cloud_event_json);
-    schemas.insert("ItemEventData".to_string(), item_event_data_json);
-    schemas.insert("Issue".to_string(), issue_json);
-    schemas.insert("Task".to_string(), task_json);
-    schemas.insert("Comment".to_string(), comment_json);
-    schemas.insert("Planning".to_string(), planning_json);
-    schemas.insert("PlanningMoment".to_string(), planning_moment_json);
-
-    // Also add resolved definitions
-    for (name, schema) in all_schemas {
-        let resolved = resolve_schema_refs(schema, &HashMap::new());
-        schemas.insert(name, resolved);
-    }
-
-    schemas
+    generate_schemas![
+        CloudEvent,
+        ItemEventData,
+        ItemType,
+        Document,
+        Issue,
+        IssueStatus,
+        Task,
+        Comment,
+        Planning,
+        PlanningMoment,
+        PlanningStatus
+    ]
 }
 
 /// Get a specific schema by name
@@ -318,6 +355,11 @@ mod tests {
         assert!(schema_names.contains(&"Issue".to_string()));
         assert!(schema_names.contains(&"Task".to_string()));
         assert!(schema_names.contains(&"Planning".to_string()));
+        // Test that previously missing schemas are now included
+        assert!(schema_names.contains(&"Document".to_string()));
+        assert!(schema_names.contains(&"ItemType".to_string()));
+        assert!(schema_names.contains(&"IssueStatus".to_string()));
+        assert!(schema_names.contains(&"PlanningStatus".to_string()));
     }
 
     #[test]
@@ -403,5 +445,82 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_missing_schemas_now_included() {
+        let all_schemas = get_all_schemas();
+
+        // Verify that previously missing schemas are now included
+        assert!(
+            all_schemas.contains_key("Document"),
+            "Document schema missing"
+        );
+        assert!(
+            all_schemas.contains_key("ItemType"),
+            "ItemType schema missing"
+        );
+        assert!(
+            all_schemas.contains_key("IssueStatus"),
+            "IssueStatus schema missing"
+        );
+        assert!(
+            all_schemas.contains_key("PlanningStatus"),
+            "PlanningStatus schema missing"
+        );
+
+        // Verify all main types are present
+        let expected_schemas = vec![
+            "CloudEvent",
+            "ItemEventData",
+            "ItemType",
+            "Document",
+            "Issue",
+            "IssueStatus",
+            "Task",
+            "Comment",
+            "Planning",
+            "PlanningMoment",
+            "PlanningStatus",
+        ];
+
+        for schema_name in expected_schemas {
+            assert!(
+                all_schemas.contains_key(schema_name),
+                "Missing schema: {}",
+                schema_name
+            );
+        }
+    }
+
+    #[test]
+    fn test_schema_generation_completeness() {
+        let schemas = get_all_schemas();
+
+        // Print schema count for debugging
+        println!("Total schemas generated: {}", schemas.len());
+
+        // Verify we have at least the expected number of main schemas
+        assert!(
+            schemas.len() >= 11,
+            "Expected at least 11 schemas, got {}",
+            schemas.len()
+        );
+
+        // Test that we can get a specific schema
+        let cloud_event = get_schema("CloudEvent");
+        assert!(
+            cloud_event.is_some(),
+            "CloudEvent schema should be available"
+        );
+
+        let document = get_schema("Document");
+        assert!(document.is_some(), "Document schema should be available");
+
+        let item_type = get_schema("ItemType");
+        assert!(
+            item_type.is_some(),
+            "ItemType enum schema should be available"
+        );
     }
 }

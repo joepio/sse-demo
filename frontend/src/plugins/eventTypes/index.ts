@@ -12,10 +12,12 @@ import DeploymentPlugin from "./DeploymentPlugin";
 import SystemEventPlugin from "./SystemEventPlugin";
 import TaskPlugin from "./TaskPlugin";
 import PlanningPlugin from "./PlanningPlugin";
+import DocumentPlugin from "./DocumentPlugin";
 
 // Plugin registry - map event types to components
 export const eventPlugins: Record<TimelineItemType, EventPluginComponent> = {
   comment: CommentPlugin,
+  document: DocumentPlugin,
   status_change: StatusChangePlugin,
   field_update: SystemEventPlugin,
   system_update: SystemEventPlugin,

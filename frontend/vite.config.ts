@@ -18,6 +18,10 @@ export default defineConfig({
         target: serverUrl,
         changeOrigin: true,
       },
+      "/schemas": {
+        target: serverUrl,
+        changeOrigin: true,
+      },
     },
   },
   build: {
