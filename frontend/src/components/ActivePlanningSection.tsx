@@ -25,7 +25,7 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
     >
       <SectionLabel>Planning</SectionLabel>
       <Card padding="sm">
-        <PlanningCard planning={latestPlanning} />
+        <PlanningCard planning={latestPlanning} zaakId={zaakId} />
       </Card>
     </div>
   );

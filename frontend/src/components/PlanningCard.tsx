@@ -1,11 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import type { ExtendedPlanning } from "../types";
+import SchemaEditForm from "./SchemaEditForm";
+import { Button } from "./ActionButton";
+import { useSSE } from "../contexts/SSEContext";
 
 interface PlanningCardProps {
   planning: ExtendedPlanning;
+  zaakId?: string;
 }
 
-const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
+const PlanningCard: React.FC<PlanningCardProps> = ({ planning, zaakId }) => {
+  const { sendEvent } = useSSE();
+  const [showEditModal, setShowEditModal] = useState(false);
   const { title, description, moments = [] } = planning;
 
   const getStatusColor = (status: "completed" | "current" | "planned") => {
@@ -38,11 +44,23 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
     <div className="p-0">
       {/* Planning header */}
       <div className="mb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">📅</span>
-          <h4 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-medium text-text-primary m-0">
-            {title || "Planning"}
-          </h4>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📅</span>
+            <h4 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-medium text-text-primary m-0">
+              {title || "Planning"}
+            </h4>
+          </div>
+          {zaakId && (
+            <Button
+              variant="icon"
+              size="sm"
+              onClick={() => setShowEditModal(true)}
+              title="Planning bewerken"
+            >
+              ✏️
+            </Button>
+          )}
         </div>
 
         {description && (
@@ -112,6 +130,22 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
         <div className="text-text-secondary text-sm sm:text-base lg:text-lg xl:text-xl italic">
           Geen planning momenten beschikbaar
         </div>
+      )}
+
+      {zaakId && (
+        <SchemaEditForm
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          itemType="planning"
+          itemId={planning.id}
+          initialData={{
+            title: title,
+            description: description,
+            moments: moments,
+          }}
+          onSubmit={sendEvent}
+          zaakId={zaakId}
+        />
       )}
     </div>
   );

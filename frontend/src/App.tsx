@@ -88,7 +88,7 @@ const ZakenDashboard: React.FC = () => {
       >
         <h1
           className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 lg:mb-6 xl:mb-8"
-          style={{ color: "var(--ro-lintblauw)" }}
+          style={{ color: "var(--logo-primary)" }}
         >
           MijnZaken
         </h1>

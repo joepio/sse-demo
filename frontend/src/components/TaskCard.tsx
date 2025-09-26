@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import type { ExtendedTask } from "../types";
-import ActionButton from "./ActionButton";
+import ActionButton, { Button } from "./ActionButton";
 import { useSSE } from "../contexts/SSEContext";
 import DeadlineBadge from "./DeadlineBadge";
+import SchemaEditForm from "./SchemaEditForm";
 
 interface TaskCardProps {
   task: ExtendedTask;
@@ -10,7 +11,8 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
-  const { completeTask } = useSSE();
+  const { completeTask, sendEvent } = useSSE();
+  const [showEditModal, setShowEditModal] = useState(false);
 
   if (task.completed) {
     return (
@@ -27,28 +29,55 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
 
   // Show the active task interface
   return (
-    <div className="p-0">
-      <p className="m-0 mb-4 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl">
-        {task.description}
-      </p>
-      <div className="mt-2 flex gap-2 items-center">
-        <ActionButton
-          variant="secondary"
-          onClick={() => {
-            completeTask(task.id, zaakId);
-          }}
-        >
-          {task.cta}
-        </ActionButton>
-        {task.deadline && (
-          <DeadlineBadge
-            deadline={task.deadline}
-            variant="full"
-            showLabel={true}
-          />
-        )}
+    <>
+      <div className="p-0">
+        <div className="flex justify-between items-start mb-4">
+          <p className="m-0 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl flex-1">
+            {task.description}
+          </p>
+          <Button
+            variant="icon"
+            size="sm"
+            onClick={() => setShowEditModal(true)}
+            title="Taak bewerken"
+          >
+            ✏️
+          </Button>
+        </div>
+        <div className="mt-2 flex gap-2 items-center">
+          <ActionButton
+            variant="secondary"
+            onClick={() => {
+              completeTask(task.id, zaakId);
+            }}
+          >
+            {task.cta}
+          </ActionButton>
+          {task.deadline && (
+            <DeadlineBadge
+              deadline={task.deadline}
+              variant="full"
+              showLabel={true}
+            />
+          )}
+        </div>
       </div>
-    </div>
+
+      <SchemaEditForm
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        itemType="task"
+        itemId={task.id}
+        initialData={{
+          description: task.description,
+          cta: task.cta,
+          deadline: task.deadline,
+          url: task.url,
+        }}
+        onSubmit={sendEvent}
+        zaakId={zaakId}
+      />
+    </>
   );
 };
 

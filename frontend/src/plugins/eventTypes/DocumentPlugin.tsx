@@ -3,14 +3,18 @@ import type { EventPluginProps } from "./types";
 import type { Document } from "../../types";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import SchemaEditForm from "../../components/SchemaEditForm";
 import { Button } from "../../components/ActionButton";
+import { useSSE } from "../../contexts/SSEContext";
 
 const DocumentPlugin: React.FC<EventPluginProps> = ({
   event,
   data,
   timeInfo,
 }) => {
+  const { sendEvent } = useSSE();
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const eventData = data as Record<string, unknown>;
   const documentId = eventData.item_id as string;
   const isUpdateEvent = event.originalEvent.type.includes("updated");
@@ -220,14 +224,24 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
               {event.actor}
             </span>
           )}
-          <Button
-            variant="link"
-            size="sm"
-            title={`${timeInfo.date} at ${timeInfo.time}`}
-            onClick={() => setShowEventModal(true)}
-          >
-            {timeInfo.relative}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="icon"
+              size="sm"
+              onClick={() => setShowEditModal(true)}
+              title="Bewerken"
+            >
+              ✏️
+            </Button>
+            <Button
+              variant="link"
+              size="sm"
+              title={`${timeInfo.date} at ${timeInfo.time}`}
+              onClick={() => setShowEventModal(true)}
+            >
+              {timeInfo.relative}
+            </Button>
+          </div>
         </div>
 
         <div className="prose prose-sm max-w-none">
@@ -264,6 +278,20 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           </div>
         </div>
       </Card>
+
+      <SchemaEditForm
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        itemType="document"
+        itemId={(documentData as any)?.id || event.id}
+        initialData={{
+          title: documentData.title,
+          url: documentData.url,
+          size: documentData.size,
+        }}
+        onSubmit={sendEvent}
+        zaakId={event.originalEvent.subject || ""}
+      />
 
       <Modal
         isOpen={showEventModal}

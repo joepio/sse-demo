@@ -21,8 +21,17 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
               <h1
-                className="text-xl font-bold hover:text-blue-600"
-                style={{ color: "var(--ro-lintblauw)" }}
+                className="text-xl font-bold"
+                style={{
+                  color: "var(--logo-primary)",
+                  transition: "color 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--logo-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--logo-primary)";
+                }}
               >
                 <Link
                   to="/"

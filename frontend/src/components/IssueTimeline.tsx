@@ -10,6 +10,7 @@ import ActivePlanningSection from "./ActivePlanningSection";
 import CommentForm from "./CommentForm";
 import TimelineEventsList from "./TimelineEventsList";
 import SchemaForm from "./SchemaForm";
+import SchemaEditForm from "./SchemaEditForm";
 import SectionLabel from "./SectionLabel";
 
 const IssueTimeline: React.FC = () => {
@@ -18,6 +19,7 @@ const IssueTimeline: React.FC = () => {
   const { events, issues, sendEvent } = useSSE();
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const issue = zaakId ? issues[zaakId] : null;
 
@@ -140,6 +142,10 @@ const IssueTimeline: React.FC = () => {
     }
   };
 
+  const handleEditIssue = () => {
+    setShowEditModal(true);
+  };
+
   if (!zaakId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center p-8 bg-bg-primary">
@@ -182,6 +188,7 @@ const IssueTimeline: React.FC = () => {
           {issue && (
             <IssueHeader
               issue={issue}
+              onEdit={handleEditIssue}
               onDelete={handleDeleteIssue}
               isDeleting={isDeleting}
             />
@@ -215,6 +222,25 @@ const IssueTimeline: React.FC = () => {
           <SchemaForm zaakId={zaakId} onSubmit={handleCommentSubmit} />
         )}
       </div>
+
+      {/* Issue Edit Modal */}
+      {zaakId && issue && (
+        <SchemaEditForm
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          itemType="issue"
+          itemId={issue.id}
+          initialData={{
+            title: issue.title,
+            description: issue.description,
+            status: issue.status,
+            assignee: issue.assignee,
+            resolution: issue.resolution,
+          }}
+          onSubmit={handleCommentSubmit}
+          zaakId={zaakId}
+        />
+      )}
     </div>
   );
 };

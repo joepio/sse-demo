@@ -92,14 +92,21 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
                 </div>
               )}
               <textarea
-                className="w-full min-h-[120px] sm:min-h-[140px] lg:min-h-[160px] border border-transparent outline-none resize-y text-sm sm:text-base lg:text-lg xl:text-xl leading-relaxed placeholder:opacity-60 mb-4 focus:border-gray-300 transition-colors duration-200"
+                className="w-full min-h-[120px] sm:min-h-[140px] lg:min-h-[160px] border outline-none resize-y text-sm sm:text-base lg:text-lg xl:text-xl leading-relaxed placeholder:opacity-60 mb-4 transition-colors duration-200"
                 style={{
-                  backgroundColor: "white",
+                  backgroundColor: "var(--bg-secondary)",
                   color: "var(--text-primary)",
+                  borderColor: "var(--border-primary)",
                 }}
                 placeholder="Voeg een opmerking toe..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-focus)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-primary)";
+                }}
                 rows={4}
                 disabled={isSubmittingComment}
               />
