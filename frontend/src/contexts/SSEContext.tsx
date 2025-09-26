@@ -76,70 +76,249 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     [],
   );
 
-  // Process CloudEvent and update issues state
+  // Extract issue data from CloudEvent
+  const extractIssueData = useCallback(
+    (cloudEvent: CloudEvent): Issue | null => {
+      if (!cloudEvent.data || typeof cloudEvent.data !== "object") return null;
+
+      const data = cloudEvent.data as Record<string, unknown>;
+      if (data.item_type !== "issue" || !data.item_data) return null;
+
+      const issueData = data.item_data as Record<string, unknown>;
+      if (!issueData.id || typeof issueData.id !== "string") return null;
+
+      return {
+        id: String(issueData.id),
+        title: String(issueData.title || ""),
+        description: issueData.description
+          ? String(issueData.description)
+          : null,
+        status: String(issueData.status || "open") as
+          | "open"
+          | "in_progress"
+          | "closed",
+        assignee: issueData.assignee ? String(issueData.assignee) : null,
+        created_at: String(issueData.created_at || new Date().toISOString()),
+        resolution: issueData.resolution ? String(issueData.resolution) : null,
+      };
+    },
+    [],
+  );
+
+  // Handle issue creation events
+  const handleIssueCreated = useCallback(
+    (
+      cloudEvent: CloudEvent,
+      eventTime: string,
+      issuesMap: Record<string, IssueWithActivity>,
+    ): Record<string, IssueWithActivity> => {
+      const newIssues = { ...issuesMap };
+      const issueData = extractIssueData(cloudEvent);
+
+      if (issueData) {
+        newIssues[issueData.id] = {
+          ...issueData,
+          lastActivity: eventTime,
+        };
+      } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
+        // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
+        const data = cloudEvent.data as Record<string, unknown>;
+
+        newIssues[cloudEvent.subject] = {
+          ...newIssues[cloudEvent.subject],
+          lastActivity: eventTime,
+        };
+      }
+
+      return newIssues;
+    },
+    [extractIssueData],
+  );
+
+  // Handle issue update events
+  const handleIssueUpdated = useCallback(
+    (
+      cloudEvent: CloudEvent,
+      eventTime: string,
+      issuesMap: Record<string, IssueWithActivity>,
+    ): Record<string, IssueWithActivity> => {
+      if (!cloudEvent.subject || !cloudEvent.data) return issuesMap;
+
+      const newIssues = { ...issuesMap };
+      const data = cloudEvent.data as Record<string, unknown>;
+      const issueId = cloudEvent.subject;
+
+      if (data.item_type === "issue" && data.item_data) {
+        if (newIssues[issueId]) {
+          const patchedIssue = applyMergePatch(
+            newIssues[issueId],
+            data.item_data,
+          ) as IssueWithActivity;
+          newIssues[issueId] = {
+            ...patchedIssue,
+            lastActivity: eventTime,
+          };
+        } else {
+          // Create new issue if it doesn't exist
+          const newIssue = { id: issueId };
+          const patchedNewIssue = applyMergePatch(
+            newIssue,
+            data.item_data,
+          ) as IssueWithActivity;
+          newIssues[issueId] = {
+            ...patchedNewIssue,
+            lastActivity: eventTime,
+          };
+        }
+      } else if (newIssues[issueId]) {
+        // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
+
+        newIssues[issueId] = {
+          ...newIssues[issueId],
+          lastActivity: eventTime,
+        };
+      }
+
+      return newIssues;
+    },
+    [applyMergePatch],
+  );
+
+  // Handle issue deletion events
+  const handleIssueDeleted = useCallback(
+    (
+      cloudEvent: CloudEvent,
+      issuesMap: Record<string, IssueWithActivity>,
+    ): Record<string, IssueWithActivity> => {
+      if (!cloudEvent.subject || !cloudEvent.data) return issuesMap;
+
+      const data = cloudEvent.data as Record<string, unknown>;
+      if (data.item_type === "issue") {
+        const newIssues = { ...issuesMap };
+        delete newIssues[cloudEvent.subject];
+
+        return newIssues;
+      }
+
+      return issuesMap;
+    },
+    [],
+  );
+
+  // Handle other timeline events that should update lastActivity
+  const handleTimelineEvent = useCallback(
+    (
+      cloudEvent: CloudEvent,
+      eventTime: string,
+      issuesMap: Record<string, IssueWithActivity>,
+    ): Record<string, IssueWithActivity> => {
+      if (!cloudEvent.subject || !issuesMap[cloudEvent.subject])
+        return issuesMap;
+
+      const newIssues = { ...issuesMap };
+      newIssues[cloudEvent.subject] = {
+        ...newIssues[cloudEvent.subject],
+        lastActivity: eventTime,
+      };
+
+      return newIssues;
+    },
+    [],
+  );
+
+  // Process a single CloudEvent and update issues state
   const processCloudEvent = useCallback(
     (cloudEvent: CloudEvent) => {
       setIssues((prevIssues) => {
-        const newIssues = { ...prevIssues };
         const eventTime = cloudEvent.time || new Date().toISOString();
 
         switch (cloudEvent.type) {
           case "item.created":
-            if (
-              cloudEvent.data &&
-              typeof cloudEvent.data === "object" &&
-              cloudEvent.data !== null
-            ) {
-              const data = cloudEvent.data as Record<string, unknown>;
-              if (data.item_type === "issue" && data.item_data) {
-                const issueData = data.item_data as Record<string, unknown>;
-                if (issueData.id && typeof issueData.id === "string") {
-                  newIssues[issueData.id] = {
-                    id: String(issueData.id),
-                    title: String(issueData.title || ""),
-                    description: issueData.description
-                      ? String(issueData.description)
-                      : null,
-                    status: String(issueData.status || "open") as
-                      | "open"
-                      | "in_progress"
-                      | "closed",
-                    assignee: issueData.assignee
-                      ? String(issueData.assignee)
-                      : null,
-                    created_at: String(
-                      issueData.created_at || new Date().toISOString(),
-                    ),
-                    resolution: issueData.resolution
-                      ? String(issueData.resolution)
-                      : null,
-                    lastActivity: eventTime,
-                  };
-                }
-              } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
-                // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
-                newIssues[cloudEvent.subject] = {
-                  ...newIssues[cloudEvent.subject],
-                  lastActivity: eventTime,
-                };
-              }
-            }
-            break;
+            return handleIssueCreated(cloudEvent, eventTime, prevIssues);
 
           case "item.updated":
-            if (cloudEvent.subject && cloudEvent.data) {
-              const data = cloudEvent.data as Record<string, unknown>;
-              const issueId = cloudEvent.subject;
+            return handleIssueUpdated(cloudEvent, eventTime, prevIssues);
+
+          case "item.deleted":
+            return handleIssueDeleted(cloudEvent, prevIssues);
+
+          case "system.reset":
+            window.location.reload();
+            return prevIssues;
+
+          default:
+            return handleTimelineEvent(cloudEvent, eventTime, prevIssues);
+        }
+      });
+    },
+    [
+      handleIssueCreated,
+      handleIssueUpdated,
+      handleIssueDeleted,
+      handleTimelineEvent,
+    ],
+  );
+
+  // Build activity map to track latest activity per issue
+  const buildActivityMap = useCallback(
+    (events: CloudEvent[]): Record<string, string> => {
+      const activityMap: Record<string, string> = {};
+
+      for (const event of events) {
+        if (event.subject) {
+          const eventTime = event.time || new Date().toISOString();
+          if (
+            !activityMap[event.subject] ||
+            eventTime > activityMap[event.subject]
+          ) {
+            activityMap[event.subject] = eventTime;
+          }
+        }
+      }
+
+      return activityMap;
+    },
+    [],
+  );
+
+  // Process snapshot events to build initial state
+  const processSnapshot = useCallback(
+    (snapshotEvents: CloudEvent[]): Record<string, IssueWithActivity> => {
+      const initialIssues: Record<string, IssueWithActivity> = {};
+      const activityMap = buildActivityMap(snapshotEvents);
+
+      for (const event of snapshotEvents) {
+        const eventTime = event.time || new Date().toISOString();
+
+        switch (event.type) {
+          case "item.created": {
+            const issueData = extractIssueData(event);
+            if (issueData) {
+              const lastActivity = activityMap[issueData.id] || eventTime;
+              initialIssues[issueData.id] = {
+                ...issueData,
+                lastActivity,
+              };
+            }
+            break;
+          }
+
+          case "item.updated": {
+            if (event.subject && event.data) {
+              const data = event.data as Record<string, unknown>;
+              const issueId = event.subject;
 
               if (data.item_type === "issue" && data.item_data) {
-                if (newIssues[issueId]) {
+                const lastActivity = activityMap[issueId] || eventTime;
+
+                if (initialIssues[issueId]) {
                   const patchedIssue = applyMergePatch(
-                    newIssues[issueId],
+                    initialIssues[issueId],
                     data.item_data,
                   ) as IssueWithActivity;
-                  newIssues[issueId] = {
+                  initialIssues[issueId] = {
                     ...patchedIssue,
-                    lastActivity: eventTime,
+                    lastActivity,
                   };
                 } else {
                   // Create new issue if it doesn't exist
@@ -148,51 +327,31 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
                     newIssue,
                     data.item_data,
                   ) as IssueWithActivity;
-                  newIssues[issueId] = {
+                  initialIssues[issueId] = {
                     ...patchedNewIssue,
-                    lastActivity: eventTime,
+                    lastActivity,
                   };
                 }
-              } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
-                // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
-                newIssues[cloudEvent.subject] = {
-                  ...newIssues[cloudEvent.subject],
-                  lastActivity: eventTime,
-                };
               }
             }
             break;
+          }
 
-          case "item.deleted":
-            if (cloudEvent.subject && cloudEvent.data) {
-              const data = cloudEvent.data as Record<string, unknown>;
+          case "item.deleted": {
+            if (event.subject && event.data) {
+              const data = event.data as Record<string, unknown>;
               if (data.item_type === "issue") {
-                delete newIssues[cloudEvent.subject];
+                delete initialIssues[event.subject];
               }
             }
             break;
-
-          case "system.reset":
-            // System reset event - reload the page to get fresh state
-            console.log("🔄 System reset event received - refreshing page");
-            window.location.reload();
-            break;
-
-          // Handle timeline events that should update lastActivity
-          default:
-            if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
-              newIssues[cloudEvent.subject] = {
-                ...newIssues[cloudEvent.subject],
-                lastActivity: eventTime,
-              };
-            }
-            break;
+          }
         }
+      }
 
-        return newIssues;
-      });
+      return initialIssues;
     },
-    [applyMergePatch],
+    [applyMergePatch, extractIssueData, buildActivityMap],
   );
 
   // Send CloudEvent to server
@@ -211,8 +370,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           throw new Error(`Failed to send event: ${response.statusText}`);
         }
 
-        // Don't add event locally - let it come back through SSE delta to avoid duplicates
-        // Only update local state for immediate UI responsiveness
+        // Process the event locally for immediate UI responsiveness
         processCloudEvent(event);
       } catch (error) {
         console.error("Error sending event:", error);
@@ -226,10 +384,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const completeTask = useCallback(
     async (taskId: string, issueId?: string) => {
       try {
-        console.log("Completing task:", taskId);
-
-        // Update the original task to mark it as completed
-        const taskUpdateEvent = {
+        const taskUpdateEvent: CloudEvent = {
           specversion: "1.0",
           id: `update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           source: "frontend-user-action",
@@ -250,7 +405,6 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
 
         console.log("Sending task update event:", taskUpdateEvent);
         await sendEvent(taskUpdateEvent);
-        console.log("Task update completed successfully");
       } catch (error) {
         console.error("Error completing task:", error);
         throw error;
@@ -259,24 +413,15 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     [sendEvent],
   );
 
-  // Connect to SSE endpoint
-  useEffect(() => {
-    const connectSSE = () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-
-      setConnectionStatus("connecting");
-      const eventSource = new EventSource("/events");
-      eventSourceRef.current = eventSource;
-
+  // Setup SSE connection handlers
+  const setupEventSourceHandlers = useCallback(
+    (eventSource: EventSource) => {
       eventSource.addEventListener("open", () => {
         setConnectionStatus("connected");
       });
 
       eventSource.addEventListener("error", () => {
         setConnectionStatus("error");
-        // EventSource will automatically reconnect
         setTimeout(() => setConnectionStatus("connecting"), 1000);
       });
 
@@ -284,108 +429,8 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
       eventSource.addEventListener("snapshot", (e) => {
         try {
           const snapshotEvents = JSON.parse(e.data) as CloudEvent[];
-
           setEvents(snapshotEvents);
-
-          // Process all events to build initial issues state
-          const initialIssues: Record<string, IssueWithActivity> = {};
-          const issueActivityMap: Record<string, string> = {};
-
-          // First pass: track latest activity for each issue
-          for (const event of snapshotEvents) {
-            if (event.subject) {
-              const eventTime = event.time || new Date().toISOString();
-              if (
-                !issueActivityMap[event.subject] ||
-                eventTime > issueActivityMap[event.subject]
-              ) {
-                issueActivityMap[event.subject] = eventTime;
-              }
-            }
-          }
-
-          for (const event of snapshotEvents) {
-            const eventTime = event.time || new Date().toISOString();
-
-            switch (event.type) {
-              case "item.created":
-                if (
-                  event.data &&
-                  typeof event.data === "object" &&
-                  event.data !== null
-                ) {
-                  const data = event.data as Record<string, unknown>;
-                  if (data.item_type === "issue" && data.item_data) {
-                    const issueData = data.item_data as Record<string, unknown>;
-                    if (issueData.id && typeof issueData.id === "string") {
-                      initialIssues[issueData.id] = {
-                        id: String(issueData.id),
-                        title: String(issueData.title || ""),
-                        description: issueData.description
-                          ? String(issueData.description)
-                          : null,
-                        status: String(issueData.status || "open") as
-                          | "open"
-                          | "in_progress"
-                          | "closed",
-                        assignee: issueData.assignee
-                          ? String(issueData.assignee)
-                          : null,
-                        created_at: String(
-                          issueData.created_at || new Date().toISOString(),
-                        ),
-                        resolution: issueData.resolution
-                          ? String(issueData.resolution)
-                          : null,
-                        lastActivity: eventTime,
-                      };
-                    }
-                  }
-                }
-                break;
-
-              case "item.updated":
-                if (event.subject && event.data) {
-                  const data = event.data as Record<string, unknown>;
-                  const issueId = event.subject;
-
-                  if (data.item_type === "issue" && data.item_data) {
-                    if (initialIssues[issueId]) {
-                      const patchedIssue = applyMergePatch(
-                        initialIssues[issueId],
-                        data.item_data,
-                      ) as IssueWithActivity;
-                      initialIssues[issueId] = {
-                        ...patchedIssue,
-                        lastActivity: eventTime,
-                      };
-                    } else {
-                      // Create new issue if it doesn't exist
-                      const newIssue = { id: issueId };
-                      const patchedNewIssue = applyMergePatch(
-                        newIssue,
-                        data.item_data,
-                      ) as IssueWithActivity;
-                      initialIssues[issueId] = {
-                        ...patchedNewIssue,
-                        lastActivity: eventTime,
-                      };
-                    }
-                  }
-                }
-                break;
-
-              case "item.deleted":
-                if (event.subject && event.data) {
-                  const data = event.data as Record<string, unknown>;
-                  if (data.item_type === "issue") {
-                    delete initialIssues[event.subject];
-                  }
-                }
-                break;
-            }
-          }
-
+          const initialIssues = processSnapshot(snapshotEvents);
           setIssues(initialIssues);
         } catch (error) {
           console.error("Error processing snapshot:", error);
@@ -397,9 +442,8 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         try {
           const cloudEvent = JSON.parse(e.data) as CloudEvent;
 
-          // Check for system reset event before processing
+          // Check for system reset event
           if (cloudEvent.type === "system.reset") {
-            console.log("🔄 System reset event received - refreshing page");
             window.location.reload();
             return;
           }
@@ -413,6 +457,23 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           console.error("Error processing delta:", error);
         }
       });
+    },
+    [processSnapshot, processCloudEvent],
+  );
+
+  // Connect to SSE endpoint
+  useEffect(() => {
+    const connectSSE = () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+
+      setConnectionStatus("connecting");
+
+      const eventSource = new EventSource("/events");
+      eventSourceRef.current = eventSource;
+
+      setupEventSourceHandlers(eventSource);
     };
 
     connectSSE();
@@ -423,7 +484,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         eventSourceRef.current.close();
       }
     };
-  }, [processCloudEvent, applyMergePatch]);
+  }, [setupEventSourceHandlers]);
 
   const contextValue: SSEContextType = {
     events,

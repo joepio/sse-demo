@@ -72,7 +72,7 @@ const ZakenDashboard: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen p-4 md:p-2"
+      className="min-h-screen"
       style={{
         backgroundColor: "var(--bg-primary)",
         color: "var(--text-primary)",
@@ -93,7 +93,7 @@ const ZakenDashboard: React.FC = () => {
         </p>
       </div>
 
-      <main className="max-w-3xl mx-auto pt-8">
+      <main className="max-w-3xl mx-auto p-4 md:p-8 pt-8">
         <div className="flex flex-col gap-6 md:gap-4 mb-8">
           {issueEntries.length === 0 ? (
             <p style={{ color: "var(--text-secondary)" }}>

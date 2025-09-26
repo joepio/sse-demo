@@ -125,7 +125,18 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   return (
     <div className="relative ml-auto" ref={notificationRef}>
       <button
-        className="relative bg-transparent border border-border-primary rounded-md p-2 md:p-1.5 text-xl md:text-base cursor-pointer flex items-center justify-center transition-all duration-200 hover:bg-bg-secondary hover:border-border-secondary"
+        className="relative bg-transparent border rounded-md p-2 md:p-1.5 text-xl md:text-base cursor-pointer flex items-center justify-center transition-all duration-200"
+        style={{
+          borderColor: "var(--border-primary)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          e.currentTarget.style.borderColor = "var(--border-secondary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "";
+          e.currentTarget.style.borderColor = "var(--border-primary)";
+        }}
         onClick={handleBellClick}
         type="button"
       >
