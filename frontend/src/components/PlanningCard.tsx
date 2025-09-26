@@ -40,13 +40,15 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-lg">📅</span>
-          <h4 className="font-medium text-text-primary m-0">
+          <h4 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-medium text-text-primary m-0">
             {title || "Planning"}
           </h4>
         </div>
 
         {description && (
-          <p className="text-sm text-text-secondary m-0 mb-3">{description}</p>
+          <p className="text-sm sm:text-base lg:text-lg xl:text-xl text-text-secondary m-0 mb-3">
+            {description}
+          </p>
         )}
       </div>
 
@@ -82,7 +84,7 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div
-                      className={`text-sm font-medium leading-tight ${
+                      className={`text-sm sm:text-base lg:text-lg xl:text-xl font-medium leading-tight ${
                         moment.status === "completed"
                           ? "text-text-secondary line-through"
                           : moment.status === "current"
@@ -93,7 +95,7 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
                       {moment.title}
                     </div>
                   </div>
-                  <div className="text-xs text-text-tertiary whitespace-nowrap">
+                  <div className="text-xs sm:text-sm lg:text-sm xl:text-base text-text-tertiary whitespace-nowrap">
                     {new Date(moment.date).toLocaleDateString("nl-NL", {
                       day: "numeric",
                       month: "short",
@@ -107,7 +109,7 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning }) => {
       </div>
 
       {moments.length === 0 && (
-        <div className="text-text-secondary text-sm italic">
+        <div className="text-text-secondary text-sm sm:text-base lg:text-lg xl:text-xl italic">
           Geen planning momenten beschikbaar
         </div>
       )}

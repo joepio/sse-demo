@@ -344,3 +344,32 @@
     border-color: var(--button-danger-hover);
   }
 }
+
+/* Global font size increases for better readability */
+@layer utilities {
+  /* Slightly increase base font sizes */
+  html {
+    font-size: 16px; /* Keep default */
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 17px; /* lg: slightly larger */
+    }
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: 18px; /* xl: moderately larger */
+    }
+  }
+
+  /* Override small text classes to be slightly larger */
+  .text-xs {
+    font-size: 0.8125rem !important; /* 13px instead of 12px */
+  }
+
+  .text-sm {
+    font-size: 0.9375rem !important; /* 15px instead of 14px */
+  }
+}

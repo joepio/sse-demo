@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CloudEvent, IssueFormData } from "../types";
+import { Button } from "./ActionButton";
 
 interface CreateIssueFormProps {
   onCreateIssue: (event: CloudEvent) => Promise<void>;
@@ -156,18 +157,15 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
           </div>
         )}
 
-        <button
+        <Button
           type="submit"
-          className="btn-primary-hover inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: "var(--button-primary-bg)",
-            color: "var(--text-inverse)",
-            borderColor: "var(--button-primary-bg)",
-          }}
+          variant="primary"
+          size="md"
           disabled={isSubmitting}
+          loading={isSubmitting}
         >
           {isSubmitting ? "Aanmaken..." : "Zaak Aanmaken"}
-        </button>
+        </Button>
       </form>
     </div>
   );

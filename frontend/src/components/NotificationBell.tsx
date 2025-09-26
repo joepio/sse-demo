@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
+import { Button } from "./ActionButton";
 
 interface NotificationBellProps {
   currentZaakId?: string;
@@ -124,21 +125,14 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
 
   return (
     <div className="relative ml-auto" ref={notificationRef}>
-      <button
-        className="relative bg-transparent border rounded-md p-2 md:p-1.5 text-xl md:text-base cursor-pointer flex items-center justify-center transition-all duration-200"
+      <Button
+        variant="ghost"
+        size="md"
+        onClick={handleBellClick}
+        className="relative border rounded-md p-2 md:p-1.5 text-xl md:text-base"
         style={{
           borderColor: "var(--border-primary)",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-          e.currentTarget.style.borderColor = "var(--border-secondary)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "";
-          e.currentTarget.style.borderColor = "var(--border-primary)";
-        }}
-        onClick={handleBellClick}
-        type="button"
       >
         🔔
         {newEventsCount > 0 && (
@@ -149,7 +143,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
             {newEventsCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {isNotificationOpen && (
         <div

@@ -1,14 +1,13 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import ApiDocumentationView from "./components/ApiDocumentationView";
+import ApiDocumentationView from "./components/documentation/ApiDocumentationView";
 import PageHeader from "./components/PageHeader";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
-import ConnectionStatus from "./components/ConnectionStatus";
 import CreateIssueForm from "./components/CreateIssueForm";
 import IssueTimeline from "./components/IssueTimeline";
 import Modal from "./components/Modal";
-import ActionButton from "./components/ActionButton";
+import ActionButton, { Button } from "./components/ActionButton";
 import { formatRelativeTime } from "./utils/time";
 import { getLatestTaskForIssue } from "./utils/taskUtils";
 import DeadlineBadge from "./components/DeadlineBadge";
@@ -20,8 +19,7 @@ import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 
 const ZakenDashboard: React.FC = () => {
-  const { issues, events, connectionStatus, sendEvent, completeTask } =
-    useSSE();
+  const { issues, events, sendEvent, completeTask } = useSSE();
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
@@ -82,20 +80,20 @@ const ZakenDashboard: React.FC = () => {
       <PageHeader />
 
       <div
-        className="text-center py-12 border-b"
+        className="text-center py-12 lg:py-16 xl:py-20 border-b"
         style={{
           borderColor: "var(--border-primary)",
           backgroundColor: "var(--bg-secondary)",
         }}
       >
         <h1
-          className="text-4xl font-bold mb-4"
+          className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 lg:mb-6 xl:mb-8"
           style={{ color: "var(--ro-lintblauw)" }}
         >
           MijnZaken
         </h1>
         <p
-          className="text-lg max-w-2xl mx-auto"
+          className="text-base lg:text-lg xl:text-xl max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto"
           style={{ color: "var(--text-secondary)" }}
         >
           Een simpel zaaksysteem met realtime updates en interactieve
@@ -103,10 +101,13 @@ const ZakenDashboard: React.FC = () => {
         </p>
       </div>
 
-      <main className="max-w-3xl mx-auto p-4 md:p-8 pt-8">
-        <div className="flex flex-col gap-6 md:gap-4 mb-8">
+      <main className="max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto p-4 md:p-8 lg:p-12 xl:p-16 pt-8 lg:pt-12 xl:pt-16">
+        <div className="flex flex-col gap-6 md:gap-4 lg:gap-6 xl:gap-8 mb-8 lg:mb-12 xl:mb-16">
           {issueEntries.length === 0 ? (
-            <p style={{ color: "var(--text-secondary)" }}>
+            <p
+              className="text-lg lg:text-xl xl:text-2xl"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Geen zaken gevonden.
             </p>
           ) : (
@@ -120,7 +121,7 @@ const ZakenDashboard: React.FC = () => {
                   className={`zaak-item-hover transition-all duration-150 block no-underline ${
                     animatingIssues.has(id) ? "animate-timeline-appear" : ""
                   }`}
-                  padding="lg"
+                  padding="sm"
                   data-issue-id={id}
                 >
                   <Link
@@ -128,13 +129,13 @@ const ZakenDashboard: React.FC = () => {
                     className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-2 no-underline group"
                   >
                     <div
-                      className="zaak-link font-semibold text-xl md:text-lg leading-tight flex-1 min-w-0 no-underline"
+                      className="zaak-link font-semibold text-lg lg:text-xl xl:text-2xl leading-tight flex-1 min-w-0 no-underline"
                       style={{ color: "var(--text-primary)" }}
                     >
                       {issue.title || "Zaak zonder titel"}
                     </div>
                     <div
-                      className="text-sm font-normal whitespace-nowrap flex-shrink-0 opacity-80 group-hover:opacity-100 md:self-end"
+                      className="text-sm lg:text-base xl:text-lg font-normal whitespace-nowrap flex-shrink-0 opacity-80 group-hover:opacity-100 md:self-end"
                       style={{ color: "var(--text-tertiary)" }}
                     >
                       {formatRelativeTime(
@@ -171,8 +172,8 @@ const ZakenDashboard: React.FC = () => {
                             e.stopPropagation();
                           }}
                         >
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="text-xs">
+                          <div className="flex items-center gap-2 text-sm lg:text-base xl:text-lg">
+                            <div className="text-sm lg:text-base xl:text-lg">
                               <ActionButton
                                 variant="secondary"
                                 onClick={() => {
@@ -200,18 +201,13 @@ const ZakenDashboard: React.FC = () => {
           )}
         </div>
 
-        <button
-          type="button"
-          className="btn-primary-hover inline-flex items-center gap-2 px-6 py-3 text-base font-semibold cursor-pointer transition-all duration-150 border disabled:opacity-60 disabled:cursor-not-allowed mt-12"
-          style={{
-            backgroundColor: "var(--button-primary-bg)",
-            color: "var(--text-inverse)",
-            borderColor: "var(--button-primary-bg)",
-          }}
+        <Button
+          variant="primary"
+          size="lg"
           onClick={() => setIsCreateModalOpen(true)}
         >
           + Nieuwe Zaak Aanmaken
-        </button>
+        </Button>
       </main>
 
       {/* Create Zaak Modal */}

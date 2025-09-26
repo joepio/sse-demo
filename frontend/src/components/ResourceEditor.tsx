@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import type { CloudEvent, BaseEntity } from "../types";
+import { Button } from "./ActionButton";
 
 interface ResourceEditorProps<T extends BaseEntity = BaseEntity> {
   isOpen: boolean;
@@ -84,20 +85,23 @@ const ResourceEditor = <T extends BaseEntity>({
       <div
         style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}
       >
-        <button
-          className="btn btn-secondary"
+        <Button
+          variant="secondary"
+          size="md"
           onClick={onClose}
           disabled={isSubmitting}
         >
           Annuleren
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
+          variant="primary"
+          size="md"
           onClick={handleSave}
           disabled={isSubmitting}
+          loading={isSubmitting}
         >
           {isSubmitting ? "Opslaan..." : "Opslaan"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

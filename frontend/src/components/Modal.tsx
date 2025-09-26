@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { Button } from "./ActionButton";
 
 interface ModalProps {
   isOpen: boolean;
@@ -68,24 +69,14 @@ const Modal: React.FC<ModalProps> = ({
           >
             {title}
           </h2>
-          <button
-            className="w-8 h-8 flex items-center justify-center transition-colors duration-150 text-2xl leading-none p-0 border-0 bg-transparent cursor-pointer"
-            style={{
-              color: "var(--text-secondary)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--bg-hover)";
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "var(--text-secondary)";
-            }}
+          <Button
+            variant="icon"
+            size="sm"
             onClick={onClose}
-            aria-label="Close modal"
+            title="Close modal"
           >
             ×
-          </button>
+          </Button>
         </div>
         <div className="p-6 md:p-4" style={{ color: "var(--text-primary)" }}>
           {children}

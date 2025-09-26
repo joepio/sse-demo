@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { Task as TaskType } from "../types";
 import DeadlineBadge from "./DeadlineBadge";
+import { Button } from "./ActionButton";
 
 interface TaskProps {
   task: TaskType;
@@ -88,18 +89,16 @@ const Task: React.FC<TaskProps> = ({
         </div>
 
         <div className="flex gap-3 items-center md:flex-col md:items-stretch">
-          <button
+          <Button
             onClick={handleComplete}
-            className={`border border-border-primary rounded-md bg-bg-secondary text-text-secondary cursor-pointer transition-all duration-200 hover:border-text-success hover:text-text-success hover:bg-bg-success disabled:opacity-60 disabled:cursor-not-allowed ${
-              isCompact
-                ? "px-2 py-1.5 text-xs"
-                : "px-3 py-2 text-xs md:text-center md:justify-center"
-            }`}
+            variant="secondary"
+            size={isCompact ? "xs" : "sm"}
             disabled={isCompleting}
+            loading={isCompleting}
             title="Markeer als voltooid"
           >
             {task.cta}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

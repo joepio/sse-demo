@@ -176,9 +176,9 @@ const IssueTimeline: React.FC = () => {
       <PageHeader currentZaakId={zaakId} />
 
       {/* Main content */}
-      <div className="max-w-3xl mx-auto p-4 md:p-8 pt-8">
+      <div className="max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto p-4 md:p-8 lg:p-12 xl:p-16 pt-8 lg:pt-12 xl:pt-16">
         {/* Zaak header - show as standalone section like active task and planning */}
-        <div className="mb-6 md:mb-8 relative">
+        <div className="mb-6 md:mb-8 lg:mb-10 xl:mb-12 relative">
           {issue && (
             <IssueHeader
               issue={issue}
@@ -196,7 +196,7 @@ const IssueTimeline: React.FC = () => {
 
         {/* Timeline section */}
         {timelineEvents.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 lg:mb-8 xl:mb-10">
             <SectionLabel>Tijdlijn</SectionLabel>
             <TimelineEventsList
               events={timelineEvents}

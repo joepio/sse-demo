@@ -19,9 +19,12 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
   if (!latestTask) return null;
 
   return (
-    <div className="mb-6 md:mb-8" style={{ position: "relative", zIndex: 1 }}>
+    <div
+      className="mb-4 sm:mb-5 lg:mb-6 xl:mb-8"
+      style={{ position: "relative", zIndex: 1 }}
+    >
       <SectionLabel>Mijn taak</SectionLabel>
-      <Card padding="lg">
+      <Card padding="sm">
         <TaskCard task={latestTask} zaakId={zaakId} />
       </Card>
     </div>

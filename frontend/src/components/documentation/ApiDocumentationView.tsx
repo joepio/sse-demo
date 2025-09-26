@@ -1,5 +1,5 @@
 import React from "react";
-import PageHeader from "./PageHeader";
+import PageHeader from "../PageHeader";
 
 import DocumentationLink from "./DocumentationLink";
 import TableOfContents from "./TableOfContents";
@@ -15,10 +15,10 @@ const ApiDocumentationView: React.FC = () => {
       <PageHeader />
 
       <div
-        className="p-6 max-w-4xl mx-auto pt-8"
+        className="p-6 lg:p-8 xl:p-12 max-w-4xl lg:max-w-5xl xl:max-w-6xl mx-auto pt-8 lg:pt-12 xl:pt-16"
         style={{ backgroundColor: "var(--bg-primary)" }}
       >
-        <div className="mb-8">
+        <div className="mb-8 lg:mb-12 xl:mb-16">
           <DocumentationLink href="/" variant="back">
             ← Terug naar Dashboard
           </DocumentationLink>
@@ -40,7 +40,7 @@ const ApiDocumentationView: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-12">
+        <div className="space-y-12 lg:space-y-16 xl:space-y-20">
           {/* Table of Contents */}
           <TableOfContents
             items={[

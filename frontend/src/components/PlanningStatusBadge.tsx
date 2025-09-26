@@ -28,6 +28,16 @@ const PlanningStatusBadge: React.FC<PlanningStatusBadgeProps> = ({
   if (variant === "compact") {
     return (
       <div className="flex items-center gap-2 text-xs">
+        <div
+          className="w-4 h-4 rounded-full flex items-center justify-center text-xs font-bold border-2"
+          style={{
+            color: "var(--status-progress)",
+            backgroundColor: "var(--bg-primary)",
+            borderColor: "var(--status-progress)",
+          }}
+        >
+          ●
+        </div>
         <div className="flex items-center gap-2">
           {currentMoment ? (
             <span className="text-text-secondary font-medium">
@@ -76,23 +86,52 @@ const PlanningStatusBadge: React.FC<PlanningStatusBadgeProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-text-secondary">
+        <div className="flex items-center gap-4 text-xs text-text-secondary">
           {currentMoment && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <div
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: "var(--status-progress)" }}
-              />
-              <span className="font-medium">Huidig: {currentMoment.title}</span>
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 relative z-10"
+                style={{
+                  color: "white",
+                  backgroundColor: "var(--status-progress)",
+                  borderColor: "var(--status-progress)",
+                }}
+              >
+                ●
+              </div>
+              <span className="font-medium text-text-primary">
+                Huidig: {currentMoment.title}
+              </span>
             </div>
           )}
           {nextMoment && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <div
-                className="w-2 h-2 rounded-full border-2"
-                style={{ borderColor: "var(--border-primary)" }}
-              />
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 relative z-10"
+                style={{
+                  color: "var(--text-tertiary)",
+                  backgroundColor: "transparent",
+                  borderColor: "var(--border-primary)",
+                }}
+              >
+                ○
+              </div>
               <span>Volgende: {nextMoment.title}</span>
+            </div>
+          )}
+          {completed > 0 && (
+            <div className="flex items-center gap-2">
+              <div
+                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 relative z-10"
+                style={{
+                  color: "white",
+                  backgroundColor: "var(--status-open)",
+                  borderColor: "var(--status-open)",
+                }}
+              >
+                ✓
+              </div>
+              <span>{completed} voltooid</span>
             </div>
           )}
         </div>

@@ -1,6 +1,6 @@
-import React from 'react';
-import Card from './Card';
-import DocumentationLink from './DocumentationLink';
+import React from "react";
+import Card from "../Card";
+import DocumentationLink from "./DocumentationLink";
 
 interface TableOfContentsItem {
   id: string;
@@ -22,11 +22,7 @@ const TableOfContents: React.FC<TableOfContentsProps> = ({ items }) => {
       </h2>
       <nav className="space-y-2">
         {items.map((item, index) => (
-          <DocumentationLink
-            key={item.id}
-            href={`#${item.id}`}
-            variant="nav"
-          >
+          <DocumentationLink key={item.id} href={`#${item.id}`} variant="nav">
             {index + 1}. {item.title}
           </DocumentationLink>
         ))}

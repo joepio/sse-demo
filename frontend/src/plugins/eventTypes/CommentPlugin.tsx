@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { EventPluginProps } from "./types";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import { Button } from "../../components/ActionButton";
 
 const CommentPlugin: React.FC<EventPluginProps> = ({
   event,
@@ -19,25 +20,32 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
       <Card padding="sm">
         <div className="flex items-center justify-between gap-4 w-full mb-3">
           {event.actor && event.actor !== "system" && (
-            <span className="font-semibold text-sm">{event.actor}</span>
+            <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
+              {event.actor}
+            </span>
           )}
-          <button
-            type="button"
-            className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
-            style={{ color: "var(--text-tertiary)" }}
+          <Button
+            variant="link"
+            size="sm"
             title={`${timeInfo.date} at ${timeInfo.time}`}
             onClick={() => setShowEventModal(true)}
           >
             {timeInfo.relative}
-          </button>
+          </Button>
         </div>
-        <div className="prose prose-sm max-w-none">
-          <p className="m-0 mb-2 leading-relaxed text-text-primary">
+        <div className="prose max-w-none">
+          <p
+            className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
+            style={{ color: "var(--text-primary)" }}
+          >
             {typeof content === "string" ? content : "Geen inhoud"}
           </p>
           {Array.isArray(mentions) && mentions.length > 0 && (
             <div className="mt-2">
-              <small className="text-text-tertiary text-xs">
+              <small
+                className="text-xs sm:text-sm lg:text-sm xl:text-base"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Vermeldingen: {mentions.map(String).join(", ")}
               </small>
             </div>
@@ -52,7 +60,7 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
         maxWidth="800px"
       >
         <pre
-          className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+          className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
           style={{
             backgroundColor: "var(--bg-tertiary)",
             borderColor: "var(--border-primary)",

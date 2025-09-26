@@ -1,5 +1,5 @@
 import React from "react";
-import Card from "../Card";
+import Card from "../../Card";
 
 const ThreeLevelsSection: React.FC = () => {
   return (

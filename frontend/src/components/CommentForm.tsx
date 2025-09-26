@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import type { CloudEvent } from "../types";
-import Card, { CardHeader, CardContent } from "./Card";
+import Card from "./Card";
+import { Button } from "./ActionButton";
 
 interface CommentFormProps {
   zaakId: string;
@@ -55,10 +56,10 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
   };
 
   return (
-    <div className="flex mb-8 relative z-20">
-      <div className="flex-shrink-0 mr-4 md:mr-3 w-10 md:w-8">
+    <div className="flex mb-8 lg:mb-12 xl:mb-16 relative z-20">
+      <div className="flex-shrink-0 mr-3 sm:mr-4 lg:mr-4 xl:mr-5 w-10 sm:w-8 lg:w-10 xl:w-12">
         <div
-          className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center font-semibold text-sm md:text-xs border-2"
+          className="w-10 h-10 sm:w-8 sm:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 rounded-full flex items-center justify-center font-semibold text-sm sm:text-xs lg:text-sm xl:text-base border-2"
           style={{
             backgroundColor: "var(--text-primary)",
             color: "var(--text-inverse)",
@@ -70,15 +71,18 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
       </div>
 
       <div className="flex-1 min-w-0">
-        <Card>
-          <CardHeader>
-            <h3 className="m-0 text-sm font-semibold text-text-primary">
+        <Card padding="sm">
+          <div className="mb-3">
+            <h3
+              className="m-0 text-sm sm:text-base lg:text-lg xl:text-xl font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Bericht schrijven
             </h3>
-          </CardHeader>
+          </div>
 
           <form onSubmit={handleCommentSubmit}>
-            <CardContent>
+            <div>
               {commentError && (
                 <div
                   className="px-4 py-3 mb-4 text-sm border-l-4 bg-bg-error text-text-error"
@@ -88,9 +92,9 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
                 </div>
               )}
               <textarea
-                className="w-full min-h-[120px] border-none outline-none resize-y text-sm leading-relaxed placeholder:opacity-60"
+                className="w-full min-h-[120px] sm:min-h-[140px] lg:min-h-[160px] border border-transparent outline-none resize-y text-sm sm:text-base lg:text-lg xl:text-xl leading-relaxed placeholder:opacity-60 mb-4 focus:border-gray-300 transition-colors duration-200"
                 style={{
-                  backgroundColor: "var(--bg-primary)",
+                  backgroundColor: "white",
                   color: "var(--text-primary)",
                 }}
                 placeholder="Voeg een opmerking toe..."
@@ -99,19 +103,19 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
                 rows={4}
                 disabled={isSubmittingComment}
               />
-            </CardContent>
 
-            <CardHeader>
-              <div className="flex justify-end gap-2">
-                <button
+              <div className="flex justify-end">
+                <Button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium cursor-pointer transition-all duration-150 border bg-button-primary-bg text-text-inverse border-button-primary-bg hover:bg-button-primary-hover hover:border-button-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
+                  variant="primary"
+                  size="md"
                   disabled={!commentText.trim() || isSubmittingComment}
+                  loading={isSubmittingComment}
                 >
                   Verzenden
-                </button>
+                </Button>
               </div>
-            </CardHeader>
+            </div>
           </form>
         </Card>
       </div>

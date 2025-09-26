@@ -3,6 +3,7 @@ import type { EventPluginProps } from "./types";
 import type { Document } from "../../types";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import { Button } from "../../components/ActionButton";
 
 const DocumentPlugin: React.FC<EventPluginProps> = ({
   event,
@@ -22,23 +23,30 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         <Card padding="sm">
           <div className="flex items-center justify-between gap-4 w-full mb-3">
             {event.actor && event.actor !== "system" && (
-              <span className="font-semibold text-sm">{event.actor}</span>
+              <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
+                {event.actor}
+              </span>
             )}
-            <button
-              type="button"
-              className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
-              style={{ color: "var(--text-tertiary)" }}
+            <Button
+              variant="link"
+              size="sm"
               title={`${timeInfo.date} at ${timeInfo.time}`}
               onClick={() => setShowEventModal(true)}
             >
               {timeInfo.relative}
-            </button>
+            </Button>
           </div>
           <div className="prose prose-sm max-w-none">
-            <p className="m-0 mb-2 leading-relaxed text-text-primary">
+            <p
+              className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
+              style={{ color: "var(--text-primary)" }}
+            >
               <strong>🗑️ Document verwijderd</strong>
             </p>
-            <div className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            <div
+              className="text-xs sm:text-sm lg:text-sm xl:text-base"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Document ID: {documentId}
             </div>
           </div>
@@ -51,7 +59,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           maxWidth="800px"
         >
           <pre
-            className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+            className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
             style={{
               backgroundColor: "var(--bg-tertiary)",
               borderColor: "var(--border-primary)",
@@ -72,23 +80,30 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         <Card padding="sm">
           <div className="flex items-center justify-between gap-4 w-full mb-3">
             {event.actor && event.actor !== "system" && (
-              <span className="font-semibold text-sm">{event.actor}</span>
+              <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
+                {event.actor}
+              </span>
             )}
-            <button
-              type="button"
-              className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
-              style={{ color: "var(--text-tertiary)" }}
+            <Button
+              variant="link"
+              size="sm"
               title={`${timeInfo.date} at ${timeInfo.time}`}
               onClick={() => setShowEventModal(true)}
             >
               {timeInfo.relative}
-            </button>
+            </Button>
           </div>
           <div className="prose prose-sm max-w-none">
-            <p className="m-0 mb-2 leading-relaxed text-text-primary">
+            <p
+              className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
+              style={{ color: "var(--text-primary)" }}
+            >
               <strong>📝 Document bijgewerkt</strong>
             </p>
-            <div className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            <div
+              className="text-xs sm:text-sm lg:text-sm xl:text-base"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Document ID: {documentId}
             </div>
           </div>
@@ -101,7 +116,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           maxWidth="800px"
         >
           <pre
-            className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+            className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
             style={{
               backgroundColor: "var(--bg-tertiary)",
               borderColor: "var(--border-primary)",
@@ -124,23 +139,30 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         <Card padding="sm">
           <div className="flex items-center justify-between gap-4 w-full mb-3">
             {event.actor && event.actor !== "system" && (
-              <span className="font-semibold text-sm">{event.actor}</span>
+              <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
+                {event.actor}
+              </span>
             )}
-            <button
-              type="button"
-              className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
-              style={{ color: "var(--text-tertiary)" }}
+            <Button
+              variant="link"
+              size="sm"
               title={`${timeInfo.date} at ${timeInfo.time}`}
               onClick={() => setShowEventModal(true)}
             >
               {timeInfo.relative}
-            </button>
+            </Button>
           </div>
           <div className="prose prose-sm max-w-none">
-            <p className="m-0 mb-2 leading-relaxed text-text-primary">
+            <p
+              className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
+              style={{ color: "var(--text-primary)" }}
+            >
               <strong>📄 Nieuw document toegevoegd</strong>
             </p>
-            <div className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            <div
+              className="text-xs sm:text-sm lg:text-sm xl:text-base"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Document informatie niet volledig beschikbaar
             </div>
           </div>
@@ -153,7 +175,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           maxWidth="800px"
         >
           <pre
-            className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+            className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
             style={{
               backgroundColor: "var(--bg-tertiary)",
               borderColor: "var(--border-primary)",
@@ -194,33 +216,34 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
       <Card padding="sm">
         <div className="flex items-center justify-between gap-4 w-full mb-3">
           {event.actor && event.actor !== "system" && (
-            <span className="font-semibold text-sm">{event.actor}</span>
+            <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
+              {event.actor}
+            </span>
           )}
-          <button
-            type="button"
-            className="text-xs hover:underline cursor-pointer bg-transparent border-none p-0 transition-colors duration-150"
-            style={{ color: "var(--text-tertiary)" }}
+          <Button
+            variant="link"
+            size="sm"
             title={`${timeInfo.date} at ${timeInfo.time}`}
             onClick={() => setShowEventModal(true)}
           >
             {timeInfo.relative}
-          </button>
+          </Button>
         </div>
 
         <div className="prose prose-sm max-w-none">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-3">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <span className="text-xl">📄</span>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h4
-                  className="font-semibold m-0 leading-tight"
+                  className="font-semibold m-0 leading-tight text-base sm:text-lg lg:text-xl xl:text-2xl"
                   style={{ color: "var(--text-primary)" }}
                 >
                   {documentData.title}
                 </h4>
                 {documentData.size && (
                   <p
-                    className="text-sm m-0 mt-1"
+                    className="text-xs sm:text-sm lg:text-sm xl:text-base m-0 mt-1"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     {formatFileSize(documentData.size)}
@@ -229,27 +252,15 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
               </div>
             </div>
 
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handleDownload}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium cursor-pointer transition-all duration-150 border"
-              style={{
-                backgroundColor: "var(--button-secondary-bg)",
-                color: "var(--text-primary)",
-                borderColor: "var(--border-primary)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--button-secondary-hover)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "var(--button-secondary-bg)";
-              }}
+              className="self-start sm:self-auto flex-shrink-0"
             >
               <span>⬇️</span>
               Download
-            </button>
+            </Button>
           </div>
         </div>
       </Card>
@@ -261,7 +272,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         maxWidth="800px"
       >
         <pre
-          className="border rounded-md p-4 font-mono text-xs leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
+          className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
           style={{
             backgroundColor: "var(--bg-tertiary)",
             borderColor: "var(--border-primary)",

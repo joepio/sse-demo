@@ -19,9 +19,12 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
   if (!latestPlanning) return null;
 
   return (
-    <div className="mb-6 md:mb-8" style={{ position: "relative", zIndex: 1 }}>
+    <div
+      className="mb-4 sm:mb-5 lg:mb-6 xl:mb-8"
+      style={{ position: "relative", zIndex: 1 }}
+    >
       <SectionLabel>Planning</SectionLabel>
-      <Card padding="md">
+      <Card padding="sm">
         <PlanningCard planning={latestPlanning} />
       </Card>
     </div>

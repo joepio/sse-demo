@@ -39,7 +39,7 @@ const DeadlineBadge: React.FC<DeadlineBadgeProps> = ({
   if (variant === "compact") {
     return (
       <span
-        className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium text-xs"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded font-medium text-sm lg:text-base xl:text-lg"
         style={{
           backgroundColor: "var(--bg-secondary)",
           color: "var(--text-secondary)",
@@ -52,7 +52,7 @@ const DeadlineBadge: React.FC<DeadlineBadgeProps> = ({
 
   return (
     <span
-      className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold text-white"
+      className="inline-flex items-center px-2 py-1 rounded text-sm lg:text-base xl:text-lg font-semibold text-white"
       style={{ backgroundColor }}
     >
       {showLabel && "Deadline: "}

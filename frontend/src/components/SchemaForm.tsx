@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchSchemaIndex, fetchSchema } from "../types/interfaces";
+import { Button } from "./ActionButton";
 
 interface SchemaFormProps {
   zaakId: string;
@@ -235,13 +236,13 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
                   >
                     Planning Moment {index + 1}
                   </span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="danger"
+                    size="xs"
                     onClick={() => removeMoment(index)}
-                    className="text-red-500 hover:text-red-700 text-xs"
                   >
                     Verwijderen
-                  </button>
+                  </Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
@@ -316,18 +317,9 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
                 </div>
               </div>
             ))}
-            <button
-              type="button"
-              onClick={addMoment}
-              className="inline-flex items-center gap-1 px-3 py-1 text-xs border rounded-md hover:bg-gray-50"
-              style={{
-                backgroundColor: "var(--bg-primary)",
-                borderColor: "var(--border-primary)",
-                color: "var(--text-primary)",
-              }}
-            >
+            <Button variant="secondary" size="xs" onClick={addMoment}>
               + Nieuw planning moment
-            </button>
+            </Button>
           </div>
         );
       }
@@ -543,17 +535,9 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
         >
           Item Toevoegen
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-md transition-colors"
-          style={{
-            backgroundColor: "var(--bg-secondary)",
-            borderColor: "var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-        >
-          + Nieuw item toevoegen
-        </button>
+        <Button variant="secondary" size="md" onClick={() => setShowForm(true)}>
+          + Item Toevoegen
+        </Button>
       </div>
     );
   }
@@ -632,32 +616,26 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
             className="flex items-center gap-3 pt-4 border-t"
             style={{ borderColor: "var(--border-primary)" }}
           >
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors disabled:opacity-50"
-              style={{
-                backgroundColor: "var(--button-primary-bg)",
-                color: "var(--text-inverse)",
-              }}
+              loading={isSubmitting}
             >
               {isSubmitting ? "Aanmaken..." : "Item Aanmaken"}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
               onClick={() => {
                 setShowForm(false);
                 setFormData({});
-              }}
-              className="px-4 py-2 text-sm font-medium border rounded-md transition-colors"
-              style={{
-                backgroundColor: "var(--bg-primary)",
-                borderColor: "var(--border-primary)",
-                color: "var(--text-primary)",
+                setSelectedType("");
               }}
             >
               Annuleren
-            </button>
+            </Button>
           </div>
         </form>
       </div>
