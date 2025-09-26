@@ -36,3 +36,4 @@ asyncapi.json
 asyncapi-docs/
 frontend/src/types/*.schema.json
 frontend/src/types/schemas.ts
+frontend/src/types/interfaces.ts

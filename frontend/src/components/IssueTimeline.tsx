@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
 import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
 
-import NotificationBell from "./NotificationBell";
 import IssueHeader from "./IssueHeader";
 import PageHeader from "./PageHeader";
 import ActiveTaskSection from "./ActiveTaskSection";
