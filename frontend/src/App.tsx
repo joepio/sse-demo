@@ -117,7 +117,7 @@ const ZakenDashboard: React.FC = () => {
         </p>
       </header>
 
-      <main className="max-w-4xl mx-auto">
+      <main className="max-w-3xl mx-auto">
         <div className="flex flex-col gap-6 md:gap-4 mb-8">
           {issueEntries.length === 0 ? (
             <p style={{ color: "var(--text-secondary)" }}>

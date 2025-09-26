@@ -195,7 +195,7 @@ const IssueTimeline: React.FC = () => {
       </div>
 
       {/* Main content */}
-      <div className="max-w-5xl mx-auto p-4 md:p-8">
+      <div className="max-w-3xl mx-auto p-4 md:p-8">
         {/* Zaak header - show as standalone section like active task and planning */}
         <div className="mb-6 md:mb-8 relative">
           {issue && (
