@@ -40,7 +40,7 @@ jobs:
       - run: pnpm generate-all
       - name: Start backend server
         run: |
-          cargo run --bin sse-delta-snapshot --release &
+          cargo run --release &
           echo $! > backend.pid
         env:
           RUST_LOG: info

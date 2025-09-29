@@ -6,6 +6,7 @@ use futures_util::stream::{self, Stream};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+#[cfg(feature = "shuttle")]
 use shuttle_axum::axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -13,6 +14,16 @@ use shuttle_axum::axum::{
     response::{Html, Response},
     routing::{get, post},
     Json, Router,
+};
+
+#[cfg(not(feature = "shuttle"))]
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::sse::{Event, KeepAlive, Sse},
+    response::{Html, Response},
+    routing::{get, post},
+    serve, Json, Router,
 };
 use std::{collections::HashMap, convert::Infallible, sync::Arc, time::Duration};
 use tokio::{
@@ -70,22 +81,21 @@ struct IncomingCloudEvent {
     data: Option<Value>,
 }
 
-#[cfg(not(feature = "local"))]
+#[cfg(feature = "shuttle")]
 #[shuttle_runtime::main]
 async fn main() -> shuttle_axum::ShuttleAxum {
     let app = create_app().await;
     Ok(app.into())
 }
 
-#[cfg(feature = "local")]
+#[cfg(not(feature = "shuttle"))]
 #[tokio::main]
 async fn main() {
     let app = create_app().await;
-    let addr = "0.0.0.0:3000";
+    let addr = "0.0.0.0:8000";
     println!("→ http://{addr}");
-    shuttle_axum::axum::serve(tokio::net::TcpListener::bind(addr).await.unwrap(), app)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    serve(listener, app).await.unwrap();
 }
 
 async fn create_app() -> Router {
