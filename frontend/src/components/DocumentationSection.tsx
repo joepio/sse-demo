@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface DocumentationSectionProps {
   id?: string;
@@ -15,31 +15,36 @@ const DocumentationSection: React.FC<DocumentationSectionProps> = ({
   emoji,
   level = 2,
   children,
-  className = ''
+  className = "",
 }) => {
   const getHeadingClasses = () => {
     switch (level) {
       case 1:
-        return 'text-3xl font-bold mb-2';
+        return "text-3xl font-bold mb-2";
       case 2:
-        return 'text-2xl font-semibold mb-6';
+        return "text-2xl font-semibold mb-6";
       case 3:
-        return 'text-xl font-semibold mb-4';
+        return "text-xl font-semibold mb-4";
       default:
-        return 'text-2xl font-semibold mb-6';
+        return "text-2xl font-semibold mb-6";
     }
   };
 
-  const HeadingTag = `h${level}` as keyof JSX.IntrinsicElements;
+  const HeadingTag = `h${level}` as keyof React.JSX.IntrinsicElements;
 
   return (
     <section id={id} className={className}>
-      <HeadingTag
-        className={getHeadingClasses()}
-        style={{ color: level === 1 ? "var(--ro-lintblauw)" : "var(--ro-lintblauw)" }}
-      >
-        {emoji && `${emoji} `}{title}
-      </HeadingTag>
+      {React.createElement(
+        HeadingTag,
+        {
+          className: getHeadingClasses(),
+          style: {
+            color: level === 1 ? "var(--ro-lintblauw)" : "var(--ro-lintblauw)",
+          },
+        },
+        emoji && `${emoji} `,
+        title,
+      )}
       {children}
     </section>
   );

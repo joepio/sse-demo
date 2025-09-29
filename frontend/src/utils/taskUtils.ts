@@ -1,9 +1,4 @@
-import type {
-  CloudEvent,
-  Task,
-  ExtendedTask,
-  TimelineItemData,
-} from "../types";
+import type { CloudEvent, ExtendedTask, TimelineItemData } from "../types";
 
 /**
  * Extract tasks from events for a specific issue
@@ -101,7 +96,7 @@ export const getLatestTaskForIssue = (
 export const getUncompletedTasksForIssue = (
   events: CloudEvent[],
   issueId: string,
-): Task[] => {
+): ExtendedTask[] => {
   const tasks = getTasksForIssue(events, issueId);
   return tasks.filter((task) => !task.completed);
 };
@@ -181,7 +176,7 @@ export const getTaskSummary = (
 ): {
   hasTask: boolean;
   taskCount: number;
-  latestTask: Task | null;
+  latestTask: ExtendedTask | null;
 } => {
   const tasks = getTasksForIssue(events, issueId);
   const uncompletedTasks = tasks.filter((task) => !task.completed);

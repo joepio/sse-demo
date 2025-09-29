@@ -12,6 +12,7 @@ interface ActionButtonProps {
   fullWidth?: boolean;
   icon?: boolean;
   title?: string;
+  style?: React.CSSProperties;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -26,6 +27,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   fullWidth = false,
   icon = false,
   title,
+  style,
 }) => {
   const getSizeClasses = () => {
     if (icon) {
@@ -190,7 +192,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     <button
       type={type}
       className={`${baseClasses} ${className}`.trim()}
-      style={getVariantStyles()}
+      style={{ ...getVariantStyles(), ...style }}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

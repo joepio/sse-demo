@@ -150,7 +150,7 @@ describe("SSEContext", () => {
 
     // Mock fetch
     mockFetch.mockResolvedValue({ ok: true });
-    global.fetch = mockFetch as any;
+    (globalThis as any).fetch = mockFetch as any;
 
     // Mock window.location.reload
     Object.defineProperty(window, "location", {
@@ -159,10 +159,12 @@ describe("SSEContext", () => {
     });
 
     // Mock EventSource
-    global.EventSource = vi.fn().mockImplementation((url: string) => {
-      mockEventSource = new MockEventSource(url);
-      return mockEventSource;
-    }) as any;
+    (globalThis as any).EventSource = vi
+      .fn()
+      .mockImplementation((url: string) => {
+        mockEventSource = new MockEventSource(url);
+        return mockEventSource;
+      }) as any;
   });
 
   afterEach(() => {

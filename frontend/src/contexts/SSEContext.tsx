@@ -122,7 +122,6 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         };
       } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
         // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
-        const data = cloudEvent.data as Record<string, unknown>;
 
         newIssues[cloudEvent.subject] = {
           ...newIssues[cloudEvent.subject],

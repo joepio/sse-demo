@@ -34,34 +34,21 @@ jobs:
           node-version: 22
           cache: "pnpm"
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Generate TypeScript types
-        run: pnpm generate-all
-
-      - name: Build frontend
-        run: cd frontend && pnpm build
-
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Build Rust backend
-        run: cargo build --release
-
+      - run: pnpm install
+      - run: cargo build --release
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm generate-all
       - name: Start backend server
         run: |
           cargo run --release &
           echo $! > backend.pid
         env:
           RUST_LOG: info
-
       - name: Wait for backend to be ready
         run: |
           timeout 60 bash -c 'until curl -f http://localhost:8000/schemas > /dev/null 2>&1; do sleep 2; done'
 
-      - name: Run Playwright tests
-        run: pnpm run test:e2e
+      - run: pnpm run test:e2e
         env:
           CI: true
 

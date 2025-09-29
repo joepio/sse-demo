@@ -1,15 +1,15 @@
 import "@testing-library/jest-dom";
-import { vi } from "vitest";
+// vitest globals are available through the config
 
 // Mock crypto.randomUUID for consistent testing
-Object.defineProperty(global, "crypto", {
+Object.defineProperty(globalThis, "crypto", {
   value: {
     randomUUID: () => "test-uuid-123",
   },
 });
 
 // Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
+(globalThis as any).IntersectionObserver = class IntersectionObserver {
   constructor() {}
   observe() {}
   disconnect() {}
