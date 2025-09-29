@@ -37,14 +37,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Export schemas
-        run: cargo run --bin export_schemas
-
-      - name: Generate AsyncAPI
-        run: cargo run --bin generate_asyncapi
-
       - name: Generate TypeScript types
-        run: pnpm generate
+        run: pnpm generate-all
 
       - name: Build frontend
         run: cd frontend && pnpm build

@@ -11,7 +11,7 @@
  */
 
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { compile } from 'json-schema-to-typescript';
@@ -30,19 +30,12 @@ async function main() {
   console.log('🔄 Generating TypeScript interfaces from Rust schemas...');
 
   try {
-    // Step 1: Export schemas from Rust
-    console.log('📦 Exporting JSON schemas from Rust...');
-    execSync('cargo run --bin export_schemas', {
-      cwd: projectRoot,
-      stdio: 'inherit'
-    });
-
-    // Step 2: Check if schemas directory exists
+    // Step 1: Check if schemas directory exists
     if (!existsSync(schemasDir)) {
       throw new Error(`Schemas directory not found: ${schemasDir}`);
     }
 
-    // Step 3: Read schema index to get list of schemas
+    // Step 2: Read schema index to get list of schemas
     const indexPath = join(schemasDir, 'index.json');
     if (!existsSync(indexPath)) {
       throw new Error('Schema index not found');
@@ -51,7 +44,7 @@ async function main() {
     const index = JSON.parse(readFileSync(indexPath, 'utf8'));
     console.log(`📋 Found ${index.schemas.length} schemas: ${index.schemas.join(', ')}`);
 
-    // Step 4: Read the combined schema file which has all definitions resolved
+    // Step 3: Read the combined schema file which has all definitions resolved
     const combinedSchemaPath = join(schemasDir, 'all_schemas.json');
     if (!existsSync(combinedSchemaPath)) {
       throw new Error('Combined schema file not found');
@@ -168,12 +161,19 @@ export async function fetchSchemaIndex(): Promise<SchemaMetadata> {
 
     const content = header + allInterfaces + helperFunctions;
 
-    // Step 6: Write the TypeScript file
+    // Step 4: Ensure output directory exists
+    const outputDir = dirname(outputFile);
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true });
+      console.log(`📁 Created directory: ${outputDir}`);
+    }
+
+    // Step 5: Write the TypeScript file
     writeFileSync(outputFile, content);
     console.log(`✅ Generated TypeScript interfaces: ${outputFile}`);
     console.log(`📊 Generated ${interfaces.length} types using json-schema-to-typescript`);
 
-    // Step 7: Verify the Document interface is included
+    // Step 6: Verify the Document interface is included
     if (content.includes('export interface Document')) {
       console.log('✅ Document interface successfully included!');
     } else {
