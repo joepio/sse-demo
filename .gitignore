@@ -32,6 +32,7 @@ Thumbs.db
 
 # Generated files (build.rs output)
 asyncapi.yaml
+asyncapi-embedded.yaml
 asyncapi.json
 asyncapi-docs/
 frontend/src/types/*.schema.json

@@ -126,8 +126,7 @@ pub struct Task {
     /// Uitgebreide uitleg: wat moet er precies gebeuren, welke voorwaarden gelden
     pub description: String,
     /// Link naar de plaats waar de taak uitgevoerd kan worden (bijv. formulier, overzicht)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
+    pub url: String,
     /// Is de taak voltooid? (true = klaar, false = nog te doen)
     pub completed: bool,
     /// Uiterste datum voor voltooiing (YYYY-MM-DD, bijv. "2024-01-25")
