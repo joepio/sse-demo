@@ -11,7 +11,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
     <header
       className="border-b sticky top-0 z-50"
       style={{
-        backgroundColor: "var(--bg-primary)",
+        backgroundColor: "var(--bg-secondary)",
         borderColor: "var(--border-primary)",
       }}
     >

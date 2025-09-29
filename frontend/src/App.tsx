@@ -80,10 +80,9 @@ const ZakenDashboard: React.FC = () => {
       <PageHeader />
 
       <div
-        className="text-center py-12 lg:py-16 xl:py-20 border-b"
+        className="text-center py-12 lg:py-16 xl:py-20"
         style={{
-          borderColor: "var(--border-primary)",
-          backgroundColor: "var(--bg-secondary)",
+          backgroundColor: "var(--bg-primary)",
         }}
       >
         <h1
@@ -203,7 +202,7 @@ const ZakenDashboard: React.FC = () => {
 
         <Button
           variant="primary"
-          size="lg"
+          size="md"
           onClick={() => setIsCreateModalOpen(true)}
         >
           + Nieuwe Zaak Aanmaken

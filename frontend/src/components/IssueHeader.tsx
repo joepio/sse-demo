@@ -33,9 +33,9 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
     <Card padding="md">
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="flex-1 min-w-0">
-          <h2 className="text-lg lg:text-xl xl:text-2xl font-semibold text-text-primary mb-2 lg:mb-3 xl:mb-4 leading-tight">
+          <h1 className="text-lg md:text-xl xl:text-2xl font-semibold text-text-primary mb-2 lg:mb-3 xl:mb-4 leading-tight">
             {String(issue.title) || "Zaak zonder titel"}
-          </h2>
+          </h1>
           <div className="flex items-center gap-2">
             <span
               className="inline-flex items-center px-2 py-1 lg:px-3 lg:py-2 xl:px-3 xl:py-2 text-xs lg:text-xs xl:text-sm font-semibold text-text-inverse capitalize"
