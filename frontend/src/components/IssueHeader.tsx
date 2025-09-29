@@ -40,6 +40,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
             <span
               className="inline-flex items-center px-2 py-1 lg:px-3 lg:py-2 xl:px-3 xl:py-2 text-xs lg:text-xs xl:text-sm font-semibold text-text-inverse capitalize"
               style={{ backgroundColor: getStatusColor(issue.status) }}
+              data-testid="issue-status"
             >
               {issue.status === "in_progress"
                 ? "In Behandeling"
@@ -75,7 +76,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
         {String(issue.description) || "Geen beschrijving beschikbaar."}
       </p>
 
-      <div className="text-xs text-text-tertiary">
+      <div className="text-xs text-text-tertiary" data-testid="issue-assignee">
         <strong className="text-text-primary">Toegewezen aan:</strong>{" "}
         {String(issue.assignee) || "Niet toegewezen"}
       </div>

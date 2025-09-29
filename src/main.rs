@@ -101,100 +101,103 @@ async fn create_app() -> Router {
     state.base_url = base_url;
 
     // Optional: emit demo events every 20s that randomly update existing zaken
-    let demo = state.clone();
-    tokio::spawn(async move {
-        loop {
-            sleep(Duration::from_secs(10)).await;
+    if std::env::var("DEMO").is_ok() {
+        let demo = state.clone();
+        tokio::spawn(async move {
+            loop {
+                sleep(Duration::from_secs(10)).await;
 
-            // Get current zaken for random selection
-            let current_issues = {
-                let issues = demo.issues.read().await;
-                issues.clone()
-            };
+                // Get current zaken for random selection
+                let current_issues = {
+                    let issues = demo.issues.read().await;
+                    issues.clone()
+                };
 
-            // Generate a random demo event
-            if let Some(demo_event_json) = issues::generate_demo_event(&current_issues) {
-                // Convert JSON to our CloudEvent struct
-                if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
-                    // Process the event using the same handle_event logic
-                    process_cloud_event(
-                        Arc::clone(&demo.issues),
-                        Arc::clone(&demo.events),
-                        &demo_event_json,
-                    )
-                    .await;
+                // Generate a random demo event
+                if let Some(demo_event_json) = issues::generate_demo_event(&current_issues) {
+                    // Convert JSON to our CloudEvent struct
+                    if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
+                        // Process the event using the same handle_event logic
+                        process_cloud_event(
+                            Arc::clone(&demo.issues),
+                            Arc::clone(&demo.events),
+                            &demo_event_json,
+                        )
+                        .await;
 
-                    // Add to events list
-                    {
-                        let mut events = demo.events.write().await;
-                        events.push(demo_event_json);
+                        // Add to events list
+                        {
+                            let mut events = demo.events.write().await;
+                            events.push(demo_event_json);
+                        }
+
+                        let _ = demo.tx.send(cloud_event);
                     }
-
-                    let _ = demo.tx.send(cloud_event);
                 }
             }
-        }
-    });
+        });
 
-    // Reset all app state every 5 minutes
-    let reset_state = state.clone();
-    tokio::spawn(async move {
-        loop {
-            sleep(Duration::from_secs(300)).await; // 5 minutes = 300 seconds
+        // Reset all app state every 5 minutes
+        let reset_state = state.clone();
+        tokio::spawn(async move {
+            loop {
+                sleep(Duration::from_secs(300)).await; // 5 minutes = 300 seconds
 
-            let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
-            println!("🔄 [{}] Resetting all app state...", reset_time);
+                let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+                println!("🔄 [{}] Resetting all app state...", reset_time);
 
-            // Generate fresh initial data
-            let (new_events, new_issues) = issues::generate_initial_data();
+                // Generate fresh initial data
+                let (new_events, new_issues) = issues::generate_initial_data();
 
-            // Store lengths before moving the data
-            let events_count = new_events.len();
-            let issues_count = new_issues.len();
+                // Store lengths before moving the data
+                let events_count = new_events.len();
+                let issues_count = new_issues.len();
 
-            // Reset events
-            {
-                let mut events = reset_state.events.write().await;
-                *events = new_events;
+                // Reset events
+                {
+                    let mut events = reset_state.events.write().await;
+                    *events = new_events;
+                }
+
+                // Reset issues
+                {
+                    let mut issues = reset_state.issues.write().await;
+                    *issues = new_issues;
+                }
+
+                // Send a reset notification event
+                let reset_event = CloudEvent {
+                    specversion: "1.0".to_string(),
+                    id: uuid::Uuid::now_v7().to_string(),
+                    source: "server".to_string(),
+                    subject: None,
+                    event_type: "system.reset".to_string(),
+                    time: Some(chrono::Utc::now().to_rfc3339()),
+                    datacontenttype: Some("application/json".to_string()),
+                    dataschema: None,
+                    dataref: None,
+                    sequence: None,
+                    sequencetype: None,
+                    data: Some(serde_json::json!({
+                        "message": "App state has been reset",
+                        "timestamp": chrono::Utc::now().to_rfc3339()
+                    })),
+                };
+
+                let _ = reset_state.tx.send(reset_event);
+                let complete_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+                println!(
+                    "✅ [{}] App state reset complete - {} issues and {} events regenerated",
+                    complete_time, issues_count, events_count
+                );
             }
-
-            // Reset issues
-            {
-                let mut issues = reset_state.issues.write().await;
-                *issues = new_issues;
-            }
-
-            // Send a reset notification event
-            let reset_event = CloudEvent {
-                specversion: "1.0".to_string(),
-                id: uuid::Uuid::now_v7().to_string(),
-                source: "server".to_string(),
-                subject: None,
-                event_type: "system.reset".to_string(),
-                time: Some(chrono::Utc::now().to_rfc3339()),
-                datacontenttype: Some("application/json".to_string()),
-                dataschema: None,
-                dataref: None,
-                sequence: None,
-                sequencetype: None,
-                data: Some(serde_json::json!({
-                    "message": "App state has been reset",
-                    "timestamp": chrono::Utc::now().to_rfc3339()
-                })),
-            };
-
-            let _ = reset_state.tx.send(reset_event);
-            let complete_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
-            println!(
-                "✅ [{}] App state reset complete - {} issues and {} events regenerated",
-                complete_time, issues_count, events_count
-            );
-        }
-    });
+        });
+    }
 
     let app = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
+        .route("/reset/", post(reset_state_handler))
         .route("/schemas", get(get_schemas_index))
         .route("/schemas/{name}", get(get_schema))
         .route("/asyncapi-docs/asyncapi.yaml", get(serve_asyncapi_yaml))
@@ -457,6 +460,64 @@ async fn serve_asyncapi_json() -> Result<Json<Value>, StatusCode> {
 }
 
 /// Example function demonstrating CloudEvent creation
+async fn reset_state_handler(State(state): State<AppState>) -> Json<Value> {
+    let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+    println!("🔄 [{}] Manual reset triggered via API...", reset_time);
+
+    // Generate fresh initial data
+    let (new_events, new_issues) = issues::generate_initial_data();
+
+    // Store lengths before moving the data
+    let events_count = new_events.len();
+    let issues_count = new_issues.len();
+
+    // Reset events
+    {
+        let mut events = state.events.write().await;
+        *events = new_events;
+    }
+
+    // Reset issues
+    {
+        let mut issues = state.issues.write().await;
+        *issues = new_issues;
+    }
+
+    // Send a reset notification event
+    let reset_event = CloudEvent {
+        specversion: "1.0".to_string(),
+        id: uuid::Uuid::now_v7().to_string(),
+        source: "server".to_string(),
+        subject: None,
+        event_type: "system.reset".to_string(),
+        time: Some(chrono::Utc::now().to_rfc3339()),
+        datacontenttype: Some("application/json".to_string()),
+        dataschema: None,
+        dataref: None,
+        sequence: None,
+        sequencetype: None,
+        data: Some(serde_json::json!({
+            "message": "App state has been reset",
+            "timestamp": chrono::Utc::now().to_rfc3339()
+        })),
+    };
+
+    let _ = state.tx.send(reset_event);
+    let complete_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+    println!(
+        "✅ [{}] Manual app state reset complete - {} issues and {} events regenerated",
+        complete_time, issues_count, events_count
+    );
+
+    Json(serde_json::json!({
+        "status": "success",
+        "message": "App state has been reset",
+        "issues_count": issues_count,
+        "events_count": events_count,
+        "timestamp": chrono::Utc::now().to_rfc3339()
+    }))
+}
+
 pub fn create_example_cloudevent() -> CloudEvent {
     // Create a sample zaak for demo purposes
     let mut sample_issues = std::collections::HashMap::new();

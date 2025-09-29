@@ -38,3 +38,5 @@ asyncapi-docs/
 frontend/src/types/*.schema.json
 frontend/src/types/schemas.ts
 frontend/src/types/interfaces.ts
+test-results/
+playwright-report/

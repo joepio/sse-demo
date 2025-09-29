@@ -22,11 +22,12 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
     <div
       className="mb-4 sm:mb-5 lg:mb-6 xl:mb-8"
       style={{ position: "relative", zIndex: 1 }}
+      data-testid="active-task-section"
     >
       <SectionLabel>Mijn taken</SectionLabel>
       <div className="space-y-3">
         {openTasks.map((task) => (
-          <Card key={task.id} padding="sm">
+          <Card key={task.id} padding="sm" data-testid="task-card">
             <TaskCard task={task} zaakId={zaakId} />
           </Card>
         ))}

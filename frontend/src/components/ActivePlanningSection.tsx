@@ -22,6 +22,7 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
     <div
       className="mb-4 sm:mb-5 lg:mb-6 xl:mb-8"
       style={{ position: "relative", zIndex: 1 }}
+      data-testid="active-planning-section"
     >
       <SectionLabel>Planning</SectionLabel>
       <Card padding="sm">

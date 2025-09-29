@@ -88,8 +88,9 @@ const ZakenDashboard: React.FC = () => {
         <h1
           className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-4 lg:mb-6 xl:mb-8"
           style={{ color: "var(--logo-primary)" }}
+          data-testid="main-heading"
         >
-          MijnZaken
+          Zaken
         </h1>
         <p
           className="text-base lg:text-lg xl:text-xl max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto"
@@ -104,8 +105,9 @@ const ZakenDashboard: React.FC = () => {
         <div className="flex flex-col gap-6 md:gap-4 lg:gap-6 xl:gap-8 mb-8 lg:mb-12 xl:mb-16">
           {issueEntries.length === 0 ? (
             <p
-              className="text-lg lg:text-xl xl:text-2xl"
+              className="text-center text-base lg:text-lg xl:text-xl py-8 lg:py-12 xl:py-16"
               style={{ color: "var(--text-secondary)" }}
+              data-testid="no-issues"
             >
               Geen zaken gevonden.
             </p>
@@ -122,6 +124,7 @@ const ZakenDashboard: React.FC = () => {
                   }`}
                   padding="sm"
                   data-issue-id={id}
+                  data-testid="zaak-item"
                 >
                   <Link
                     to={`/zaak/${id}`}
@@ -131,11 +134,12 @@ const ZakenDashboard: React.FC = () => {
                       className="zaak-link font-semibold text-lg lg:text-xl xl:text-2xl leading-tight flex-1 min-w-0 no-underline"
                       style={{ color: "var(--text-primary)" }}
                     >
-                      {issue.title || "Zaak zonder titel"}
+                      <h2>{issue.title || "Zaak zonder titel"}</h2>
                     </div>
                     <div
                       className="text-sm lg:text-base xl:text-lg font-normal whitespace-nowrap flex-shrink-0 opacity-80 group-hover:opacity-100 md:self-end"
                       style={{ color: "var(--text-tertiary)" }}
+                      data-testid="last-activity"
                     >
                       {formatRelativeTime(
                         issue.lastActivity ||
@@ -178,6 +182,7 @@ const ZakenDashboard: React.FC = () => {
                                 onClick={() => {
                                   completeTask(latestTask.id, id);
                                 }}
+                                data-testid="complete-task-button"
                               >
                                 {latestTask.cta}
                               </ActionButton>

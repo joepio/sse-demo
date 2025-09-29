@@ -56,7 +56,10 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
   };
 
   return (
-    <div className="flex mb-8 lg:mb-12 xl:mb-16 relative z-20">
+    <div
+      className="flex mb-8 lg:mb-12 xl:mb-16 relative z-20"
+      data-testid="comment-form"
+    >
       <div className="flex-shrink-0 mr-3 sm:mr-4 lg:mr-4 xl:mr-5 w-10 sm:w-8 lg:w-10 xl:w-12">
         <div
           className="w-10 h-10 sm:w-8 sm:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 rounded-full flex items-center justify-center font-semibold text-sm sm:text-xs lg:text-sm xl:text-base border-2"

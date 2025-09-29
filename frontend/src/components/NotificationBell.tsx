@@ -10,7 +10,7 @@ interface NotificationBellProps {
 const NotificationBell: React.FC<NotificationBellProps> = ({
   currentZaakId,
 }) => {
-  const { events, issues } = useSSE();
+  const { events, issues, connectionStatus } = useSSE();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [newEventsCount, setNewEventsCount] = useState(0);
   const [lastEventId, setLastEventId] = useState<string | null>(null);
@@ -123,8 +123,57 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
   };
 
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case "connected":
+        return "Verbonden";
+      case "connecting":
+        return "Verbinden...";
+      case "disconnected":
+        return "Verbinding verbroken";
+      case "error":
+        return "Fout";
+      default:
+        return "Onbekend";
+    }
+  };
+
+  const getConnectionStatusColor = () => {
+    switch (connectionStatus) {
+      case "connected":
+        return "#10b981"; // green
+      case "connecting":
+        return "#f59e0b"; // yellow
+      case "disconnected":
+        return "#ef4444"; // red
+      case "error":
+        return "#ef4444"; // red
+      default:
+        return "#6b7280"; // gray
+    }
+  };
+
   return (
-    <div className="relative ml-auto" ref={notificationRef}>
+    <div
+      className="relative ml-auto flex items-center space-x-3"
+      ref={notificationRef}
+    >
+      {/* Connection Status */}
+      <div className="flex items-center space-x-2">
+        <div
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: getConnectionStatusColor() }}
+          data-testid="connection-indicator"
+        />
+        <span
+          className="text-xs font-medium"
+          style={{ color: "var(--text-secondary)" }}
+          data-testid="connection-status"
+        >
+          {getConnectionStatusText()}
+        </span>
+      </div>
+
       <Button
         variant="ghost"
         size="md"

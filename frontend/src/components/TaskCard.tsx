@@ -32,7 +32,10 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
     <>
       <div className="p-0">
         <div className="flex justify-between items-start mb-4">
-          <p className="m-0 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl flex-1">
+          <p
+            className="m-0 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl flex-1"
+            data-testid="task-description"
+          >
             {task.description}
           </p>
           <Button
@@ -50,6 +53,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
             onClick={() => {
               completeTask(task.id, zaakId);
             }}
+            data-testid="task-cta"
           >
             {task.cta}
           </ActionButton>

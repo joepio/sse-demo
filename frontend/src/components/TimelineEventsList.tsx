@@ -38,6 +38,7 @@ const TimelineEventsList: React.FC<TimelineEventsListProps> = ({
           <div
             key={event.id}
             className="flex mb-4 sm:mb-5 lg:mb-6 xl:mb-8 relative z-20"
+            data-testid="timeline-event"
           >
             <div className="flex-shrink-0 mr-3 sm:mr-4 lg:mr-4 xl:mr-5 w-10 sm:w-8 lg:w-10 xl:w-12">
               <div
