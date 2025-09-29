@@ -284,7 +284,7 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "subject": "1",
                 "type": "item.updated",
                 "time": "2025-01-15T11:15:00Z",
-                "datacontenttype": "application/merge-patch+json",
+                "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
                     "#/components/schemas/ItemEventData".to_string()
                 } else {
@@ -370,7 +370,7 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "subject": "1",
                 "type": "item.updated",
                 "time": "2025-01-15T14:30:00Z",
-                "datacontenttype": "application/merge-patch+json",
+                "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
                     "#/components/schemas/ItemEventData".to_string()
                 } else {
@@ -503,7 +503,7 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "subject": "2",
                 "type": "item.updated",
                 "time": "2025-01-15T16:00:00Z",
-                "datacontenttype": "application/merge-patch+json",
+                "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
                     "#/components/schemas/ItemEventData".to_string()
                 } else {
@@ -574,7 +574,7 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "subject": "1",
                 "type": "item.updated",
                 "time": "2025-01-15T14:25:00Z",
-                "datacontenttype": "application/merge-patch+json",
+                "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
                     "#/components/schemas/ItemEventData".to_string()
                 } else {

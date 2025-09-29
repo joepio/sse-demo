@@ -23,7 +23,6 @@ const EVENT_TYPE_ITEM_DELETED: &str = "item.deleted";
 
 // Content type constants
 const CONTENT_TYPE_JSON: &str = "application/json";
-const CONTENT_TYPE_MERGE_PATCH: &str = "application/merge-patch+json";
 
 // Event schema constants
 const ITEM_EVENT_DATA_SCHEMA: &str = "http://localhost:8000/schemas/ItemEventData";
@@ -306,7 +305,7 @@ fn add_timeline_update_event(events: &mut Vec<Value>, base_time: chrono::DateTim
         EVENT_TYPE_ITEM_UPDATED,
         DEFAULT_SOURCE,
         Some("1"),
-        CONTENT_TYPE_MERGE_PATCH,
+        CONTENT_TYPE_JSON,
         "comment",
         "comment-1001",
         None,
@@ -862,7 +861,7 @@ fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
         EVENT_TYPE_ITEM_UPDATED,
         DEFAULT_SOURCE,
         Some(issue_id),
-        CONTENT_TYPE_MERGE_PATCH,
+        CONTENT_TYPE_JSON,
         "issue",
         issue_id,
         None,

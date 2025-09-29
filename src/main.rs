@@ -35,10 +35,6 @@ struct AppState {
     tx: broadcast::Sender<CloudEvent>,
     // Base URL for generating schema URLs
     base_url: String,
-    // NL-GOV organization identifier (OIN)
-    org_identifier: String,
-    // System identifier for CloudEvents source
-    system_identifier: String,
 }
 
 impl Default for AppState {
@@ -53,8 +49,6 @@ impl Default for AppState {
             issues: Arc::new(RwLock::new(initial_issues)),
             tx,
             base_url: "http://localhost:8000".to_string(),
-            org_identifier: "00000001823288444000".to_string(), // Demo OIN
-            system_identifier: "sse-demo-systeem".to_string(),
         }
     }
 }
@@ -576,7 +570,7 @@ mod tests {
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
         assert_eq!(event["type"], "item.updated");
-        assert_eq!(event["datacontenttype"], "application/merge-patch+json");
+        assert_eq!(event["datacontenttype"], "application/json");
         assert!(event["data"]["item_data"].is_object());
     }
 

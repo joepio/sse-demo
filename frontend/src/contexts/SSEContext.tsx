@@ -391,7 +391,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           subject: issueId,
           type: "item.updated",
           time: new Date().toISOString(),
-          datacontenttype: "application/merge-patch+json",
+          datacontenttype: "application/json",
           data: {
             item_type: "task",
             item_id: taskId,

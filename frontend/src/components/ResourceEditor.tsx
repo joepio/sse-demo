@@ -41,7 +41,7 @@ const ResourceEditor = <T extends BaseEntity>({
         subject: resource.id,
         type: "item.updated",
         time: new Date().toISOString(),
-        datacontenttype: "application/merge-patch+json",
+        datacontenttype: "application/json",
         data: {
           item_type: resourceType,
           item_id: resource.id,
