@@ -174,20 +174,25 @@ async fn create_app() -> Router {
         });
     }
 
-    let app = Router::new()
+    // API routes that need state
+    let api_routes = Router::new()
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/reset/", post(reset_state_handler))
         .route("/schemas", get(get_schemas_index))
-        .route("/schemas/{name}", get(get_schema))
+        .route("/schemas/:name", get(get_schema))
+        .with_state(state);
+
+    // Combine API routes with static file serving
+    let app = Router::new()
+        .merge(api_routes)
         .route("/asyncapi-docs/asyncapi.yaml", get(serve_asyncapi_yaml))
         .route("/asyncapi-docs/asyncapi.json", get(serve_asyncapi_json))
         .route("/asyncapi-docs", get(serve_asyncapi_docs))
         .nest_service("/asyncapi-docs/css", ServeDir::new("asyncapi-docs/css"))
         .nest_service("/asyncapi-docs/js", ServeDir::new("asyncapi-docs/js"))
-        .with_state(state)
-        .layer(CorsLayer::permissive())
-        .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")));
+        .fallback_service(ServeDir::new("dist").fallback(ServeFile::new("dist/index.html")))
+        .layer(CorsLayer::permissive());
 
     app
 }
