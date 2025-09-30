@@ -25,23 +25,21 @@ use axum::{
     routing::{get, post},
     serve, Json, Router,
 };
-use std::{collections::HashMap, convert::Infallible, sync::Arc, time::Duration};
+use std::{convert::Infallible, sync::Arc, time::Duration};
 use tokio::{
     sync::{broadcast, RwLock},
     time::sleep,
 };
 use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
-use tower_http::cors::CorsLayer;
-use tower_http::services::{ServeDir, ServeFile};
+use tower_http::services::ServeDir;
+use tower_http::{cors::CorsLayer, services::ServeFile};
 use uuid;
 
 #[derive(Clone)]
 struct AppState {
     // Our entire list (the "source of truth")
     events: Arc<RwLock<Vec<Value>>>,
-    // Zaken storage
-    issues: Arc<RwLock<std::collections::HashMap<String, Value>>>,
     // Broadcast deltas to all subscribers
     tx: broadcast::Sender<CloudEvent>,
     // Base URL for generating schema URLs
@@ -53,11 +51,10 @@ impl Default for AppState {
         let (tx, _) = broadcast::channel(256);
 
         // Generate initial data
-        let (initial_events, initial_issues) = issues::generate_initial_data();
+        let (initial_events, _) = issues::generate_initial_data();
 
         Self {
             events: Arc::new(RwLock::new(initial_events)),
-            issues: Arc::new(RwLock::new(initial_issues)),
             tx,
             base_url: "http://localhost:8000".to_string(),
         }
@@ -117,10 +114,28 @@ async fn create_app() -> Router {
             loop {
                 sleep(Duration::from_secs(10)).await;
 
-                // Get current zaken for random selection
+                // Get current zaken for random selection from events
                 let current_issues = {
-                    let issues = demo.issues.read().await;
-                    issues.clone()
+                    let events = demo.events.read().await;
+                    // Extract issues from events for demo purposes
+                    let mut issues_map = std::collections::HashMap::new();
+                    for event in events.iter() {
+                        if let Some(data) = event.get("data") {
+                            if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str())
+                            {
+                                if item_type == "issue" {
+                                    if let Some(item_data) = data.get("item_data") {
+                                        if let Some(id) =
+                                            item_data.get("id").and_then(|i| i.as_str())
+                                        {
+                                            issues_map.insert(id.to_string(), item_data.clone());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    issues_map
                 };
 
                 // Generate a random demo event
@@ -128,12 +143,7 @@ async fn create_app() -> Router {
                     // Convert JSON to our CloudEvent struct
                     if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
                         // Process the event using the same handle_event logic
-                        process_cloud_event(
-                            Arc::clone(&demo.issues),
-                            Arc::clone(&demo.events),
-                            &demo_event_json,
-                        )
-                        .await;
+                        process_cloud_event(Arc::clone(&demo.events), &demo_event_json).await;
 
                         // Add to events list
                         {
@@ -156,49 +166,12 @@ async fn create_app() -> Router {
                 let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
                 println!("🔄 [{}] Resetting all app state...", reset_time);
 
-                // Generate fresh initial data
-                let (new_events, new_issues) = issues::generate_initial_data();
+                let events_count = reset_app_state(&reset_state).await;
 
-                // Store lengths before moving the data
-                let events_count = new_events.len();
-                let issues_count = new_issues.len();
-
-                // Reset events
-                {
-                    let mut events = reset_state.events.write().await;
-                    *events = new_events;
-                }
-
-                // Reset issues
-                {
-                    let mut issues = reset_state.issues.write().await;
-                    *issues = new_issues;
-                }
-
-                // Send a reset notification event
-                let reset_event = CloudEvent {
-                    specversion: "1.0".to_string(),
-                    id: uuid::Uuid::now_v7().to_string(),
-                    source: "server".to_string(),
-                    subject: None,
-                    event_type: "system.reset".to_string(),
-                    time: Some(chrono::Utc::now().to_rfc3339()),
-                    datacontenttype: Some("application/json".to_string()),
-                    dataschema: None,
-                    dataref: None,
-                    sequence: None,
-                    sequencetype: None,
-                    data: Some(serde_json::json!({
-                        "message": "App state has been reset",
-                        "timestamp": chrono::Utc::now().to_rfc3339()
-                    })),
-                };
-
-                let _ = reset_state.tx.send(reset_event);
                 let complete_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
                 println!(
-                    "✅ [{}] App state reset complete - {} issues and {} events regenerated",
-                    complete_time, issues_count, events_count
+                    "✅ [{}] App state reset complete - {} events regenerated",
+                    complete_time, events_count
                 );
             }
         });
@@ -246,12 +219,8 @@ async fn sse_handler(
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
-/// Process a CloudEvent JSON and update the zaken state
-async fn process_cloud_event(
-    issues_lock: Arc<RwLock<HashMap<String, Value>>>,
-    events_lock: Arc<RwLock<Vec<Value>>>,
-    event_json: &Value,
-) {
+/// Process a CloudEvent JSON and update the events state
+async fn process_cloud_event(events_lock: Arc<RwLock<Vec<Value>>>, event_json: &Value) {
     if let (Some(event_type), Some(data)) = (
         event_json.get("type").and_then(|t| t.as_str()),
         event_json.get("data"),
@@ -266,60 +235,29 @@ async fn process_cloud_event(
                 return;
             }
         }
-        match event_type {
-            "item.created" => {
-                if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
-                    if item_type == "issue" {
-                        if let Some(item_data) = data.get("item_data") {
-                            if let Some(id) = item_data.get("id").and_then(|i| i.as_str()) {
-                                let mut issues = issues_lock.write().await;
-                                issues.insert(id.to_string(), item_data.clone());
-                            }
-                        }
-                    }
-                }
-            }
-            "item.updated" => {
-                if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
-                    match item_type {
-                        "issue" => {
-                            if let Some(issue_id) =
-                                event_json.get("subject").and_then(|s| s.as_str())
-                            {
-                                if let Some(item_data) = data.get("item_data") {
-                                    let mut issues = issues_lock.write().await;
-                                    if let Some(existing_issue) = issues.get_mut(issue_id) {
-                                        // Apply merge patch to existing issue
-                                        crate::issues::apply_merge_patch(existing_issue, item_data);
-                                    } else {
-                                        // If issue doesn't exist, create it with the patch data
-                                        issues.insert(issue_id.to_string(), item_data.clone());
-                                    }
-                                }
-                            }
-                        }
-                        _ => {
-                            // Handle timeline item updates (tasks, comments, etc.)
-                            if let (Some(item_id), Some(patch)) = (
-                                data.get("item_id").and_then(|i| i.as_str()),
-                                data.get("patch"),
-                            ) {
-                                let mut events = events_lock.write().await;
 
-                                // Find and update the timeline item
-                                for event in events.iter_mut() {
-                                    if let Some(event_data) = event.get("data") {
-                                        if event_data.get("item_id").and_then(|id| id.as_str())
-                                            == Some(item_id)
-                                        {
-                                            if let Some(item_data) = event
-                                                .get_mut("data")
-                                                .and_then(|d| d.get_mut("item_data"))
-                                            {
-                                                issues::apply_merge_patch(item_data, patch);
-                                                break;
-                                            }
-                                        }
+        // Handle timeline item updates (tasks, comments, etc.) in events
+        if event_type == "item.updated" {
+            if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
+                if item_type != "issue" {
+                    // Handle timeline item updates (tasks, comments, etc.)
+                    if let (Some(item_id), Some(patch)) = (
+                        data.get("item_id").and_then(|i| i.as_str()),
+                        data.get("patch"),
+                    ) {
+                        let mut events = events_lock.write().await;
+
+                        // Find and update the timeline item
+                        for event in events.iter_mut() {
+                            if let Some(event_data) = event.get("data") {
+                                if event_data.get("item_id").and_then(|id| id.as_str())
+                                    == Some(item_id)
+                                {
+                                    if let Some(item_data) =
+                                        event.get_mut("data").and_then(|d| d.get_mut("item_data"))
+                                    {
+                                        issues::apply_merge_patch(item_data, patch);
+                                        break;
                                     }
                                 }
                             }
@@ -327,19 +265,6 @@ async fn process_cloud_event(
                     }
                 }
             }
-            "item.deleted" => {
-                if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
-                    if item_type == "issue" {
-                        if let Some(item_data) = data.get("item_data") {
-                            if let Some(id) = item_data.get("id").and_then(|i| i.as_str()) {
-                                let mut issues = issues_lock.write().await;
-                                issues.remove(id);
-                            }
-                        }
-                    }
-                }
-            }
-            _ => {}
         }
     }
 }
@@ -367,12 +292,7 @@ async fn handle_event(
     }
 
     // Process the event
-    process_cloud_event(
-        Arc::clone(&state.issues),
-        Arc::clone(&state.events),
-        &event_json,
-    )
-    .await;
+    process_cloud_event(Arc::clone(&state.events), &event_json).await;
 
     // Convert incoming event to our CloudEvent format
     let cloud_event = CloudEvent {
@@ -469,28 +389,18 @@ async fn serve_asyncapi_json() -> Result<Json<Value>, StatusCode> {
     }
 }
 
-/// Example function demonstrating CloudEvent creation
-async fn reset_state_handler(State(state): State<AppState>) -> Json<Value> {
-    let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
-    println!("🔄 [{}] Manual reset triggered via API...", reset_time);
-
+/// Reset the application state with fresh data
+async fn reset_app_state(state: &AppState) -> usize {
     // Generate fresh initial data
-    let (new_events, new_issues) = issues::generate_initial_data();
+    let (new_events, _) = issues::generate_initial_data();
 
-    // Store lengths before moving the data
+    // Store length before moving the data
     let events_count = new_events.len();
-    let issues_count = new_issues.len();
 
     // Reset events
     {
         let mut events = state.events.write().await;
         *events = new_events;
-    }
-
-    // Reset issues
-    {
-        let mut issues = state.issues.write().await;
-        *issues = new_issues;
     }
 
     // Send a reset notification event
@@ -513,16 +423,26 @@ async fn reset_state_handler(State(state): State<AppState>) -> Json<Value> {
     };
 
     let _ = state.tx.send(reset_event);
+
+    events_count
+}
+
+/// Example function demonstrating CloudEvent creation
+async fn reset_state_handler(State(state): State<AppState>) -> Json<Value> {
+    let reset_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+    println!("🔄 [{}] Manual reset triggered via API...", reset_time);
+
+    let events_count = reset_app_state(&state).await;
+
     let complete_time = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
     println!(
-        "✅ [{}] Manual app state reset complete - {} issues and {} events regenerated",
-        complete_time, issues_count, events_count
+        "✅ [{}] Manual app state reset complete - {} events regenerated",
+        complete_time, events_count
     );
 
     Json(serde_json::json!({
         "status": "success",
         "message": "App state has been reset",
-        "issues_count": issues_count,
         "events_count": events_count,
         "timestamp": chrono::Utc::now().to_rfc3339()
     }))
