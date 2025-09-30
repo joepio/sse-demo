@@ -180,7 +180,7 @@ async fn create_app() -> Router {
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/reset/", post(reset_state_handler))
         .route("/schemas", get(get_schemas_index))
-        .route("/schemas/:name", get(get_schema))
+        .route("/schemas/{name}", get(get_schema))
         .with_state(state);
 
     // Combine API routes with static file serving
