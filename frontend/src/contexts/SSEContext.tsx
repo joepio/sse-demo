@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   useRef,
   type ReactNode,
 } from "react";
@@ -16,6 +17,7 @@ interface IssueWithActivity extends Issue {
 interface SSEContextType {
   events: CloudEvent[];
   issues: Record<string, IssueWithActivity>;
+  items: Record<string, Record<string, unknown>>; // Unified item store for all item types
   connectionStatus: "connecting" | "connected" | "disconnected" | "error";
   sendEvent: (event: CloudEvent) => Promise<void>;
   completeTask: (taskId: string, issueId?: string) => Promise<void>;
@@ -29,11 +31,44 @@ interface SSEProviderProps {
 
 export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const [events, setEvents] = useState<CloudEvent[]>([]);
-  const [issues, setIssues] = useState<Record<string, IssueWithActivity>>({});
+  const [items, setItems] = useState<Record<string, Record<string, unknown>>>({});
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Derive issues from items store with lastActivity calculated from events
+  const issues = useMemo(() => {
+    const issuesMap: Record<string, IssueWithActivity> = {};
+    const activityMap: Record<string, string> = {};
+
+    // Build activity map from events
+    for (const event of events) {
+      if (event.subject) {
+        const eventTime = event.time || new Date().toISOString();
+        if (
+          !activityMap[event.subject] ||
+          eventTime > activityMap[event.subject]
+        ) {
+          activityMap[event.subject] = eventTime;
+        }
+      }
+    }
+
+    // Extract issues from items and add lastActivity
+    for (const [itemId, itemData] of Object.entries(items)) {
+      // Check if this is an issue (issues have their ID as the item_id)
+      if (itemData.status && itemData.title && itemData.created_at) {
+        const issue = itemData as unknown as Issue;
+        issuesMap[itemId] = {
+          ...issue,
+          lastActivity: activityMap[itemId] || issue.created_at,
+        };
+      }
+    }
+
+    return issuesMap;
+  }, [items, events]);
 
   // Apply JSON Merge Patch (RFC 7396)
   const applyMergePatch = useCallback(
@@ -76,281 +111,111 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     [],
   );
 
-  // Extract issue data from CloudEvent
-  const extractIssueData = useCallback(
-    (cloudEvent: CloudEvent): Issue | null => {
-      if (!cloudEvent.data || typeof cloudEvent.data !== "object") return null;
+
+  // Process items (comments, tasks, planning, documents, etc.) into unified items store
+  const processItemEvent = useCallback(
+    (cloudEvent: CloudEvent) => {
+      if (!cloudEvent.data) return;
 
       const data = cloudEvent.data as Record<string, unknown>;
-      if (data.item_type !== "issue" || !data.item_data) return null;
+      const itemId = data.item_id as string;
+      if (!itemId) return;
 
-      const issueData = data.item_data as Record<string, unknown>;
-      if (!issueData.id || typeof issueData.id !== "string") return null;
+      setItems((prevItems) => {
+        const newItems = { ...prevItems };
 
-      return {
-        id: String(issueData.id),
-        title: String(issueData.title || ""),
-        description: issueData.description
-          ? String(issueData.description)
-          : null,
-        status: String(issueData.status || "open") as
-          | "open"
-          | "in_progress"
-          | "closed",
-        assignee: issueData.assignee ? String(issueData.assignee) : null,
-        created_at: String(issueData.created_at || new Date().toISOString()),
-        resolution: issueData.resolution ? String(issueData.resolution) : null,
-      };
-    },
-    [],
-  );
+        switch (cloudEvent.type) {
+          case "item.created":
+            // Store the full item data
+            if (data.item_data) {
+              newItems[itemId] = data.item_data as Record<string, unknown>;
+            }
+            break;
 
-  // Handle issue creation events
-  const handleIssueCreated = useCallback(
-    (
-      cloudEvent: CloudEvent,
-      eventTime: string,
-      issuesMap: Record<string, IssueWithActivity>,
-    ): Record<string, IssueWithActivity> => {
-      const newIssues = { ...issuesMap };
-      const issueData = extractIssueData(cloudEvent);
+          case "item.updated":
+            // Apply patch to existing item
+            if (data.patch && newItems[itemId]) {
+              const patched = applyMergePatch(
+                newItems[itemId],
+                data.patch,
+              ) as Record<string, unknown>;
+              newItems[itemId] = patched;
+            } else if (data.patch) {
+              // Item doesn't exist yet, create it with just the patch data
+              newItems[itemId] = data.patch as Record<string, unknown>;
+            }
+            break;
 
-      if (issueData) {
-        newIssues[issueData.id] = {
-          ...issueData,
-          lastActivity: eventTime,
-        };
-      } else if (cloudEvent.subject && newIssues[cloudEvent.subject]) {
-        // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
-
-        newIssues[cloudEvent.subject] = {
-          ...newIssues[cloudEvent.subject],
-          lastActivity: eventTime,
-        };
-      }
-
-      return newIssues;
-    },
-    [extractIssueData],
-  );
-
-  // Handle issue update events
-  const handleIssueUpdated = useCallback(
-    (
-      cloudEvent: CloudEvent,
-      eventTime: string,
-      issuesMap: Record<string, IssueWithActivity>,
-    ): Record<string, IssueWithActivity> => {
-      if (!cloudEvent.subject || !cloudEvent.data) return issuesMap;
-
-      const newIssues = { ...issuesMap };
-      const data = cloudEvent.data as Record<string, unknown>;
-      const issueId = cloudEvent.subject;
-
-      if (data.item_type === "issue" && data.item_data) {
-        if (newIssues[issueId]) {
-          const patchedIssue = applyMergePatch(
-            newIssues[issueId],
-            data.item_data,
-          ) as IssueWithActivity;
-          newIssues[issueId] = {
-            ...patchedIssue,
-            lastActivity: eventTime,
-          };
-        } else {
-          // Create new issue if it doesn't exist
-          const newIssue = { id: issueId };
-          const patchedNewIssue = applyMergePatch(
-            newIssue,
-            data.item_data,
-          ) as IssueWithActivity;
-          newIssues[issueId] = {
-            ...patchedNewIssue,
-            lastActivity: eventTime,
-          };
+          case "item.deleted":
+            // Remove the item
+            delete newItems[itemId];
+            break;
         }
-      } else if (newIssues[issueId]) {
-        // For non-issue items (comments, tasks, etc.), update the parent issue's lastActivity
 
-        newIssues[issueId] = {
-          ...newIssues[issueId],
-          lastActivity: eventTime,
-        };
-      }
-
-      return newIssues;
+        return newItems;
+      });
     },
     [applyMergePatch],
   );
 
-  // Handle issue deletion events
-  const handleIssueDeleted = useCallback(
-    (
-      cloudEvent: CloudEvent,
-      issuesMap: Record<string, IssueWithActivity>,
-    ): Record<string, IssueWithActivity> => {
-      if (!cloudEvent.subject || !cloudEvent.data) return issuesMap;
-
-      const data = cloudEvent.data as Record<string, unknown>;
-      if (data.item_type === "issue") {
-        const newIssues = { ...issuesMap };
-        delete newIssues[cloudEvent.subject];
-
-        return newIssues;
-      }
-
-      return issuesMap;
-    },
-    [],
-  );
-
-  // Handle other timeline events that should update lastActivity
-  const handleTimelineEvent = useCallback(
-    (
-      cloudEvent: CloudEvent,
-      eventTime: string,
-      issuesMap: Record<string, IssueWithActivity>,
-    ): Record<string, IssueWithActivity> => {
-      if (!cloudEvent.subject || !issuesMap[cloudEvent.subject])
-        return issuesMap;
-
-      const newIssues = { ...issuesMap };
-      newIssues[cloudEvent.subject] = {
-        ...newIssues[cloudEvent.subject],
-        lastActivity: eventTime,
-      };
-
-      return newIssues;
-    },
-    [],
-  );
-
-  // Process a single CloudEvent and update issues state
+  // Process a single CloudEvent
   const processCloudEvent = useCallback(
     (cloudEvent: CloudEvent) => {
-      setIssues((prevIssues) => {
-        const eventTime = cloudEvent.time || new Date().toISOString();
+      // Process all items into the unified items store
+      processItemEvent(cloudEvent);
 
-        switch (cloudEvent.type) {
-          case "item.created":
-            return handleIssueCreated(cloudEvent, eventTime, prevIssues);
-
-          case "item.updated":
-            return handleIssueUpdated(cloudEvent, eventTime, prevIssues);
-
-          case "item.deleted":
-            return handleIssueDeleted(cloudEvent, prevIssues);
-
-          case "system.reset":
-            window.location.reload();
-            return prevIssues;
-
-          default:
-            return handleTimelineEvent(cloudEvent, eventTime, prevIssues);
-        }
-      });
-    },
-    [
-      handleIssueCreated,
-      handleIssueUpdated,
-      handleIssueDeleted,
-      handleTimelineEvent,
-    ],
-  );
-
-  // Build activity map to track latest activity per issue
-  const buildActivityMap = useCallback(
-    (events: CloudEvent[]): Record<string, string> => {
-      const activityMap: Record<string, string> = {};
-
-      for (const event of events) {
-        if (event.subject) {
-          const eventTime = event.time || new Date().toISOString();
-          if (
-            !activityMap[event.subject] ||
-            eventTime > activityMap[event.subject]
-          ) {
-            activityMap[event.subject] = eventTime;
-          }
-        }
+      // Handle system reset
+      if (cloudEvent.type === "system.reset") {
+        window.location.reload();
       }
-
-      return activityMap;
     },
-    [],
+    [processItemEvent],
   );
+
 
   // Process snapshot events to build initial state
   const processSnapshot = useCallback(
-    (snapshotEvents: CloudEvent[]): Record<string, IssueWithActivity> => {
-      const initialIssues: Record<string, IssueWithActivity> = {};
-      const activityMap = buildActivityMap(snapshotEvents);
+    (snapshotEvents: CloudEvent[]) => {
+      const initialItems: Record<string, Record<string, unknown>> = {};
 
       for (const event of snapshotEvents) {
-        const eventTime = event.time || new Date().toISOString();
+        // Process all items into the unified store
+        if (event.data) {
+          const data = event.data as Record<string, unknown>;
+          const itemId = data.item_id as string;
 
-        switch (event.type) {
-          case "item.created": {
-            const issueData = extractIssueData(event);
-            if (issueData) {
-              const lastActivity = activityMap[issueData.id] || eventTime;
-              initialIssues[issueData.id] = {
-                ...issueData,
-                lastActivity,
-              };
-            }
-            break;
-          }
-
-          case "item.updated": {
-            if (event.subject && event.data) {
-              const data = event.data as Record<string, unknown>;
-              const issueId = event.subject;
-
-              if (data.item_type === "issue" && data.item_data) {
-                const lastActivity = activityMap[issueId] || eventTime;
-
-                if (initialIssues[issueId]) {
-                  const patchedIssue = applyMergePatch(
-                    initialIssues[issueId],
-                    data.item_data,
-                  ) as IssueWithActivity;
-                  initialIssues[issueId] = {
-                    ...patchedIssue,
-                    lastActivity,
-                  };
-                } else {
-                  // Create new issue if it doesn't exist
-                  const newIssue = { id: issueId };
-                  const patchedNewIssue = applyMergePatch(
-                    newIssue,
-                    data.item_data,
-                  ) as IssueWithActivity;
-                  initialIssues[issueId] = {
-                    ...patchedNewIssue,
-                    lastActivity,
-                  };
+          if (itemId) {
+            switch (event.type) {
+              case "item.created":
+                if (data.item_data) {
+                  initialItems[itemId] = data.item_data as Record<string, unknown>;
                 }
-              }
-            }
-            break;
-          }
+                break;
 
-          case "item.deleted": {
-            if (event.subject && event.data) {
-              const data = event.data as Record<string, unknown>;
-              if (data.item_type === "issue") {
-                delete initialIssues[event.subject];
-              }
+              case "item.updated":
+                if (data.patch && initialItems[itemId]) {
+                  const patched = applyMergePatch(
+                    initialItems[itemId],
+                    data.patch,
+                  ) as Record<string, unknown>;
+                  initialItems[itemId] = patched;
+                } else if (data.patch) {
+                  initialItems[itemId] = data.patch as Record<string, unknown>;
+                }
+                break;
+
+              case "item.deleted":
+                delete initialItems[itemId];
+                break;
             }
-            break;
           }
         }
       }
 
-      return initialIssues;
+      // Set the items state (issues will be derived from this)
+      setItems(initialItems);
     },
-    [applyMergePatch, extractIssueData, buildActivityMap],
+    [applyMergePatch],
   );
 
   // Send CloudEvent to server
@@ -429,8 +294,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         try {
           const snapshotEvents = JSON.parse(e.data) as CloudEvent[];
           setEvents(snapshotEvents);
-          const initialIssues = processSnapshot(snapshotEvents);
-          setIssues(initialIssues);
+          processSnapshot(snapshotEvents);
         } catch (error) {
           console.error("Error processing snapshot:", error);
         }
@@ -488,6 +352,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const contextValue: SSEContextType = {
     events,
     issues,
+    items,
     connectionStatus,
     sendEvent,
     completeTask,

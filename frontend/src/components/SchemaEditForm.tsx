@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { fetchSchema } from "../types/interfaces";
 import { Button } from "./ActionButton";
 import Modal from "./Modal";
+import { createItemUpdatedEvent } from "../utils/cloudEvents";
+import type { ItemType } from "../types";
 
 interface SchemaEditFormProps {
   isOpen: boolean;
@@ -133,25 +135,17 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Create the CloudEvent for updating the item
-      const event = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
-        source: "frontend-edit",
-        subject: zaakId,
-        type: "item.updated",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: itemType.toLowerCase(),
-          item_id: itemId,
+      // Use the schema-based CloudEvent utility for updates
+      const event = createItemUpdatedEvent(
+        itemType.toLowerCase() as ItemType,
+        itemId,
+        formData,
+        {
+          source: "frontend-edit",
+          subject: zaakId,
           actor: "frontend-user",
-          patch: {
-            ...formData,
-            updated_at: new Date().toISOString(),
-          },
-        },
-      };
+        }
+      );
 
       await onSubmit(event);
       onClose();

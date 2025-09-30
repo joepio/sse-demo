@@ -210,8 +210,8 @@ fn add_patch_events(
         // Apply patch to issues state
         if let Some(existing_issue) = issues.get_mut(&issue_id.to_string()) {
             if let Some(data) = patch_event.get("data") {
-                if let Some(item_data) = data.get("item_data") {
-                    apply_merge_patch(existing_issue, item_data);
+                if let Some(patch) = data.get("patch") {
+                    apply_merge_patch(existing_issue, patch);
                 }
             }
         }

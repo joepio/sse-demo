@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
 import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
+import { createItemDeletedEvent } from "../utils/cloudEvents";
 
 import IssueHeader from "./IssueHeader";
 import PageHeader from "./PageHeader";
@@ -89,6 +90,12 @@ const IssueTimeline: React.FC = () => {
           if (event.type === "item.deleted") return "issue_deleted";
         }
 
+        // For updated/deleted events of other items, use system_event (renders as line)
+        if (event.type === "item.updated" || event.type === "item.deleted") {
+          return "system_event";
+        }
+
+        // For created events, use the item type (renders as card with full content)
         return (itemType as TimelineItemType) || "system_event";
       }
     }
@@ -111,24 +118,12 @@ const IssueTimeline: React.FC = () => {
     setIsDeleting(true);
 
     try {
-      // Create delete event
-      const deleteEvent: CloudEvent = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
+      // Use the schema-based CloudEvent utility for deletion
+      const deleteEvent = createItemDeletedEvent("issue", zaakId, {
         source: "frontend-demo-event",
         subject: zaakId,
-        type: "item.deleted",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: "issue",
-          item_id: zaakId,
-          item_data: {
-            id: zaakId,
-            reason: "Verwijderd vanuit tijdlijn weergave",
-          },
-        },
-      };
+        actor: "frontend-user",
+      });
 
       await sendEvent(deleteEvent);
 

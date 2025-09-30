@@ -11,10 +11,15 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
   data,
   timeInfo,
 }) => {
-  const { sendEvent } = useSSE();
+  const { sendEvent, items } = useSSE();
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const { content, mentions } = (data.item_data || data) as {
+
+  // Get the current state of the comment from the items store
+  const itemId = (data.item_id as string) || "";
+  const commentData = items[itemId] || data.item_data || data;
+
+  const { content, mentions } = commentData as {
     content?: unknown;
     mentions?: unknown[];
   };
@@ -71,11 +76,8 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         itemType="comment"
-        itemId={(data.item_data as any)?.id || (data as any)?.id || event.id}
-        initialData={{
-          content: content,
-          mentions: mentions || [],
-        }}
+        itemId={itemId || event.id}
+        initialData={commentData}
         onSubmit={sendEvent}
         zaakId={event.originalEvent.subject || ""}
       />

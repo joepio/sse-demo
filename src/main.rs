@@ -34,7 +34,6 @@ use tokio_stream::wrappers::BroadcastStream;
 use tokio_stream::StreamExt;
 use tower_http::services::ServeDir;
 use tower_http::{cors::CorsLayer, services::ServeFile};
-use uuid;
 
 #[derive(Clone)]
 struct AppState {
@@ -142,15 +141,13 @@ async fn create_app() -> Router {
                 if let Some(demo_event_json) = issues::generate_demo_event(&current_issues) {
                     // Convert JSON to our CloudEvent struct
                     if let Some(cloud_event) = issues::json_to_cloudevent(&demo_event_json) {
-                        // Process the event using the same handle_event logic
-                        process_cloud_event(Arc::clone(&demo.events), &demo_event_json).await;
-
-                        // Add to events list
+                        // Store the event
                         {
                             let mut events = demo.events.write().await;
                             events.push(demo_event_json);
                         }
 
+                        // Broadcast to all listeners
                         let _ = demo.tx.send(cloud_event);
                     }
                 }
@@ -219,80 +216,33 @@ async fn sse_handler(
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
-/// Process a CloudEvent JSON and update the events state
-async fn process_cloud_event(events_lock: Arc<RwLock<Vec<Value>>>, event_json: &Value) {
-    if let (Some(event_type), Some(data)) = (
-        event_json.get("type").and_then(|t| t.as_str()),
-        event_json.get("data"),
-    ) {
-        // Validate event type
-        match event_type {
-            "item.created" | "item.updated" | "item.deleted" | "system.reset" => {
-                // Valid event type, continue processing
-            }
-            _ => {
-                eprintln!("❌ Invalid event type received: {}", event_type);
-                return;
-            }
-        }
-
-        // Handle timeline item updates (tasks, comments, etc.) in events
-        if event_type == "item.updated" {
-            if let Some(item_type) = data.get("item_type").and_then(|t| t.as_str()) {
-                if item_type != "issue" {
-                    // Handle timeline item updates (tasks, comments, etc.)
-                    if let (Some(item_id), Some(patch)) = (
-                        data.get("item_id").and_then(|i| i.as_str()),
-                        data.get("patch"),
-                    ) {
-                        let mut events = events_lock.write().await;
-
-                        // Find and update the timeline item
-                        for event in events.iter_mut() {
-                            if let Some(event_data) = event.get("data") {
-                                if event_data.get("item_id").and_then(|id| id.as_str())
-                                    == Some(item_id)
-                                {
-                                    if let Some(item_data) =
-                                        event.get_mut("data").and_then(|d| d.get_mut("item_data"))
-                                    {
-                                        issues::apply_merge_patch(item_data, patch);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+/// Validate a CloudEvent JSON
+fn validate_cloud_event(event_json: &Value) -> bool {
+    if let Some(event_type) = event_json.get("type").and_then(|t| t.as_str()) {
+        matches!(
+            event_type,
+            "item.created" | "item.updated" | "item.deleted" | "system.reset"
+        )
+    } else {
+        false
     }
 }
 
 async fn handle_event(
     State(state): State<AppState>,
     Json(incoming_event): Json<IncomingCloudEvent>,
-) -> Json<&'static str> {
+) -> Result<Json<&'static str>, StatusCode> {
     // Convert to JSON Value for processing
     let mut event_json = serde_json::to_value(&incoming_event).unwrap();
 
-    // Add NL-GOV compliance fields if not present
-    add_dataschema_to_event(&mut event_json, &state.base_url);
-
-    // Debug logging
-    println!(
-        "Received event: type={}, subject={:?}",
-        incoming_event.event_type, incoming_event.subject
-    );
-    if incoming_event.event_type.contains("task") {
-        println!(
-            "Task event data: {}",
-            serde_json::to_string_pretty(&event_json).unwrap_or_default()
-        );
+    // Validate event type
+    if !validate_cloud_event(&event_json) {
+        eprintln!("❌ Invalid event type: {}", incoming_event.event_type);
+        return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Process the event
-    process_cloud_event(Arc::clone(&state.events), &event_json).await;
+    // Add NL-GOV compliance fields if not present
+    add_dataschema_to_event(&mut event_json, &state.base_url);
 
     // Convert incoming event to our CloudEvent format
     let cloud_event = CloudEvent {
@@ -310,15 +260,16 @@ async fn handle_event(
         data: incoming_event.data,
     };
 
-    // Add to events list
+    // Store the event
     {
         let mut events = state.events.write().await;
         events.push(event_json);
     }
 
-    // Broadcast the event
+    // Broadcast to all listeners
     let _ = state.tx.send(cloud_event);
-    Json("ok")
+
+    Ok(Json("ok"))
 }
 
 /// Get all available schemas as an index

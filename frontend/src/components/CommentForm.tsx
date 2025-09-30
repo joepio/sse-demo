@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import type { CloudEvent } from "../types";
+import type { CloudEvent, Comment } from "../types";
 import Card from "./Card";
 import { Button } from "./ActionButton";
+import { createCommentCreatedEvent } from "../utils/cloudEvents";
+import { generateUUID } from "../utils/uuid";
 
 interface CommentFormProps {
   zaakId: string;
@@ -21,26 +23,19 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
     setCommentError(null);
 
     try {
-      // Create a timeline comment event
-      const commentEvent: CloudEvent = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
-        source: `frontend-demo-event`,
-        subject: zaakId,
-        type: "item.created",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: "comment",
-          item_id: `comment-${Date.now()}`,
-          actor: "user@example.com", // In a real app, this would come from auth
-          item_data: {
-            content: commentText.trim(),
-            parent_id: null,
-            mentions: [],
-          },
-        },
+      // Create a Comment object following the schema
+      const comment: Comment = {
+        id: `comment-${generateUUID()}`,
+        content: commentText.trim(),
+        author: "user@example.com", // In a real app, this would come from auth
+        parent_id: null,
+        mentions: null,
       };
+
+      // Create a CloudEvent with the Comment schema
+      const commentEvent = createCommentCreatedEvent(comment, zaakId, {
+        actor: "user@example.com",
+      });
 
       // Send the comment event to the server
       await onSubmit(commentEvent);

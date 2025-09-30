@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
-import type { CloudEvent, BaseEntity } from "../types";
+import type { CloudEvent, BaseEntity, ItemType } from "../types";
 import { Button } from "./ActionButton";
+import { createItemCreatedEvent } from "../utils/cloudEvents";
 
 interface ResourceEditorProps<T extends BaseEntity = BaseEntity> {
   isOpen: boolean;
@@ -34,20 +35,15 @@ const ResourceEditor = <T extends BaseEntity>({
       const newData = JSON.parse(jsonText);
       setIsSubmitting(true);
 
-      const cloudEvent: CloudEvent = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
-        source: `/${resourceType}s`,
-        subject: resource.id,
-        type: "item.updated",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: resourceType,
-          item_id: resource.id,
-          item_data: newData,
-        },
-      };
+      // Use the schema-based CloudEvent creation utility
+      const cloudEvent = createItemCreatedEvent(
+        resourceType as ItemType,
+        newData,
+        {
+          source: `/${resourceType}s`,
+          subject: resource.id,
+        }
+      );
 
       await onSave(cloudEvent);
       onClose();

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { fetchSchemaIndex, fetchSchema } from "../types/interfaces";
 import { Button } from "./ActionButton";
+import { generateUUID } from "../utils/uuid";
+import { createItemCreatedEvent } from "../utils/cloudEvents";
+import type { ItemType } from "../types";
 
 interface SchemaFormProps {
   zaakId: string;
@@ -100,26 +103,24 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
     setIsSubmitting(true);
 
     try {
-      // Create the CloudEvent
-      const event = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
-        source: "frontend-create",
-        subject: zaakId,
-        type: "item.created",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: selectedType.toLowerCase(),
-          item_id: `${selectedType}-${crypto.randomUUID()}`,
-          actor: "frontend-user", // Add actor field
-          item_data: {
-            id: `${selectedType}-${crypto.randomUUID()}`,
-            ...formData,
-            created_at: new Date().toISOString(),
-          },
-        },
+      const itemId = `${selectedType}-${generateUUID()}`;
+
+      // Create item data following the schema
+      const itemData = {
+        id: itemId,
+        ...formData,
       };
+
+      // Use the schema-based CloudEvent utility
+      const event = createItemCreatedEvent(
+        selectedType.toLowerCase() as ItemType,
+        itemData,
+        {
+          source: "frontend-create",
+          subject: zaakId,
+          actor: "frontend-user",
+        }
+      );
 
       await onSubmit(event);
 
@@ -195,7 +196,7 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
 
         const addMoment = () => {
           const newMoment = {
-            id: `moment-${crypto.randomUUID()}`,
+            id: `moment-${generateUUID()}`,
             date: "",
             title: "",
             status: "planned",

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { CloudEvent, IssueFormData } from "../types";
+import type { CloudEvent, IssueFormData, Issue } from "../types";
 import { Button } from "./ActionButton";
+import { generateUUID } from "../utils/uuid";
+import { createIssueCreatedEvent } from "../utils/cloudEvents";
 
 interface CreateIssueFormProps {
   onCreateIssue: (event: CloudEvent) => Promise<void>;
@@ -41,36 +43,21 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
     setError("");
 
     try {
-      const issueId = crypto.randomUUID();
-      const issueData: Record<string, unknown> = {
+      const issueId = generateUUID();
+
+      // Create an Issue object following the schema
+      const issue: Issue = {
         id: issueId,
         title: formData.title.trim(),
         status: "open",
         created_at: new Date().toISOString(),
+        description: formData.description.trim() || null,
+        assignee: formData.assignee.trim() || null,
+        resolution: null,
       };
 
-      if (formData.description.trim()) {
-        issueData.description = formData.description.trim();
-      }
-
-      if (formData.assignee.trim()) {
-        issueData.assignee = formData.assignee.trim();
-      }
-
-      const cloudEvent: CloudEvent = {
-        specversion: "1.0",
-        id: crypto.randomUUID(),
-        source: "frontend-create",
-        subject: issueId,
-        type: "item.created",
-        time: new Date().toISOString(),
-        datacontenttype: "application/json",
-        data: {
-          item_type: "issue",
-          item_id: issueId,
-          item_data: issueData,
-        },
-      };
+      // Use the schema-based CloudEvent utility
+      const cloudEvent = createIssueCreatedEvent(issue);
 
       await onCreateIssue(cloudEvent);
 
