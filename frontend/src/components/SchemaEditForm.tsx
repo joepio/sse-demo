@@ -5,14 +5,15 @@ import Modal from "./Modal";
 import SchemaField from "./SchemaField";
 import { createItemUpdatedEvent } from "../utils/cloudEvents";
 import type { ItemType } from "../types";
+import type { CloudEvent } from "../types/interfaces";
 
 interface SchemaEditFormProps {
   isOpen: boolean;
   onClose: () => void;
   itemType: string;
   itemId: string;
-  initialData: Record<string, any>;
-  onSubmit: (event: any) => Promise<void>;
+  initialData: Record<string, unknown>;
+  onSubmit: (event: CloudEvent) => Promise<void>;
   zaakId: string;
 }
 
@@ -40,9 +41,9 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
   onSubmit,
   zaakId,
 }) => {
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentSchema, setCurrentSchema] = useState<any>(null);
+  const [currentSchema, setCurrentSchema] = useState<Record<string, unknown> | null>(null);
 
   // Initialize form data when modal opens or initialData changes
   useEffect(() => {
@@ -68,66 +69,14 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
         setCurrentSchema(schema);
       } catch (error) {
         console.error(`Failed to load schema for ${itemType}:`, error);
-        // Create type-specific fallback schemas
-        let fallbackSchema = { type: "object", properties: {} };
-
-        switch (itemType.toLowerCase()) {
-          case "comment":
-            fallbackSchema.properties = {
-              content: { type: "string", title: "Inhoud", format: "textarea" },
-              mentions: { type: "array", title: "Vermeldingen" },
-            };
-            break;
-          case "task":
-            fallbackSchema.properties = {
-              description: {
-                type: "string",
-                title: "Beschrijving",
-                format: "textarea",
-              },
-              cta: { type: "string", title: "Actie" },
-              deadline: { type: "string", title: "Deadline", format: "date" },
-              url: { type: "string", title: "URL" },
-              completed: { type: "boolean", title: "Voltooid" },
-            };
-            break;
-          case "document":
-            fallbackSchema.properties = {
-              title: { type: "string", title: "Titel" },
-              url: { type: "string", title: "URL" },
-              size: { type: "number", title: "Grootte" },
-            };
-            break;
-          case "planning":
-            fallbackSchema.properties = {
-              title: { type: "string", title: "Titel" },
-              description: {
-                type: "string",
-                title: "Beschrijving",
-                format: "textarea",
-              },
-            };
-            break;
-          default:
-            fallbackSchema.properties = {
-              title: { type: "string", title: "Titel" },
-              description: {
-                type: "string",
-                title: "Beschrijving",
-                format: "textarea",
-              },
-            };
-        }
-
-        console.log(`Using fallback schema for ${itemType}:`, fallbackSchema);
-        setCurrentSchema(fallbackSchema);
+        setCurrentSchema(null);
       }
     };
 
     loadSchema();
   }, [itemType, isOpen]);
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -179,26 +128,29 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
         {currentSchema ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             {currentSchema.properties &&
-              Object.keys(currentSchema.properties)
-                .filter((fieldName) => {
-                  // Only show fields that exist in initialData or are in the schema
-                  return (
-                    initialData.hasOwnProperty(fieldName) ||
-                    currentSchema.properties.hasOwnProperty(fieldName)
-                  );
-                })
-                .map((fieldName) => (
-                  <SchemaField
-                    key={fieldName}
-                    fieldName={fieldName}
-                    fieldSchema={currentSchema}
-                    currentSchema={currentSchema}
-                    value={formData[fieldName] || ""}
-                    onChange={handleInputChange}
-                    selectedType={itemType}
-                    idPrefix="edit-field"
-                  />
-                ))}
+              typeof currentSchema.properties === "object" &&
+              currentSchema.properties !== null
+                ? Object.keys(currentSchema.properties as Record<string, unknown>)
+                    .filter((fieldName) => {
+                      // Only show fields that exist in initialData or are in the schema
+                      return (
+                        Object.prototype.hasOwnProperty.call(initialData, fieldName) ||
+                        Object.prototype.hasOwnProperty.call(currentSchema.properties, fieldName)
+                      );
+                    })
+                    .map((fieldName) => (
+                      <SchemaField
+                        key={fieldName}
+                        fieldName={fieldName}
+                        fieldSchema={currentSchema}
+                        currentSchema={currentSchema}
+                        value={formData[fieldName] || ""}
+                        onChange={handleInputChange}
+                        selectedType={itemType}
+                        idPrefix="edit-field"
+                      />
+                    ))
+                : null}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button
@@ -222,14 +174,15 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
             </div>
           </form>
         ) : (
-          <div className="text-center py-4">
-            <p style={{ color: "var(--text-secondary)" }}>Schema laden...</p>
+          <div className="text-center py-8">
+            <p className="text-lg mb-2" style={{ color: "var(--text-error)" }}>
+              Schema kon niet worden geladen
+            </p>
             <p
-              className="text-sm mt-2"
-              style={{ color: "var(--text-tertiary)" }}
+              className="text-sm"
+              style={{ color: "var(--text-secondary)" }}
             >
-              Als dit lang duurt, controleer of de backend server draait op
-              poort 8000
+              Controleer of de backend server draait op poort 8000 en het schema voor "{itemType}" beschikbaar is.
             </p>
           </div>
         )}

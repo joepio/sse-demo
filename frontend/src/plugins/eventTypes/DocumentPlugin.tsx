@@ -12,13 +12,16 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   data,
   timeInfo,
 }) => {
-  const { sendEvent } = useSSE();
+  const { sendEvent, items } = useSSE();
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const eventData = data as Record<string, unknown>;
   const documentId = eventData.item_id as string;
   const isUpdateEvent = event.originalEvent.type.includes("updated");
   const isDeleteEvent = event.originalEvent.type.includes("deleted");
+
+  // Get the current state of the document from the items store
+  const documentData = (items[documentId] || eventData.item_data || eventData) as Partial<Document>;
 
   // Handle delete events
   if (isDeleteEvent) {
@@ -135,8 +138,6 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   }
 
   // Handle create events - show document card
-  const documentData = (eventData.item_data || eventData) as Partial<Document>;
-
   if (!documentData.title || !documentData.url) {
     return (
       <>

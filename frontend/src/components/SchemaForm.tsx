@@ -5,10 +5,11 @@ import SchemaField from "./SchemaField";
 import { generateUUID } from "../utils/uuid";
 import { createItemCreatedEvent } from "../utils/cloudEvents";
 import type { ItemType } from "../types";
+import type { CloudEvent } from "../types/interfaces";
 
 interface SchemaFormProps {
   zaakId: string;
-  onSubmit: (event: any) => Promise<void>;
+  onSubmit: (event: CloudEvent) => Promise<void>;
 }
 
 // Default labels for known types
@@ -43,9 +44,9 @@ const DEFAULT_DESCRIPTIONS: Record<string, string> = {
 const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentSchema, setCurrentSchema] = useState<any>(null);
+  const [currentSchema, setCurrentSchema] = useState<Record<string, unknown> | null>(null);
 
   // Fetch available schemas on component mount
   useEffect(() => {
@@ -100,7 +101,7 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -194,23 +195,26 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
               {currentSchema &&
                 "properties" in currentSchema &&
                 currentSchema.properties &&
-                Object.keys(currentSchema.properties)
-                  .filter(
-                    (field) =>
-                      !["id", "created_at", "updated_at"].includes(field),
-                  ) // Skip auto-generated fields
-                  .map((fieldName) => (
-                    <SchemaField
-                      key={fieldName}
-                      fieldName={fieldName}
-                      fieldSchema={currentSchema}
-                      currentSchema={currentSchema}
-                      value={formData[fieldName] || ""}
-                      onChange={handleInputChange}
-                      selectedType={selectedType}
-                      idPrefix="field"
-                    />
-                  ))}
+                typeof currentSchema.properties === "object" &&
+                currentSchema.properties !== null
+                  ? Object.keys(currentSchema.properties as Record<string, unknown>)
+                      .filter(
+                        (field) =>
+                          !["id", "created_at", "updated_at"].includes(field),
+                      ) // Skip auto-generated fields
+                      .map((fieldName) => (
+                        <SchemaField
+                          key={fieldName}
+                          fieldName={fieldName}
+                          fieldSchema={currentSchema}
+                          currentSchema={currentSchema}
+                          value={formData[fieldName] || ""}
+                          onChange={handleInputChange}
+                          selectedType={selectedType}
+                          idPrefix="field"
+                        />
+                      ))
+                  : null}
             </div>
 
             {/* Form Actions */}
