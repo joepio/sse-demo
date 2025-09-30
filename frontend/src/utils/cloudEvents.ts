@@ -35,10 +35,11 @@ export function createItemCreatedEvent<T extends { id: string }>(
     time: new Date().toISOString(),
     datacontenttype: "application/json",
     data: {
-      item_type: itemType,
+      schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       item_id: itemId,
       actor: options?.actor || "frontend-user",
       item_data: itemData,
+      item_type: itemType, // Keep for backwards compatibility
     },
   };
 }
@@ -61,10 +62,11 @@ export function createItemUpdatedEvent<T = Record<string, unknown>>(
     time: new Date().toISOString(),
     datacontenttype: "application/json",
     data: {
-      item_type: itemType,
+      schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       item_id: itemId,
       actor: options?.actor || "frontend-user",
       patch,
+      item_type: itemType, // Keep for backwards compatibility
     },
   };
 }
@@ -86,12 +88,13 @@ export function createItemDeletedEvent(
     time: new Date().toISOString(),
     datacontenttype: "application/json",
     data: {
-      item_type: itemType,
+      schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       item_id: itemId,
       actor: options?.actor || "frontend-user",
       item_data: {
         id: itemId,
       },
+      item_type: itemType, // Keep for backwards compatibility,
     },
   };
 }

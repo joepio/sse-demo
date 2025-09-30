@@ -44,8 +44,8 @@ pub struct CloudEvent {
 /// Gebeurtenis data voor zaakgerelateerde items (zaken, taken, reacties, planning)
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ItemEventData {
-    /// Soort item: zaak, taak, reactie of planning
-    pub item_type: ItemType,
+    /// URL naar het JSON Schema dat de structuur van item_data beschrijft (bijv. "http://localhost:8000/schemas/Comment")
+    pub schema: String,
     /// Unieke identificatie van het item waar de gebeurtenis over gaat
     pub item_id: String,
     /// Email van de persoon die de actie heeft uitgevoerd (bijv. "alice@gemeente.nl", "user@gemeente.nl")
@@ -60,9 +60,10 @@ pub struct ItemEventData {
     /// Alleen de gewijzigde velden (bij gedeeltelijke updates)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub patch: Option<Value>,
-    /// URL naar het schema dat de structuur van item_data beschrijft
+    /// Deprecated: gebruik 'schema' in plaats van 'item_type' voor toekomstige compatibiliteit
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub itemschema: Option<String>,
+    #[deprecated(note = "Use 'schema' field instead")]
+    pub item_type: Option<ItemType>,
 }
 
 /// Soorten items in het zaaksysteem

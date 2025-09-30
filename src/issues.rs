@@ -784,10 +784,12 @@ fn create_event_data(
     patch_data: Option<&Value>,
     item_schema: &str,
 ) -> Value {
+    let schema_url = format!("http://localhost:8000/schemas/{}", item_schema);
+
     let mut data = json!({
-        "item_type": item_type,
+        "schema": schema_url,
         "item_id": item_id,
-        "itemschema": format!("http://localhost:8000/schemas/{}", item_schema)
+        "item_type": item_type  // Keep for backwards compatibility
     });
 
     if let Some(item_data) = item_data {
@@ -1128,7 +1130,7 @@ fn generate_task_event_with_data(
         "datacontenttype": CONTENT_TYPE_JSON,
         "dataschema": ITEM_EVENT_DATA_SCHEMA,
         "data": {
-            "item_type": "task",
+            "schema": TASK_SCHEMA,
             "item_id": format!("task-{}", Uuid::now_v7().simple()),
             "actor": actor,
             "timestamp": Utc::now().to_rfc3339(),
@@ -1139,7 +1141,7 @@ fn generate_task_event_with_data(
                 "completed": false,
                 "deadline": deadline
             },
-            "itemschema": TASK_SCHEMA
+            "item_type": "task"  // Keep for backwards compatibility
         }
     })
 }
@@ -1235,7 +1237,7 @@ fn generate_planning_event_with_data(
         "datacontenttype": CONTENT_TYPE_JSON,
         "dataschema": ITEM_EVENT_DATA_SCHEMA,
         "data": {
-            "item_type": "planning",
+            "schema": PLANNING_SCHEMA,
             "item_id": format!("planning-{}", Uuid::now_v7().simple()),
             "actor": actor,
             "timestamp": Utc::now().to_rfc3339(),
@@ -1244,7 +1246,7 @@ fn generate_planning_event_with_data(
                 "description": description,
                 "moments": moments
             },
-            "itemschema": PLANNING_SCHEMA
+            "item_type": "planning"  // Keep for backwards compatibility
         }
     })
 }
@@ -1293,7 +1295,7 @@ fn generate_document_event_with_data(issue_id: &str, title: &str, size: u64, act
         "datacontenttype": CONTENT_TYPE_JSON,
         "dataschema": ITEM_EVENT_DATA_SCHEMA,
         "data": {
-            "item_type": "document",
+            "schema": DOCUMENT_SCHEMA,
             "item_id": document_id,
             "actor": actor,
             "timestamp": Utc::now().to_rfc3339(),
@@ -1302,7 +1304,7 @@ fn generate_document_event_with_data(issue_id: &str, title: &str, size: u64, act
                 "url": url,
                 "size": size
             },
-            "itemschema": DOCUMENT_SCHEMA
+            "item_type": "document"  // Keep for backwards compatibility
         }
     })
 }

@@ -257,9 +257,10 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           time: new Date().toISOString(),
           datacontenttype: "application/json",
           data: {
-            item_type: "task",
+            schema: "http://localhost:8000/schemas/Task",
             item_id: taskId,
             actor: "user@gemeente.nl",
+            item_type: "task",  // Keep for backwards compatibility
             patch: {
               completed: true,
               completed_at: new Date().toISOString(),

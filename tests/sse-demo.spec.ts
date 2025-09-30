@@ -18,7 +18,7 @@ async function resetServerState() {
 async function waitForConnection(page) {
   await expect(page.locator('[data-testid="connection-status"]')).toHaveText(
     "Verbonden",
-    { timeout: 15000 },
+    { timeout: 15000 }
   );
 }
 
@@ -27,7 +27,7 @@ async function navigateToFirstIssue(page) {
   // First check if we have any issues available
   const issuesOrEmpty = await page.waitForSelector(
     '.zaak-item-hover, :has-text("Geen zaken"), [data-testid="no-issues"]',
-    { timeout: 10000 },
+    { timeout: 10000 }
   );
 
   // Check if we actually have issues to navigate to
@@ -71,7 +71,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
     test("renders initial issues on the home page", async ({ page }) => {
       // Should have main heading
       await expect(page.locator('[data-testid="main-heading"]')).toHaveText(
-        "Zaken",
+        "Zaken"
       );
 
       // Should have issues displayed
@@ -85,7 +85,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
       // Verify connection status
       await expect(
-        page.locator('[data-testid="connection-status"]'),
+        page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
     });
 
@@ -108,7 +108,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
           await expect(taskElement).toBeVisible();
           // Verify it's not a clickable button
           const isInButton = await taskElement.evaluate(
-            (el) => el.closest("button") !== null,
+            (el) => el.closest("button") !== null
           );
           expect(isInButton).toBe(false);
         }
@@ -118,7 +118,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
     test("shows connection status correctly", async ({ page }) => {
       // Verify connection status
       await expect(
-        page.locator('[data-testid="connection-status"]'),
+        page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
 
       // Verify bell icon is present
@@ -172,7 +172,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
       // Should show comment form
       const commentTextarea = page.locator(
-        'textarea[placeholder="Voeg een opmerking toe..."]',
+        'textarea[placeholder="Voeg een opmerking toe..."]'
       );
       await expect(commentTextarea).toBeVisible();
     });
@@ -183,7 +183,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       // Submit a unique comment
       const testComment = `Test comment - ${generateTestId()}`;
       const commentTextarea = page.locator(
-        'textarea[placeholder="Voeg een opmerking toe..."]',
+        'textarea[placeholder="Voeg een opmerking toe..."]'
       );
       await commentTextarea.fill(testComment);
 
@@ -196,7 +196,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         .locator("..")
         .locator("..");
       await expect(
-        timelineArea.locator(`:has-text("${testComment}")`).first(),
+        timelineArea.locator(`:has-text("${testComment}")`).first()
       ).toBeVisible({ timeout: 10000 });
 
       // Verify form is cleared
@@ -210,7 +210,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
       // Add a unique comment
       const commentTextarea = page.locator(
-        'textarea[placeholder="Voeg een opmerking toe..."]',
+        'textarea[placeholder="Voeg een opmerking toe..."]'
       );
       await commentTextarea.fill(testComment);
       await page.locator('button:has-text("Verzenden")').click();
@@ -221,7 +221,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         .locator("..")
         .locator("..");
       await expect(
-        timelineArea.locator(`:has-text("${testComment}")`).first(),
+        timelineArea.locator(`:has-text("${testComment}")`).first()
       ).toBeVisible({ timeout: 10000 });
 
       // Refresh the page
@@ -233,35 +233,28 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         .locator("..")
         .locator("..");
       await expect(
-        timelineAreaAfterRefresh.locator(`:has-text("${testComment}")`).first(),
+        timelineAreaAfterRefresh.locator(`:has-text("${testComment}")`).first()
       ).toBeVisible({ timeout: 10000 });
     });
 
     test("can access schema form for creating items", async ({ page }) => {
       await navigateToFirstIssue(page);
 
-      // Find the "Item Toevoegen" button
-      const addItemButton = page.locator('button:has-text("+ Item Toevoegen")');
-      await expect(addItemButton).toBeVisible();
-      await addItemButton.click();
+      // Should show "Item Toevoegen" section
+      await expect(page.locator('text="Item Toevoegen"')).toBeVisible();
 
-      // Should show item type selection
-      await expect(page.locator('h3:has-text("Type Item")')).toBeVisible();
-
-      // Should have all item type buttons
-      await expect(page.locator('button:has-text("Reactie")')).toBeVisible();
+      // Should have item type buttons (Issue is not shown as there's a dedicated form)
       await expect(page.locator('button:has-text("Taak")')).toBeVisible();
+      await expect(page.locator('button:has-text("Reactie")')).toBeVisible();
       await expect(page.locator('button:has-text("Document")')).toBeVisible();
       await expect(page.locator('button:has-text("Planning")')).toBeVisible();
-      await expect(page.locator('button:has-text("Zaak")')).toBeVisible();
     });
 
     test("can create a task using schema form", async ({ page }) => {
       await navigateToFirstIssue(page);
 
-      // Open item creation form
-      const addItemButton = page.locator('button:has-text("+ Item Toevoegen")');
-      await addItemButton.click();
+      // Scroll to the Item Toevoegen section
+      await page.locator('text="Item Toevoegen"').scrollIntoViewIfNeeded();
 
       // Select task type
       const taskButton = page.locator('button:has-text("Taak")');
@@ -272,7 +265,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         timeout: 15000,
       });
       await expect(
-        page.getByRole("textbox", { name: "Description*" }),
+        page.getByRole("textbox", { name: "Description*" })
       ).toBeVisible();
       await expect(page.getByRole("textbox", { name: "Url*" })).toBeVisible();
       await expect(page.getByRole("textbox", { name: "Actor" })).toBeVisible();
@@ -321,7 +314,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       // Should be on home page initially
       await expect(page).toHaveURL("/");
       await expect(page.locator('[data-testid="main-heading"]')).toHaveText(
-        "Zaken",
+        "Zaken"
       );
 
       // Navigate to an issue
@@ -342,7 +335,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       await page.goto("/");
       await expect(page).toHaveURL("/");
       await expect(page.locator('[data-testid="main-heading"]')).toHaveText(
-        "Zaken",
+        "Zaken"
       );
     });
 
@@ -363,7 +356,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         .locator("..")
         .locator("..");
       await expect(
-        timelineArea.locator(`:has-text("${testComment}")`).first(),
+        timelineArea.locator(`:has-text("${testComment}")`).first()
       ).toBeVisible({ timeout: 10000 });
 
       // Go back to home page
@@ -394,20 +387,20 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
     test("handles connection status changes", async ({ page }) => {
       // Initial connection should be established on home page
       await expect(
-        page.locator('[data-testid="connection-status"]'),
+        page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
 
       // Navigate to an issue
       await navigateToFirstIssue(page);
       await expect(
-        page.locator('[data-testid="connection-status"]'),
+        page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
 
       // Navigate back to home
       await page.goto("/");
       await waitForConnection(page);
       await expect(
-        page.locator('[data-testid="connection-status"]'),
+        page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
     });
   });
@@ -417,7 +410,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       // Wait for page to load
       await page.waitForSelector(
         '.zaak-item-hover, :has-text("Geen zaken"), [data-testid="no-issues"]',
-        { timeout: 10000 },
+        { timeout: 10000 }
       );
 
       // Either we have issues or we have a no-issues message
@@ -469,8 +462,8 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
     test("handles form validation appropriately", async ({ page }) => {
       await navigateToFirstIssue(page);
 
-      // Open task creation form
-      await page.locator('button:has-text("+ Item Toevoegen")').click();
+      // Scroll to Item Toevoegen section and select task type
+      await page.locator('text="Item Toevoegen"').scrollIntoViewIfNeeded();
       await page.locator('button:has-text("Taak")').click();
 
       // Try to submit without filling required fields
@@ -480,7 +473,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       // Form should still be visible (validation should prevent submission)
       await expect(page.getByRole("textbox", { name: "Cta*" })).toBeVisible();
       await expect(
-        page.getByRole("textbox", { name: "Description*" }),
+        page.getByRole("textbox", { name: "Description*" })
       ).toBeVisible();
     });
 
@@ -489,7 +482,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
       // Comment form should start with disabled send button
       const commentTextarea = page.locator(
-        'textarea[placeholder="Voeg een opmerking toe..."]',
+        'textarea[placeholder="Voeg een opmerking toe..."]'
       );
       const sendButton = page.locator('button:has-text("Verzenden")');
 

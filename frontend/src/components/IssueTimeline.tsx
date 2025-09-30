@@ -81,7 +81,19 @@ const IssueTimeline: React.FC = () => {
     ) {
       if (event.data && typeof event.data === "object" && event.data !== null) {
         const data = event.data as Record<string, unknown>;
-        const itemType = data.item_type as string;
+
+        // Extract schema name from schema URL (e.g., "http://localhost:8000/schemas/Comment" -> "comment")
+        // Falls back to item_type for backwards compatibility
+        let itemType: string;
+        if (data.schema && typeof data.schema === "string") {
+          const schemaUrl = data.schema as string;
+          const schemaName = schemaUrl.split("/").pop() || "";
+          itemType = schemaName.toLowerCase();
+        } else if (data.item_type) {
+          itemType = data.item_type as string;
+        } else {
+          return "system_event";
+        }
 
         // Map item types to timeline types
         if (itemType === "issue") {
