@@ -16,7 +16,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
 
   if (task.completed) {
     return (
-      <div className="p-0">
+      <div className="p-0" id={task.id}>
         <p className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl">
           <strong>✅ Taak voltooid: {task.cta}</strong>
         </p>
@@ -30,7 +30,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
   // Show the active task interface
   return (
     <>
-      <div className="p-0">
+      <div className="p-0" id={task.id}>
         <div className="flex justify-between items-start mb-4">
           <p
             className="m-0 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl flex-1"

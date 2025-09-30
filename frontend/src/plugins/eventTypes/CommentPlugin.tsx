@@ -26,7 +26,7 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
 
   return (
     <>
-      <Card padding="sm">
+      <Card padding="sm" id={itemId}>
         <div className="flex items-center justify-between gap-4 w-full mb-3">
           {event.actor && event.actor !== "system" && (
             <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import React, { useMemo, useState, useEffect } from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
 import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
 import { createItemDeletedEvent } from "../utils/cloudEvents";
@@ -17,12 +17,33 @@ import SectionLabel from "./SectionLabel";
 const IssueTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { events, issues, sendEvent } = useSSE();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const issue = zaakId ? issues[zaakId] : null;
+
+  // Scroll to item if hash is present in URL
+  useEffect(() => {
+    if (location.hash) {
+      const itemId = location.hash.substring(1); // Remove the '#'
+      const element = document.getElementById(itemId);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Add a subtle highlight effect
+          const originalBg = window.getComputedStyle(element).backgroundColor;
+          element.style.transition = "background-color 0.3s ease";
+          element.style.backgroundColor = "rgba(251, 191, 36, 0.2)";
+          setTimeout(() => {
+            element.style.backgroundColor = originalBg;
+          }, 2000);
+        }, 100);
+      }
+    }
+  }, [location.hash]);
 
   // Convert CloudEvents to TimelineEvents for this specific issue
   const timelineEvents = useMemo(() => {
@@ -192,6 +213,7 @@ const IssueTimeline: React.FC = () => {
       <div className="max-w-3xl lg:max-w-4xl xl:max-w-5xl mx-auto p-4 md:p-8 lg:p-12 xl:p-16 pt-8 lg:pt-12 xl:pt-16">
         {/* Zaak header - show as standalone section like active task and planning */}
         <div
+          id={zaakId}
           className="mb-6 md:mb-8 lg:mb-10 xl:mb-12 relative"
           data-testid="issue-header"
         >

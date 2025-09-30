@@ -4,12 +4,14 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   padding?: "sm" | "md" | "lg";
+  id?: string;
 }
 
 const Card: React.FC<CardProps> = ({
   children,
   className = "",
   padding = "md",
+  id,
 }) => {
   const paddingClasses = {
     sm: "p-3 sm:p-4 lg:p-4 xl:p-5",
@@ -21,6 +23,7 @@ const Card: React.FC<CardProps> = ({
 
   return (
     <div
+      id={id}
       className={`${baseClasses} ${className}`.trim()}
       style={{
         backgroundColor: "var(--bg-secondary)",

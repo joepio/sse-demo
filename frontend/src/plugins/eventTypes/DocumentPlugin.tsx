@@ -27,7 +27,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   if (isDeleteEvent) {
     return (
       <>
-        <Card padding="sm">
+        <Card padding="sm" id={documentId}>
           <div className="flex items-center justify-between gap-4 w-full mb-3">
             {event.actor && event.actor !== "system" && (
               <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
@@ -84,7 +84,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   if (isUpdateEvent) {
     return (
       <>
-        <Card padding="sm">
+        <Card padding="sm" id={documentId}>
           <div className="flex items-center justify-between gap-4 w-full mb-3">
             {event.actor && event.actor !== "system" && (
               <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
@@ -141,7 +141,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   if (!documentData.title || !documentData.url) {
     return (
       <>
-        <Card padding="sm">
+        <Card padding="sm" id={documentId}>
           <div className="flex items-center justify-between gap-4 w-full mb-3">
             {event.actor && event.actor !== "system" && (
               <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
@@ -218,7 +218,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
 
   return (
     <>
-      <Card padding="sm">
+      <Card padding="sm" id={documentId}>
         <div className="flex items-center justify-between gap-4 w-full mb-3">
           {event.actor && event.actor !== "system" && (
             <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">

@@ -2,19 +2,18 @@
 
 Dit is een simpele front-end applicatie om te demonstreren hoe Server-Sent Events (SSE) zouden kunnen werken voor MijnZaken.
 
-
 Dit project bevat:
 
-- **Front-end voor MijnZaken**, met real-time updates, commenting, planningen, acties en overzichtweergave.
-- **Back-end** met een `/events` endpoint en `/schemas` endpoints voor JSON schema serving.
-- **AsyncAPI specificatie** voor het protocol op basis van CloudEvents + SSE, met daarin schemas voor de verschillende berichten.
+- **Front-end voor MijnZaken**, met real-time updates, commenting, planningen, acties, schema-driven formulieren, en een zoekfunctionaliteit. Geschreven in React met Vite.
+- **Back-end** met een `/events` endpoint en `/schemas` endpoints voor JSON schema serving. Geschreven in Rust met Axum en Tokio.
+- **AsyncAPI specificatie** voor het protocol op basis van CloudEvents + SSE, met daarin schemas voor de verschillende berichten. Deze wordt gegenereerd door het back-end.
 
 ![Screenshot](screenshot.png)
 
 ## Lokaal draaien
 
 ```sh
-# Zorg dat pnpm, node, cargo, en shuttle zijn geinstalleerd
+# Zorg dat node, pnpm en cargo zijn geinstalleerd
 
 # Installeer de vereiste dependencies
 pnpm i
@@ -26,7 +25,7 @@ pnpm run generate-all
 pnpm run dev
 
 # Start de back-end applicatie
-shuttle run
+cargo run
 
 # Start de AsyncAPI portal voor de specificaties
 pnpm run spec

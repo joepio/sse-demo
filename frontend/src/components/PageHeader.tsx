@@ -1,5 +1,6 @@
 import React from "react";
 import NotificationBell from "./NotificationBell";
+import SearchBar from "./SearchBar";
 import { Link } from "react-router-dom";
 
 interface PageHeaderProps {
@@ -16,9 +17,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 gap-4">
           {/* Left side - Logo/Title area */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <div className="flex-shrink-0">
               <h1
                 className="text-xl font-bold"
@@ -41,7 +42,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
                 </Link>
               </h1>
             </div>
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
               <div
                 className="text-sm"
                 style={{ color: "var(--text-tertiary)" }}
@@ -51,11 +52,14 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
             </div>
           </div>
 
+          {/* Center - Search Bar */}
+          <SearchBar />
+
           {/* Right side - Navigation and notifications */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <Link
               to="/api-docs"
-              className="text-sm font-medium"
+              className="hidden sm:block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
               API Docs

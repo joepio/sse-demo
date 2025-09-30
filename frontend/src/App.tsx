@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import ApiDocumentationView from "./components/documentation/ApiDocumentationView";
 import PageHeader from "./components/PageHeader";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
+import { SearchProvider } from "./contexts/SearchContext";
 import CreateIssueForm from "./components/CreateIssueForm";
 import IssueTimeline from "./components/IssueTimeline";
 import Modal from "./components/Modal";
@@ -90,14 +91,13 @@ const ZakenDashboard: React.FC = () => {
           style={{ color: "var(--logo-primary)" }}
           data-testid="main-heading"
         >
-          Zaken
+          MijnZaken
         </h1>
         <p
           className="text-base lg:text-lg xl:text-xl max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto"
           style={{ color: "var(--text-secondary)" }}
         >
-          Een simpel zaaksysteem met realtime updates en interactieve
-          visualisaties
+          Een simpel zaaksysteem met realtime updates.
         </p>
       </div>
 
@@ -232,13 +232,15 @@ const ZakenDashboard: React.FC = () => {
 const App: React.FC = () => {
   return (
     <SSEProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<ZakenDashboard />} />
-          <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
-          <Route path="/api-docs" element={<ApiDocumentationView />} />
-        </Routes>
-      </Router>
+      <SearchProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<ZakenDashboard />} />
+            <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
+            <Route path="/api-docs" element={<ApiDocumentationView />} />
+          </Routes>
+        </Router>
+      </SearchProvider>
     </SSEProvider>
   );
 };

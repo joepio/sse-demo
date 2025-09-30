@@ -25,6 +25,7 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@uiw/react-json-view": "^1.12.2",
+    "minisearch": "^7.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1"
