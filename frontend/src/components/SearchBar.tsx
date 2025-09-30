@@ -55,7 +55,8 @@ const SearchBar: React.FC = () => {
     // Find the subject (zaakId) for this item
     const itemEvent = events.find((event) => {
       const data = event.data as Record<string, unknown> | undefined;
-      return data?.item_id === itemId;
+      // Support both new (resource_id) and old (item_id) field names
+      return (data?.resource_id === itemId || data?.item_id === itemId);
     });
 
     const zaakId = itemEvent?.subject;

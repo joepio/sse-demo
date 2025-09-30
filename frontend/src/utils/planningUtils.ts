@@ -5,28 +5,33 @@ import type { CloudEvent, PlanningMoment, ExtendedPlanning } from "../types";
  */
 export const getPlanningForIssue = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): Map<string, ExtendedPlanning> => {
   const planningMap = new Map<string, ExtendedPlanning>();
 
-  // Filter events for this issue and planning-related events
+  // Filter json.commit events for planning
   const relevantEvents = events.filter(
     (event) =>
       event.subject === issueId &&
-      (event.type === "item.created" || event.type === "item.updated") &&
+      event.type === "json.commit" &&
       event.data &&
       typeof event.data === "object" &&
       event.data !== null &&
-      (event.data as Record<string, unknown>).item_type === "planning",
+      ((event.data as Record<string, unknown>).schema as string)?.endsWith(
+        "/Planning"
+      )
   );
 
   for (const event of relevantEvents) {
     const data = event.data as Record<string, unknown>;
-    const planningId = String(data.item_id);
+    const planningId = String(data.resource_id || data.item_id);
 
-    if (event.type === "item.created") {
+    const resourceData = data.resource_data || data.item_data;
+    const patch = data.patch;
+
+    if (resourceData) {
       // Create new planning
-      const itemData = (data.item_data || {}) as Record<string, unknown>;
+      const itemData = resourceData as Record<string, unknown>;
       planningMap.set(planningId, {
         id: planningId,
         title: String(itemData.title) || "",
@@ -35,22 +40,29 @@ export const getPlanningForIssue = (
         actor: String(data.actor) || "system",
         timestamp: event.time || new Date().toISOString(),
       } as ExtendedPlanning);
-    } else if (event.type === "item.updated") {
+    } else if (patch) {
       // Update existing planning
       const existingPlanning = planningMap.get(planningId);
       if (existingPlanning) {
-        const patch = (data.patch || {}) as Record<string, unknown>;
+        const patchData = patch as Record<string, unknown>;
+
+        // Check for deletion
+        if (patchData._deleted === true) {
+          planningMap.delete(planningId);
+          continue;
+        }
+
         const updatedPlanning = { ...existingPlanning };
 
         // Apply patch fields
-        if (patch.title) {
-          updatedPlanning.title = String(patch.title);
+        if (patchData.title) {
+          updatedPlanning.title = String(patchData.title);
         }
-        if (patch.description) {
-          updatedPlanning.description = String(patch.description);
+        if (patchData.description) {
+          updatedPlanning.description = String(patchData.description);
         }
-        if (patch.moments) {
-          updatedPlanning.moments = patch.moments as PlanningMoment[];
+        if (patchData.moments) {
+          updatedPlanning.moments = patchData.moments as PlanningMoment[];
         }
 
         // Update timestamp
@@ -69,7 +81,7 @@ export const getPlanningForIssue = (
  */
 export const getLatestPlanningForIssue = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): ExtendedPlanning | null => {
   const planningItems = getPlanningForIssue(events, issueId);
   const planningArray = Array.from(planningItems.values());
@@ -77,11 +89,11 @@ export const getLatestPlanningForIssue = (
   // Find planning with current or planned items (not all completed)
   const activePlanning = planningArray
     .filter((planning) =>
-      planning.moments.some((moment) => moment.status !== "completed"),
+      planning.moments.some((moment) => moment.status !== "completed")
     )
     .sort(
       (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
 
   return activePlanning.length > 0 ? activePlanning[0] : null;
@@ -91,7 +103,7 @@ export const getLatestPlanningForIssue = (
  * Get progress information for a planning
  */
 export const getPlanningProgress = (
-  planning: ExtendedPlanning,
+  planning: ExtendedPlanning
 ): {
   completed: number;
   current: number;
@@ -101,7 +113,7 @@ export const getPlanningProgress = (
   nextMoment: PlanningMoment | null;
 } => {
   const completed = planning.moments.filter(
-    (m) => m.status === "completed",
+    (m) => m.status === "completed"
   ).length;
   const current = planning.moments.filter((m) => m.status === "current").length;
   const planned = planning.moments.filter((m) => m.status === "planned").length;
@@ -133,10 +145,10 @@ export const isPlanningActive = (planning: ExtendedPlanning): boolean => {
  * Sort planning moments by date
  */
 export const sortPlanningMoments = (
-  moments: PlanningMoment[],
+  moments: PlanningMoment[]
 ): PlanningMoment[] => {
   return [...moments].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 };
 
@@ -144,7 +156,7 @@ export const sortPlanningMoments = (
  * Get formatted status text for a planning moment
  */
 export const getPlanningMomentStatusText = (
-  status: "completed" | "current" | "planned",
+  status: "completed" | "current" | "planned"
 ): string => {
   switch (status) {
     case "completed":
@@ -162,12 +174,12 @@ export const getPlanningMomentStatusText = (
  * Calculate planning completion percentage
  */
 export const getPlanningCompletionPercentage = (
-  planning: ExtendedPlanning,
+  planning: ExtendedPlanning
 ): number => {
   if (planning.moments.length === 0) return 0;
 
   const completedCount = planning.moments.filter(
-    (m) => m.status === "completed",
+    (m) => m.status === "completed"
   ).length;
   return Math.round((completedCount / planning.moments.length) * 100);
 };
@@ -178,7 +190,7 @@ export const getPlanningCompletionPercentage = (
  */
 export const shouldShowPlanningStatus = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): boolean => {
   const latestPlanning = getLatestPlanningForIssue(events, issueId);
 

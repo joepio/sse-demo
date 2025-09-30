@@ -38,7 +38,7 @@ event: snapshot
 data: [{"specversion":"1.0",...}, ...]
 
 event: delta
-data: {"specversion":"1.0","type":"item.updated",...}`}</pre>
+data: {"specversion":"1.0","type":"json.commit",...}`}</pre>
           </div>
         </div>
 
@@ -78,21 +78,16 @@ const handleNewEvent = (cloudEvent) => {
   const { type, subject, data } = cloudEvent;
 
   switch (type) {
-    case 'item.created':
-      if (data.item_type === 'issue') {
-        addIssue(subject, data.item_data);
-      }
-      break;
-
-    case 'item.updated':
-      if (data.item_type === 'issue') {
-        updateIssue(subject, data.patch);
-      }
-      break;
-
-    case 'item.deleted':
-      if (data.item_type === 'issue') {
-        removeIssue(subject);
+    case 'json.commit':
+      const schema = data.schema;
+      if (schema?.endsWith('/Issue')) {
+        if (data.resource_data) {
+          addIssue(subject, data.resource_data);
+        } else if (data.patch?._deleted) {
+          removeIssue(subject);
+        } else if (data.patch) {
+          updateIssue(subject, data.patch);
+        }
       }
       break;
   }

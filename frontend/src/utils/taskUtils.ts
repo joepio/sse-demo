@@ -5,16 +5,18 @@ import type { CloudEvent, ExtendedTask, TimelineItemData } from "../types";
  */
 export const getTasksForIssue = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): ExtendedTask[] => {
-  // Get both created and updated task events
+  // Get json.commit events for tasks
   const taskEvents = events.filter(
     (event) =>
-      (event.type === "item.created" || event.type === "item.updated") &&
+      event.type === "json.commit" &&
       event.subject === issueId &&
       event.data &&
       typeof event.data === "object" &&
-      (event.data as Record<string, unknown>).item_type === "task",
+      ((event.data as Record<string, unknown>).schema as string)?.endsWith(
+        "/Task"
+      )
   );
 
   // Group events by task ID to handle updates
@@ -24,15 +26,19 @@ export const getTasksForIssue = (
   taskEvents
     .sort(
       (a, b) =>
-        new Date(a.time || "").getTime() - new Date(b.time || "").getTime(),
+        new Date(a.time || "").getTime() - new Date(b.time || "").getTime()
     )
     .forEach((event) => {
       const data = event.data as Record<string, unknown>;
-      const taskId = data.item_id as string;
+      const taskId = (data.resource_id || data.item_id) as string;
 
-      if (event.type === "item.created") {
+      // Check if this is a create (has resource_data) or update (has patch)
+      const resourceData = data.resource_data || data.item_data;
+      const patch = data.patch;
+
+      if (resourceData) {
         // Create new task
-        const itemData = data.item_data as TimelineItemData;
+        const itemData = resourceData as TimelineItemData;
         if (itemData.cta && itemData.description && itemData.url) {
           taskMap.set(taskId, {
             id: taskId,
@@ -45,37 +51,40 @@ export const getTasksForIssue = (
             timestamp: event.time || new Date().toISOString(),
           } as ExtendedTask);
         }
-      } else if (event.type === "item.updated") {
+      } else if (patch) {
         // Update existing task
         const existingTask = taskMap.get(taskId);
         if (existingTask) {
-          const patch = data.patch as Record<string, unknown>;
-          if (patch) {
-            // Apply patch to existing task
-            const updatedTask = { ...existingTask };
-            if (patch.completed !== undefined) {
-              updatedTask.completed = patch.completed as boolean;
-            }
-            if (patch.cta !== undefined) {
-              updatedTask.cta = patch.cta as string;
-            }
-            if (patch.description !== undefined) {
-              updatedTask.description = patch.description as string;
-            }
-            if (patch.url !== undefined) {
-              updatedTask.url = patch.url as string;
-            }
-            if (patch.deadline !== undefined) {
-              updatedTask.deadline = patch.deadline as string;
-            }
-            taskMap.set(taskId, updatedTask);
+          const patchData = patch as Record<string, unknown>;
+          // Check for deletion
+          if (patchData._deleted === true) {
+            taskMap.delete(taskId);
+            return;
           }
+          // Apply patch to existing task
+          const updatedTask = { ...existingTask };
+          if (patchData.completed !== undefined) {
+            updatedTask.completed = patchData.completed as boolean;
+          }
+          if (patchData.cta !== undefined) {
+            updatedTask.cta = patchData.cta as string;
+          }
+          if (patchData.description !== undefined) {
+            updatedTask.description = patchData.description as string;
+          }
+          if (patchData.url !== undefined) {
+            updatedTask.url = patchData.url as string;
+          }
+          if (patchData.deadline !== undefined) {
+            updatedTask.deadline = patchData.deadline as string;
+          }
+          taskMap.set(taskId, updatedTask);
         }
       }
     });
 
   return Array.from(taskMap.values()).sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 };
 
@@ -84,7 +93,7 @@ export const getTasksForIssue = (
  */
 export const getLatestTaskForIssue = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): ExtendedTask | null => {
   const tasks = getTasksForIssue(events, issueId);
   return tasks.find((task) => !task.completed) || null;
@@ -95,7 +104,7 @@ export const getLatestTaskForIssue = (
  */
 export const getUncompletedTasksForIssue = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): ExtendedTask[] => {
   const tasks = getTasksForIssue(events, issueId);
   return tasks.filter((task) => !task.completed);
@@ -109,17 +118,17 @@ export const createTaskCompletionEvent = (taskId: string): CloudEvent => {
     specversion: "1.0",
     id: `completion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     source: "frontend-user-action",
-    type: "item.created",
+    type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
+    dataschema: "http://localhost:8000/schemas/JSONCommit",
     data: {
-      item_type: "task_completed",
-      item_id: `completion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      schema: "http://localhost:8000/schemas/Task",
+      resource_id: taskId,
       actor: "user@gemeente.nl",
-      item_data: {
-        original_task_id: taskId,
+      patch: {
+        completed: true,
         completed_at: new Date().toISOString(),
-        message: "Taak voltooid",
       },
     },
   };
@@ -134,7 +143,7 @@ export const getTaskUrgencyClass = (deadline: string): string => {
   const deadlineDate = new Date(deadline);
   const now = new Date();
   const diffDays = Math.ceil(
-    (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
   );
 
   if (diffDays < 0) return "deadline-overdue";
@@ -172,7 +181,7 @@ export const formatTaskDeadline = (deadline: string): string => {
  */
 export const getTaskSummary = (
   events: CloudEvent[],
-  issueId: string,
+  issueId: string
 ): {
   hasTask: boolean;
   taskCount: number;

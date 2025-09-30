@@ -102,13 +102,14 @@ const createIssueEvent = (
   id: `event-${Date.now()}-${Math.random()}`,
   source: "test",
   subject: id,
-  type: "item.created",
+  type: "json.commit",
   time,
   datacontenttype: "application/json",
+  dataschema: "http://localhost:8000/schemas/JSONCommit",
   data: {
-    item_type: "issue",
-    item_id: id,
-    item_data: {
+    schema: "http://localhost:8000/schemas/Issue",
+    resource_id: id,
+    resource_data: {
       id,
       title,
       status: "open",
@@ -127,13 +128,14 @@ const createCommentEvent = (
   id: `comment-event-${Date.now()}-${Math.random()}`,
   source: "test",
   subject: issueId,
-  type: "item.created",
+  type: "json.commit",
   time,
   datacontenttype: "application/json",
+  dataschema: "http://localhost:8000/schemas/JSONCommit",
   data: {
-    item_type: "comment",
-    item_id: commentId,
-    item_data: {
+    schema: "http://localhost:8000/schemas/Comment",
+    resource_id: commentId,
+    resource_data: {
       id: commentId,
       content,
       author: "test@example.com",

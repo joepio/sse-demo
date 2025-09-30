@@ -16,7 +16,7 @@ interface CloudEventOptions {
 }
 
 /**
- * Generic function to create a CloudEvent for item creation
+ * Generic function to create a JSONCommit CloudEvent for resource creation
  * Takes the actual schema type as a parameter to ensure type safety
  */
 export function createItemCreatedEvent<T extends { id: string }>(
@@ -24,32 +24,32 @@ export function createItemCreatedEvent<T extends { id: string }>(
   itemData: T,
   options?: CloudEventOptions
 ): CloudEvent {
-  const itemId = itemData.id;
+  const resourceId = itemData.id;
 
   return {
     specversion: "1.0",
     id: generateUUID(),
     source: options?.source || "frontend-create",
-    subject: options?.subject || itemId,
-    type: "item.created",
+    subject: options?.subject || resourceId,
+    type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
+    dataschema: "http://localhost:8000/schemas/JSONCommit",
     data: {
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
-      item_id: itemId,
+      resource_id: resourceId,
       actor: options?.actor || "frontend-user",
-      item_data: itemData,
-      item_type: itemType, // Keep for backwards compatibility
+      resource_data: itemData,
     },
   };
 }
 
 /**
- * Generic function to create a CloudEvent for item updates
+ * Generic function to create a JSONCommit CloudEvent for resource updates
  */
 export function createItemUpdatedEvent<T = Record<string, unknown>>(
   itemType: ItemType,
-  itemId: string,
+  resourceId: string,
   patch: Partial<T>,
   options?: CloudEventOptions
 ): CloudEvent {
@@ -57,44 +57,45 @@ export function createItemUpdatedEvent<T = Record<string, unknown>>(
     specversion: "1.0",
     id: generateUUID(),
     source: options?.source || "frontend-edit",
-    subject: options?.subject || itemId,
-    type: "item.updated",
+    subject: options?.subject || resourceId,
+    type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
+    dataschema: "http://localhost:8000/schemas/JSONCommit",
     data: {
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
-      item_id: itemId,
+      resource_id: resourceId,
       actor: options?.actor || "frontend-user",
       patch,
-      item_type: itemType, // Keep for backwards compatibility
     },
   };
 }
 
 /**
- * Generic function to create a CloudEvent for item deletion
+ * Generic function to create a JSONCommit CloudEvent for resource deletion
+ * Deletion is represented as a patch with _deleted flag
  */
 export function createItemDeletedEvent(
   itemType: ItemType,
-  itemId: string,
+  resourceId: string,
   options?: CloudEventOptions
 ): CloudEvent {
   return {
     specversion: "1.0",
     id: generateUUID(),
     source: options?.source || "frontend-delete",
-    subject: options?.subject || itemId,
-    type: "item.deleted",
+    subject: options?.subject || resourceId,
+    type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
+    dataschema: "http://localhost:8000/schemas/JSONCommit",
     data: {
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
-      item_id: itemId,
+      resource_id: resourceId,
       actor: options?.actor || "frontend-user",
-      item_data: {
-        id: itemId,
+      patch: {
+        _deleted: true,
       },
-      item_type: itemType, // Keep for backwards compatibility,
     },
   };
 }

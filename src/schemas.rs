@@ -15,7 +15,7 @@ pub struct CloudEvent {
     /// Het onderwerp van de gebeurtenis, meestal de zaak ID waar het over gaat
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
-    /// Type gebeurtenis (bijv. "item.created", "item.updated", "item.deleted")
+    /// Type gebeurtenis. Hier is het altijd "json.commit"
     #[serde(rename = "type")]
     pub event_type: String,
     /// Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat)
@@ -41,29 +41,30 @@ pub struct CloudEvent {
     pub data: Option<Value>,
 }
 
-/// Gebeurtenis data voor zaakgerelateerde items (zaken, taken, reacties, planning)
+/// JSONCommit - Een commit van wijzigingen aan een JSON resource
+///
+/// Dit event type vertegenwoordigt elke wijziging aan een JSON resource, of het nu gaat om:
+/// - Het aanmaken van een nieuwe resource (resource_data bevat de volledige resource)
+/// - Het updaten van een bestaande resource (patch bevat de wijzigingen)
+/// - Het verwijderen van een resource (patch bevat null waarden of expliciete verwijdering)
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
-pub struct ItemEventData {
-    /// URL naar het JSON Schema dat de structuur van item_data beschrijft (bijv. "http://localhost:8000/schemas/Comment")
+pub struct JSONCommit {
+    /// URL naar het JSON Schema dat de structuur van de resource beschrijft (bijv. "http://localhost:8000/schemas/Comment")
     pub schema: String,
-    /// Unieke identificatie van het item waar de gebeurtenis over gaat
-    pub item_id: String,
+    /// Unieke identificatie van de resource waar deze commit over gaat
+    pub resource_id: String,
     /// Email van de persoon die de actie heeft uitgevoerd (bijv. "alice@gemeente.nl", "user@gemeente.nl")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actor: Option<String>,
-    /// Tijdstip waarop de gebeurtenis plaatsvond (ISO 8601 formaat: 2024-01-15T10:30:00Z)
+    /// Tijdstip waarop de commit plaatsvond (ISO 8601 formaat: 2024-01-15T10:30:00Z)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
-    /// Complete item gegevens (bij aanmaken of volledige updates)
+    /// Complete resource data (bij aanmaken van nieuwe resources)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub item_data: Option<Value>,
-    /// Alleen de gewijzigde velden (bij gedeeltelijke updates)
+    pub resource_data: Option<Value>,
+    /// JSON Merge Patch (RFC 7396) met wijzigingen (bij updates of verwijderingen)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub patch: Option<Value>,
-    /// Deprecated: gebruik 'schema' in plaats van 'item_type' voor toekomstige compatibiliteit
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[deprecated(note = "Use 'schema' field instead")]
-    pub item_type: Option<ItemType>,
 }
 
 /// Soorten items in het zaaksysteem
@@ -320,7 +321,7 @@ macro_rules! generate_schemas {
 pub fn get_all_schemas() -> HashMap<String, Value> {
     generate_schemas![
         CloudEvent,
-        ItemEventData,
+        JSONCommit,
         ItemType,
         Document,
         Issue,
@@ -494,7 +495,7 @@ mod tests {
         // Verify all main types are present
         let expected_schemas = vec![
             "CloudEvent",
-            "ItemEventData",
+            "JSONCommit",
             "ItemType",
             "Document",
             "Issue",

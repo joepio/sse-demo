@@ -3,6 +3,7 @@ import PageHeader from "../PageHeader";
 
 import DocumentationLink from "./DocumentationLink";
 import TableOfContents from "./TableOfContents";
+import JSONCommitSection from "./sections/JSONCommitSection";
 import WhyCloudEventsSection from "./sections/WhyCloudEventsSection";
 import ThreeLevelsSection from "./sections/ThreeLevelsSection";
 import EventProducersSection from "./sections/EventProducersSection";
@@ -44,6 +45,7 @@ const ApiDocumentationView: React.FC = () => {
           {/* Table of Contents */}
           <TableOfContents
             items={[
+              { id: "json-commit", title: "JSONCommit - Één Event Type" },
               { id: "waarom-cloudevents", title: "Waarom CloudEvents?" },
               { id: "drie-niveaus", title: "De 3 Niveaus van Event Structuur" },
               { id: "events-versturen", title: "Events Versturen (Producers)" },
@@ -51,6 +53,7 @@ const ApiDocumentationView: React.FC = () => {
             ]}
           />
 
+          <JSONCommitSection />
           <WhyCloudEventsSection />
           <ThreeLevelsSection />
           <EventProducersSection />

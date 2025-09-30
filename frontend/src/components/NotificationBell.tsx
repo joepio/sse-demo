@@ -36,17 +36,27 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
       if (issue && !activitiesByIssue.has(issueId)) {
         let activityDescription = "Activiteit";
 
-        if (event.type === "item.created" && event.data) {
+        if (event.type === "json.commit" && event.data) {
           const data = event.data as any;
-          if (data.item_type === "comment") {
-            activityDescription = "Nieuwe reactie";
-          } else if (data.item_type === "task") {
-            activityDescription = "Nieuwe taak";
-          } else if (data.item_type === "issue") {
-            activityDescription = "Nieuwe zaak";
+          const schema = data.schema as string;
+          const hasResourceData = !!data.resource_data || !!data.item_data;
+          const hasPatch = !!data.patch;
+
+          if (hasResourceData) {
+            // New resource created
+            if (schema?.endsWith("/Comment")) {
+              activityDescription = "Nieuwe reactie";
+            } else if (schema?.endsWith("/Task")) {
+              activityDescription = "Nieuwe taak";
+            } else if (schema?.endsWith("/Issue")) {
+              activityDescription = "Nieuwe zaak";
+            } else {
+              activityDescription = "Nieuw item";
+            }
+          } else if (hasPatch) {
+            // Resource updated
+            activityDescription = "Update";
           }
-        } else if (event.type === "item.updated") {
-          activityDescription = "Update";
         }
 
         activitiesByIssue.set(issueId, {

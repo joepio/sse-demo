@@ -71,7 +71,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
     test("renders initial issues on the home page", async ({ page }) => {
       // Should have main heading
       await expect(page.locator('[data-testid="main-heading"]')).toHaveText(
-        "Zaken"
+        "MijnZaken"
       );
 
       // Should have issues displayed
@@ -314,7 +314,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       // Should be on home page initially
       await expect(page).toHaveURL("/");
       await expect(page.locator('[data-testid="main-heading"]')).toHaveText(
-        "Zaken"
+        "MijnZaken"
       );
 
       // Navigate to an issue
@@ -335,7 +335,7 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       await page.goto("/");
       await expect(page).toHaveURL("/");
       await expect(page.locator('[data-testid="main-heading"]')).toHaveText(
-        "Zaken"
+        "MijnZaken"
       );
     });
 
@@ -402,6 +402,60 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       await expect(
         page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
+    });
+
+    test("can search for comments and navigate to them", async ({ page }) => {
+      // Navigate to an issue
+      await navigateToFirstIssue(page);
+
+      // Add a unique comment
+      const testComment = `Searchable comment - ${generateTestId()}`;
+      await page
+        .locator('textarea[placeholder="Voeg een opmerking toe..."]')
+        .fill(testComment);
+      await page.locator('button:has-text("Verzenden")').click();
+
+      // Wait for comment to appear in timeline
+      const timelineArea = page
+        .locator("text=TIJDLIJN")
+        .locator("..")
+        .locator("..");
+      await expect(
+        timelineArea.locator(`:has-text("${testComment}")`).first()
+      ).toBeVisible({ timeout: 10000 });
+
+      // Go back to home page
+      await page.goto("/");
+      await waitForConnection(page);
+
+      // Use search to find the comment
+      const searchInput = page.locator('input[placeholder*="Zoek"]');
+      await expect(searchInput).toBeVisible();
+
+      // Type a portion of the search query to make it unique
+      const searchTerm = testComment.split(" ")[0]; // Use first word
+      await searchInput.fill(searchTerm);
+
+      // Wait for search results to appear
+      await page.waitForTimeout(1000); // Give MiniSearch time to index and search
+
+      // Press Enter to navigate to the first result
+      await searchInput.press("Enter");
+
+      // Should navigate to the issue page
+      await page.waitForTimeout(1000); // Wait for navigation
+      await expect(page).toHaveURL(/\/zaak\//, { timeout: 5000 });
+
+      // Comment should be visible on screen
+      await expect(
+        page.locator(`:has-text("${testComment}")`).first()
+      ).toBeVisible({ timeout: 10000 });
+
+      // Verify we're on the correct page by checking the comment is in viewport
+      const commentElement = page
+        .locator(`:has-text("${testComment}")`)
+        .first();
+      await expect(commentElement).toBeInViewport({ timeout: 5000 });
     });
   });
 

@@ -33,7 +33,7 @@ Content-Type: application/json
   "id": "evt-${Date.now()}",
   "source": "mijn-applicatie",
   "subject": "zaak-123",
-  "type": "item.created",
+  "type": "json.commit",
   "time": "2025-01-15T10:30:00Z",
   "datacontenttype": "application/json",
   "data": {
@@ -62,7 +62,7 @@ Content-Type: application/json
                     color: "var(--text-primary)",
                   }}
                 >
-                  type: "item.created"
+                  type: "json.commit"
                 </code>
               </div>
               <div>
@@ -89,7 +89,7 @@ Content-Type: application/json
                     color: "var(--text-primary)",
                   }}
                 >
-                  type: "item.updated"
+                  type: "json.commit"
                 </code>
               </div>
               <div>
@@ -116,7 +116,7 @@ Content-Type: application/json
                     color: "var(--text-primary)",
                   }}
                 >
-                  type: "item.deleted"
+                  type: "json.commit"
                 </code>
               </div>
               <div>
@@ -166,7 +166,7 @@ await sendEvent({
   id: \`evt-\${Date.now()}\`,
   source: "frontend-app",
   subject: "zaak-123",
-  type: "item.updated",
+  type: "json.commit",
   time: new Date().toISOString(),
   data: {
     item_type: "issue",

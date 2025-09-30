@@ -26,7 +26,7 @@ describe("cloudEvents", () => {
   });
 
   describe("createItemCreatedEvent", () => {
-    it("creates a valid item.created CloudEvent with a Task schema", () => {
+    it("creates a valid json.commit CloudEvent with a Task schema", () => {
       const task: Task = {
         id: "task-1",
         cta: "Test Task",
@@ -44,14 +44,15 @@ describe("cloudEvents", () => {
         id: "test-uuid-123",
         source: "frontend-create",
         subject: "task-1",
-        type: "item.created",
+        type: "json.commit",
         time: "2025-01-01T00:00:00.000Z",
         datacontenttype: "application/json",
+        dataschema: "http://localhost:8000/schemas/JSONCommit",
         data: {
-          item_type: "task",
-          item_id: "task-1",
+          schema: "http://localhost:8000/schemas/Task",
+          resource_id: "task-1",
           actor: "frontend-user",
-          item_data: task,
+          resource_data: task,
         },
       });
     });
@@ -78,7 +79,7 @@ describe("cloudEvents", () => {
   });
 
   describe("createItemUpdatedEvent", () => {
-    it("creates a valid item.updated CloudEvent with a partial Task schema", () => {
+    it("creates a valid json.commit CloudEvent with a partial Task schema", () => {
       const patch: Partial<Task> = {
         completed: true,
       };
@@ -90,12 +91,13 @@ describe("cloudEvents", () => {
         id: "test-uuid-123",
         source: "frontend-edit",
         subject: "task-1",
-        type: "item.updated",
+        type: "json.commit",
         time: "2025-01-01T00:00:00.000Z",
         datacontenttype: "application/json",
+        dataschema: "http://localhost:8000/schemas/JSONCommit",
         data: {
-          item_type: "task",
-          item_id: "task-1",
+          schema: "http://localhost:8000/schemas/Task",
+          resource_id: "task-1",
           actor: "frontend-user",
           patch: {
             completed: true,
@@ -106,7 +108,7 @@ describe("cloudEvents", () => {
   });
 
   describe("createItemDeletedEvent", () => {
-    it("creates a valid item.deleted CloudEvent", () => {
+    it("creates a valid json.commit CloudEvent with _deleted flag", () => {
       const event = createItemDeletedEvent("task", "task-1");
 
       expect(event).toEqual({
@@ -114,15 +116,16 @@ describe("cloudEvents", () => {
         id: "test-uuid-123",
         source: "frontend-delete",
         subject: "task-1",
-        type: "item.deleted",
+        type: "json.commit",
         time: "2025-01-01T00:00:00.000Z",
         datacontenttype: "application/json",
+        dataschema: "http://localhost:8000/schemas/JSONCommit",
         data: {
-          item_type: "task",
-          item_id: "task-1",
+          schema: "http://localhost:8000/schemas/Task",
+          resource_id: "task-1",
           actor: "frontend-user",
-          item_data: {
-            id: "task-1",
+          patch: {
+            _deleted: true,
           },
         },
       });
@@ -143,9 +146,9 @@ describe("cloudEvents", () => {
 
       const event = createIssueCreatedEvent(issue);
 
-      expect(event.type).toBe("item.created");
-      expect(event.data?.item_type).toBe("issue");
-      expect(event.data?.item_data).toEqual(issue);
+      expect(event.type).toBe("json.commit");
+      expect(event.data?.schema).toBe("http://localhost:8000/schemas/Issue");
+      expect(event.data?.resource_data).toEqual(issue);
       expect(event.subject).toBe("issue-1");
     });
   });
@@ -162,11 +165,11 @@ describe("cloudEvents", () => {
 
       const event = createCommentCreatedEvent(comment, "zaak-1");
 
-      expect(event.type).toBe("item.created");
+      expect(event.type).toBe("json.commit");
       expect(event.source).toBe("frontend-demo-event");
       expect(event.subject).toBe("zaak-1");
-      expect(event.data?.item_type).toBe("comment");
-      expect(event.data?.item_data).toEqual(comment);
+      expect(event.data?.schema).toBe("http://localhost:8000/schemas/Comment");
+      expect(event.data?.resource_data).toEqual(comment);
     });
 
     it("accepts custom options", () => {
@@ -183,7 +186,7 @@ describe("cloudEvents", () => {
       });
 
       expect(event.data?.actor).toBe("admin");
-      expect(event.data?.item_data).toEqual(comment);
+      expect(event.data?.resource_data).toEqual(comment);
     });
   });
 
@@ -201,9 +204,9 @@ describe("cloudEvents", () => {
 
       const event = createTaskCreatedEvent(task, "zaak-1");
 
-      expect(event.type).toBe("item.created");
-      expect(event.data?.item_type).toBe("task");
-      expect(event.data?.item_data).toEqual(task);
+      expect(event.type).toBe("json.commit");
+      expect(event.data?.schema).toBe("http://localhost:8000/schemas/Task");
+      expect(event.data?.resource_data).toEqual(task);
       expect(event.subject).toBe("zaak-1");
     });
   });

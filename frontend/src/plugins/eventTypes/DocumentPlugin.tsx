@@ -16,12 +16,21 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   const [showEventModal, setShowEventModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const eventData = data as Record<string, unknown>;
-  const documentId = eventData.item_id as string;
-  const isUpdateEvent = event.originalEvent.type.includes("updated");
-  const isDeleteEvent = event.originalEvent.type.includes("deleted");
+
+  // Support both new (resource_id) and old (item_id) field names
+  const documentId = (eventData.resource_id || eventData.item_id) as string;
+
+  const isUpdateEvent = event.originalEvent.type.includes("updated") ||
+                        (event.originalEvent.type === "json.commit" && !!eventData.patch && !eventData.resource_data);
+  const isDeleteEvent = event.originalEvent.type.includes("deleted") ||
+                        (eventData.patch && typeof eventData.patch === "object" &&
+                         (eventData.patch as Record<string, unknown>)._deleted === true);
 
   // Get the current state of the document from the items store
-  const documentData = (items[documentId] || eventData.item_data || eventData) as Partial<Document>;
+  const documentData = (items[documentId] ||
+                       eventData.resource_data ||
+                       eventData.item_data ||
+                       eventData) as Partial<Document>;
 
   // Handle delete events
   if (isDeleteEvent) {

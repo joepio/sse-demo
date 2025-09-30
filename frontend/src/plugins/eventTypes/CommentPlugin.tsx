@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { EventPluginProps } from "./types";
+import type { Comment } from "../../types";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
 import SchemaEditForm from "../../components/SchemaEditForm";
@@ -16,13 +17,12 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
   const [showEditModal, setShowEditModal] = useState(false);
 
   // Get the current state of the comment from the items store
-  const itemId = (data.item_id as string) || "";
-  const commentData = items[itemId] || data.item_data || data;
-
-  const { content, mentions } = commentData as {
-    content?: unknown;
-    mentions?: unknown[];
-  };
+  // Support both new (resource_id) and old (item_id) field names
+  const itemId = (data.resource_id || data.item_id) as string;
+  const comment = (items[itemId] ||
+    data.resource_data ||
+    data.item_data ||
+    data) as unknown as Comment;
 
   return (
     <>
@@ -57,15 +57,15 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
             className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
             style={{ color: "var(--text-primary)" }}
           >
-            {typeof content === "string" ? content : "Geen inhoud"}
+            {comment.content || "Geen inhoud"}
           </p>
-          {Array.isArray(mentions) && mentions.length > 0 && (
+          {comment.mentions && comment.mentions.length > 0 && (
             <div className="mt-2">
               <small
                 className="text-xs sm:text-sm lg:text-sm xl:text-base"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Vermeldingen: {mentions.map(String).join(", ")}
+                Vermeldingen: {comment.mentions.join(", ")}
               </small>
             </div>
           )}
@@ -77,7 +77,7 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
         onClose={() => setShowEditModal(false)}
         itemType="comment"
         itemId={itemId || event.id}
-        initialData={commentData}
+        initialData={comment as unknown as Record<string, unknown>}
         onSubmit={sendEvent}
         zaakId={event.originalEvent.subject || ""}
       />

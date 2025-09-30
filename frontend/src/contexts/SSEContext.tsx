@@ -118,38 +118,46 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
       if (!cloudEvent.data) return;
 
       const data = cloudEvent.data as Record<string, unknown>;
-      const itemId = data.item_id as string;
-      if (!itemId) return;
+
+      // Support both new field names (resource_id, resource_data) and old ones (item_id, item_data)
+      const resourceId = (data.resource_id || data.item_id) as string;
+      if (!resourceId) return;
 
       setItems((prevItems) => {
         const newItems = { ...prevItems };
 
-        switch (cloudEvent.type) {
-          case "item.created":
-            // Store the full item data
-            if (data.item_data) {
-              newItems[itemId] = data.item_data as Record<string, unknown>;
-            }
-            break;
+        // Handle both old event types and new json.commit type
+        if (cloudEvent.type === "json.commit") {
 
-          case "item.updated":
-            // Apply patch to existing item
-            if (data.patch && newItems[itemId]) {
+          const resourceData = data.resource_data || data.item_data;
+          const patch = data.patch;
+
+          // If resource_data exists, it's a create (full resource)
+          if (resourceData) {
+            newItems[resourceId] = resourceData as Record<string, unknown>;
+          }
+          // If patch exists, apply it to existing resource or create new one
+          else if (patch) {
+            if (newItems[resourceId]) {
               const patched = applyMergePatch(
-                newItems[itemId],
-                data.patch,
+                newItems[resourceId],
+                patch,
               ) as Record<string, unknown>;
-              newItems[itemId] = patched;
-            } else if (data.patch) {
-              // Item doesn't exist yet, create it with just the patch data
-              newItems[itemId] = data.patch as Record<string, unknown>;
-            }
-            break;
 
-          case "item.deleted":
-            // Remove the item
-            delete newItems[itemId];
-            break;
+              // Check if this is a deletion (has _deleted flag)
+              if (patched._deleted === true) {
+                delete newItems[resourceId];
+              } else {
+                newItems[resourceId] = patched;
+              }
+            } else {
+              // Resource doesn't exist yet, create it with the patch data
+              const patchData = patch as Record<string, unknown>;
+              if (patchData._deleted !== true) {
+                newItems[resourceId] = patchData;
+              }
+            }
+          }
         }
 
         return newItems;
@@ -182,31 +190,33 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         // Process all items into the unified store
         if (event.data) {
           const data = event.data as Record<string, unknown>;
-          const itemId = data.item_id as string;
+          const itemId = (data.resource_id || data.item_id) as string;
 
           if (itemId) {
-            switch (event.type) {
-              case "item.created":
-                if (data.item_data) {
-                  initialItems[itemId] = data.item_data as Record<string, unknown>;
-                }
-                break;
+            // Handle both new json.commit and old event types for backwards compatibility
+            const resourceData = data.resource_data || data.item_data;
+            const patch = data.patch;
 
-              case "item.updated":
-                if (data.patch && initialItems[itemId]) {
-                  const patched = applyMergePatch(
-                    initialItems[itemId],
-                    data.patch,
-                  ) as Record<string, unknown>;
-                  initialItems[itemId] = patched;
-                } else if (data.patch) {
-                  initialItems[itemId] = data.patch as Record<string, unknown>;
-                }
-                break;
+            if (resourceData) {
+              // Create or replace item with full resource data
+              initialItems[itemId] = resourceData as Record<string, unknown>;
+            } else if (patch) {
+              // Apply patch to existing item
+              const patchData = patch as Record<string, unknown>;
 
-              case "item.deleted":
+              // Check for deletion
+              if (patchData._deleted === true) {
                 delete initialItems[itemId];
-                break;
+              } else if (initialItems[itemId]) {
+                const patched = applyMergePatch(
+                  initialItems[itemId],
+                  patch,
+                ) as Record<string, unknown>;
+                initialItems[itemId] = patched;
+              } else {
+                // No existing item, create from patch data
+                initialItems[itemId] = patchData;
+              }
             }
           }
         }
@@ -253,14 +263,14 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           id: `update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           source: "frontend-user-action",
           subject: issueId,
-          type: "item.updated",
+          type: "json.commit",
           time: new Date().toISOString(),
           datacontenttype: "application/json",
+          dataschema: "http://localhost:8000/schemas/JSONCommit",
           data: {
             schema: "http://localhost:8000/schemas/Task",
-            item_id: taskId,
+            resource_id: taskId,
             actor: "user@gemeente.nl",
-            item_type: "task",  // Keep for backwards compatibility
             patch: {
               completed: true,
               completed_at: new Date().toISOString(),

@@ -224,10 +224,7 @@ async fn sse_handler(
 /// Validate a CloudEvent JSON
 fn validate_cloud_event(event_json: &Value) -> bool {
     if let Some(event_type) = event_json.get("type").and_then(|t| t.as_str()) {
-        matches!(
-            event_type,
-            "item.created" | "item.updated" | "item.deleted" | "system.reset"
-        )
+        matches!(event_type, "json.commit" | "system.reset")
     } else {
         false
     }
@@ -432,18 +429,18 @@ pub fn create_example_cloudevent() -> CloudEvent {
         event_type: "nl.gemeente.demo.zaken.zaak-status-gewijzigd".to_string(),
         time: Some(chrono::Utc::now().to_rfc3339()),
         datacontenttype: Some("application/json".to_string()),
-        dataschema: Some("http://localhost:8000/schemas/ItemEventData".to_string()),
+        dataschema: Some("http://localhost:8000/schemas/JSONCommit".to_string()),
         dataref: Some("http://localhost:8000/api/zaken/zaak-123".to_string()),
         sequence: Some("1".to_string()),
         sequencetype: Some("integer".to_string()),
         data: Some(serde_json::json!({
-            "item_type": "issue",
-            "item_id": "zaak-123",
-            "item_data": {
-                "status": "in_behandeling",
-                "assignee": "alice@gemeente.nl"
-            },
-            "itemschema": "http://localhost:8000/schemas/Issue"
+                "item_type": "issue",
+                "item_id": "zaak-123",
+                "item_data": {
+                    "status": "in_behandeling",
+                    "assignee": "alice@gemeente.nl"
+                },
+                "itemschema": "http://localhost:8000/schemas/Issue"
         })),
     }
 }
@@ -462,7 +459,7 @@ mod tests {
         assert!(event.source.contains("demo") || event.source == "server");
         assert!(matches!(
             event.event_type.as_str(),
-            "item.created" | "item.updated" | "item.deleted" | "system.reset"
+            "json.commit" | "system.reset"
         ));
         assert!(event.datacontenttype.is_some());
         assert!(event.data.is_some());
@@ -488,18 +485,21 @@ mod tests {
         let (events, _) = issues::generate_initial_data();
         let create_events: Vec<_> = events
             .iter()
-            .filter(|e| e["type"] == "item.created" && e["data"]["item_type"] == "issue")
+            .filter(|e| e["type"] == "json.commit" && e["data"]["resource_data"].is_object())
             .collect();
 
-        assert!(!create_events.is_empty());
+        assert!(
+            !create_events.is_empty(),
+            "Should have json.commit events with resource_data"
+        );
 
         let event = &create_events[0];
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
-        assert_eq!(event["type"], "item.created");
+        assert_eq!(event["type"], "json.commit");
         assert_eq!(event["datacontenttype"], "application/json");
-        assert!(event["data"]["item_data"]["title"].is_string());
-        assert!(event["data"]["item_data"]["id"].is_string());
+        assert!(event["data"]["resource_data"]["title"].is_string());
+        assert!(event["data"]["resource_data"]["id"].is_string());
     }
 
     #[test]
@@ -508,17 +508,20 @@ mod tests {
         let (events, _) = issues::generate_initial_data();
         let patch_events: Vec<_> = events
             .iter()
-            .filter(|e| e["type"] == "item.updated" && e["data"]["item_type"] == "issue")
+            .filter(|e| e["type"] == "json.commit" && e["data"]["patch"].is_object())
             .collect();
 
-        assert!(!patch_events.is_empty());
+        assert!(
+            !patch_events.is_empty(),
+            "Should have json.commit events with patches"
+        );
 
         let event = &patch_events[0];
         assert_eq!(event["specversion"], "1.0");
         assert!(!event["source"].as_str().unwrap().is_empty());
-        assert_eq!(event["type"], "item.updated");
+        assert_eq!(event["type"], "json.commit");
         assert_eq!(event["datacontenttype"], "application/json");
-        assert!(event["data"]["item_data"].is_object());
+        assert!(event["data"]["patch"].is_object());
     }
 
     #[test]
@@ -636,10 +639,10 @@ mod tests {
             "specversion": "1.0",
             "id": "test-123",
             "source": "test-source",
-            "type": "item.created",
+            "type": "json.commit",
             "data": {
-                "item_type": "issue",
-                "item_id": "issue-123"
+                "schema": "http://localhost:8000/schemas/Issue",
+                "resource_id": "issue-123"
             }
         });
 
@@ -647,7 +650,7 @@ mod tests {
 
         assert_eq!(
             event_with_data.get("dataschema").unwrap().as_str().unwrap(),
-            "http://localhost:8000/schemas/ItemEventData"
+            "http://localhost:8000/schemas/JSONCommit"
         );
 
         // Test event without data payload
@@ -674,10 +677,11 @@ mod tests {
             "specversion": "1.0",
             "id": "test-789",
             "source": "test-source",
-            "type": "item.updated",
-            "dataschema": "http://example.com/custom-schema",
+            "type": "json.commit",
+            "dataschema": "http://localhost:8000/schemas/JSONCommit",
             "data": {
-                "item_type": "task"
+                "schema": "http://localhost:8000/schemas/Task",
+                "resource_id": "task-789"
             }
         });
 
@@ -701,11 +705,11 @@ fn add_dataschema_to_event(event: &mut Value, base_url: &str) {
     if event.get("dataschema").is_none() {
         let schema_url = if event.get("data").is_some() {
             // The dataschema describes the structure of the "data" payload
-            // In our case, that's always ItemEventData which contains:
-            // - item_type
-            // - item_id
-            // - item_data (the actual item content)
-            format!("{}/schemas/ItemEventData", base_url)
+            // In our case, that's always JSONCommit which contains:
+            // - schema (URL to resource schema)
+            // - resource_id
+            // - resource_data (the actual resource content)
+            format!("{}/schemas/JSONCommit", base_url)
         } else {
             // No data payload, so no schema needed for data
             // Could potentially point to a minimal CloudEvent schema

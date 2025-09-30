@@ -168,7 +168,7 @@ const WhyCloudEventsSection: React.FC = () => {
             vaak gebouwd worden door alleen maar te luisteren naar
             bestaande events, zonder bestaande code te wijzigen. Een
             notification service hoeft alleen maar te luisteren naar{" "}
-            <code>item.created</code> events om meldingen te versturen.
+            <code>json.commit</code> events om meldingen te versturen.
           </p>
 
           <p className="mb-4">

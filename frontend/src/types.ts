@@ -6,7 +6,7 @@ import type {
   Comment as BaseComment,
   Planning as BasePlanning,
   PlanningMoment as BasePlanningMoment,
-  ItemEventData as BaseItemEventData,
+  JSONCommit as BaseJSONCommit,
   ItemType as BaseItemType,
   IssueStatus as BaseIssueStatus,
   PlanningStatus as BasePlanningStatus,
@@ -20,7 +20,7 @@ export type Task = BaseTask;
 export type Comment = BaseComment;
 export type Planning = BasePlanning;
 export type PlanningMoment = BasePlanningMoment;
-export type ItemEventData = BaseItemEventData;
+export type JSONCommit = BaseJSONCommit;
 export type ItemType = BaseItemType;
 export type IssueStatus = BaseIssueStatus;
 export type PlanningStatus = BasePlanningStatus;
@@ -73,11 +73,7 @@ export interface IssueDeleteData {
   reason: string;
 }
 
-export type EventType =
-  | "item.created"
-  | "item.updated"
-  | "item.deleted"
-  | "system.reset";
+export type EventType = "json.commit" | "system.reset";
 
 // Generic entity interface that all entities should extend
 export interface BaseEntity extends Record<string, unknown> {

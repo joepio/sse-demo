@@ -28,24 +28,24 @@ const ThreeLevelsSection: React.FC = () => {
   "id": "evt-123",                // Unieke event identifier
   "source": "zaaksysteem",        // Welk systeem het verstuurde
   "subject": "zaak-456",          // Welke zaak het betreft
-  "type": "item.updated",         // Type gebeurtenis (niveau 2)
+  "type": "json.commit",          // Type gebeurtenis (altijd json.commit)
   "time": "2025-01-15T10:30:00Z", // Wanneer het gebeurde
   "datacontenttype": "application/json",
-  "data": { ... }                 // De inhoud (niveau 2)
+  "data": { ... }                 // De inhoud (JSONCommit)
 }`}</pre>
           </div>
         </div>
 
-        {/* Level 2: Event Types */}
+        {/* Level 2: JSONCommit Operations */}
         <div className="pl-6">
           <h3 className="text-xl font-semibold mb-4">
-            ⚡ Niveau 2: Event Types
+            ⚡ Niveau 2: JSONCommit Operaties
           </h3>
-          <p className="mb-4">Er zijn 3 soorten gebeurtenissen:</p>
+          <p className="mb-4">Alle wijzigingen gebruiken hetzelfde event type (json.commit), met verschillende velden:</p>
 
           <div className="grid md:grid-cols-3 gap-4">
             <Card padding="md">
-              <h4 className="font-semibold mb-2">🆕 item.created</h4>
+              <h4 className="font-semibold mb-2">🆕 Aanmaken</h4>
               <p className="text-sm mb-2">Nieuw item aangemaakt</p>
               <code
                 className="text-xs px-2 py-1"
@@ -54,11 +54,11 @@ const ThreeLevelsSection: React.FC = () => {
                   color: "var(--text-primary)",
                 }}
               >
-                item_data: volledig object
+                resource_data: volledig object
               </code>
             </Card>
             <Card padding="md">
-              <h4 className="font-semibold mb-2">✏️ item.updated</h4>
+              <h4 className="font-semibold mb-2">✏️ Wijzigen</h4>
               <p className="text-sm mb-2">Bestaand item gewijzigd</p>
               <code
                 className="text-xs px-2 py-1"
@@ -71,7 +71,7 @@ const ThreeLevelsSection: React.FC = () => {
               </code>
             </Card>
             <Card padding="md">
-              <h4 className="font-semibold mb-2">🗑️ item.deleted</h4>
+              <h4 className="font-semibold mb-2">🗑️ Verwijderen</h4>
               <p className="text-sm mb-2">Item verwijderd</p>
               <code
                 className="text-xs px-2 py-1"
@@ -80,7 +80,7 @@ const ThreeLevelsSection: React.FC = () => {
                   color: "var(--text-primary)",
                 }}
               >
-                reason: waarom verwijderd
+                patch._deleted: true
               </code>
             </Card>
           </div>

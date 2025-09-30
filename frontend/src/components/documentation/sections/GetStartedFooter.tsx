@@ -8,7 +8,7 @@ const GetStartedFooter: React.FC = () => {
       <div className="space-y-2 text-sm">
         <p>
           <strong>Producers:</strong> Begin met het versturen van{" "}
-          <code>item.created</code> events naar <code>/events</code>
+          <code>json.commit</code> events naar <code>/events</code>
         </p>
         <p>
           <strong>Consumers:</strong> Open een SSE verbinding naar{" "}

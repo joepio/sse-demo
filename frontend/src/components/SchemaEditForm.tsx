@@ -25,7 +25,7 @@ const DEFAULT_LABELS: Record<string, string> = {
   planning: "Planning",
   document: "Document",
   cloudevent: "CloudEvent",
-  itemeventdata: "ItemEventData",
+  jsoncommit: "JSONCommit",
   issuestatus: "IssueStatus",
   planningstatus: "PlanningStatus",
   planningmoment: "PlanningMoment",

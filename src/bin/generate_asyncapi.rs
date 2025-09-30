@@ -249,28 +249,27 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7E8",
                 "source": "frontend-demo-event",
                 "subject": "1",
-                "type": "item.created",
+                "type": "json.commit",
                 "time": "2025-01-15T10:30:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
-                    "item_type": "issue",
-                    "item_id": "1",
+                    "schema": format!("{}/schemas/Issue", base_url),
+                    "resource_id": "1",
                     "actor": "user@gemeente.nl",
                     "timestamp": "2025-01-15T10:30:00Z",
-                    "item_data": {
+                    "resource_data": {
                         "id": "1",
                         "title": "Paspoort aanvragen",
                         "description": "Nieuwe paspoort aanvraag ingediend door burger",
                         "status": "open",
                         "assignee": "alice@gemeente.nl",
                         "created_at": "2025-01-15T10:30:00Z"
-                    },
-                    "itemschema": format!("{}/schemas/Issue", base_url)
+                    }
                 }
             }
         }),
@@ -282,24 +281,23 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7E9",
                 "source": "frontend-demo-event",
                 "subject": "1",
-                "type": "item.updated",
+                "type": "json.commit",
                 "time": "2025-01-15T11:15:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
-                    "item_type": "issue",
-                    "item_id": "1",
+                    "schema": format!("{}/schemas/Issue", base_url),
+                    "resource_id": "1",
                     "actor": "alice@gemeente.nl",
                     "timestamp": "2025-01-15T11:15:00Z",
                     "patch": {
                         "status": "in_progress",
                         "assignee": "bob@gemeente.nl"
-                    },
-                    "itemschema": format!("{}/schemas/Issue", base_url)
+                    }
                 }
             }
         }),
@@ -311,20 +309,23 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F0",
                 "source": "frontend-demo-event",
                 "subject": "1",
-                "type": "item.deleted",
+                "type": "json.commit",
                 "time": "2025-01-15T16:45:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
-                    "item_type": "issue",
-                    "item_id": "1",
+                    "schema": format!("{}/schemas/Issue", base_url),
+                    "resource_id": "1",
                     "actor": "admin@gemeente.nl",
                     "timestamp": "2025-01-15T16:45:00Z",
-                    "reason": "Duplicate case - merged with case #3"
+                    "patch": {
+                        "_deleted": true,
+                        "_deletion_reason": "Duplicate case - merged with case #3"
+                    }
                 }
             }
         }),
@@ -336,20 +337,20 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F1",
                 "source": "workflow-engine",
                 "subject": "1",
-                "type": "item.created",
+                "type": "json.commit",
                 "time": "2025-01-15T10:35:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "task",
                     "item_id": "task-1001",
                     "actor": "system@gemeente.nl",
                     "timestamp": "2025-01-15T10:35:00Z",
-                    "item_data": {
+                    "resource_data": {
                         "cta": "Documenten Controleren",
                         "description": "Controleer de ingediende paspoort aanvraag documenten",
                         "url": "/review/passport-1",
@@ -368,13 +369,13 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F2",
                 "source": "frontend-user-action",
                 "subject": "1",
-                "type": "item.updated",
+                "type": "json.commit",
                 "time": "2025-01-15T14:30:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "task",
@@ -397,20 +398,20 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F3",
                 "source": "document-service",
                 "subject": "1",
-                "type": "item.created",
+                "type": "json.commit",
                 "time": "2025-01-15T10:40:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "document",
                     "item_id": "doc-1001",
                     "actor": "user@gemeente.nl",
                     "timestamp": "2025-01-15T10:40:00Z",
-                    "item_data": {
+                    "resource_data": {
                         "title": "Paspoortfoto_Officieel.jpg",
                         "url": "https://example.com/documents/passport-photo-12345.jpg",
                         "size": 89765
@@ -427,20 +428,23 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F4",
                 "source": "document-service",
                 "subject": "1",
-                "type": "item.deleted",
+                "type": "json.commit",
                 "time": "2025-01-15T15:20:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
-                    "item_type": "document",
-                    "item_id": "doc-1001",
+                    "schema": format!("{}/schemas/Document", base_url),
+                    "resource_id": "doc-1001",
                     "actor": "alice@gemeente.nl",
                     "timestamp": "2025-01-15T15:20:00Z",
-                    "reason": "Incorrect document uploaded"
+                    "patch": {
+                        "_deleted": true,
+                        "_deletion_reason": "Incorrect document uploaded"
+                    }
                 }
             }
         }),
@@ -452,20 +456,20 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F5",
                 "source": "planning-service",
                 "subject": "2",
-                "type": "item.created",
+                "type": "json.commit",
                 "time": "2025-01-15T11:00:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "planning",
                     "item_id": "planning-2001",
                     "actor": "specialist@gemeente.nl",
                     "timestamp": "2025-01-15T11:00:00Z",
-                    "item_data": {
+                    "resource_data": {
                         "title": "Vergunningsprocedure",
                         "description": "Proces voor het verkrijgen van de benodigde vergunningen",
                         "moments": [
@@ -501,13 +505,13 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F6",
                 "source": "planning-service",
                 "subject": "2",
-                "type": "item.updated",
+                "type": "json.commit",
                 "time": "2025-01-15T16:00:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "planning",
@@ -542,20 +546,20 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F7",
                 "source": "frontend-demo-event",
                 "subject": "1",
-                "type": "item.created",
+                "type": "json.commit",
                 "time": "2025-01-15T14:20:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "comment",
                     "item_id": "comment-1001",
                     "actor": "alice@gemeente.nl",
                     "timestamp": "2025-01-15T14:20:00Z",
-                    "item_data": {
+                    "resource_data": {
                         "content": "Documenten zijn gecontroleerd en goedgekeurd. Zaak kan worden voortgezet.",
                         "parent_id": null,
                         "mentions": []
@@ -572,13 +576,13 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F8",
                 "source": "frontend-demo-event",
                 "subject": "1",
-                "type": "item.updated",
+                "type": "json.commit",
                 "time": "2025-01-15T14:25:00Z",
                 "datacontenttype": "application/json",
                 "dataschema": if embed_schemas {
-                    "#/components/schemas/ItemEventData".to_string()
+                    "#/components/schemas/JSONCommit".to_string()
                 } else {
-                    format!("{}/schemas/ItemEventData", base_url)
+                    format!("{}/schemas/JSONCommit", base_url)
                 },
                 "data": {
                     "item_type": "comment",
@@ -600,16 +604,18 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                 "id": "01HF7K8QZ9X1Y2Z3A4B5C6D7F9",
                 "source": "frontend-demo-event",
                 "subject": "1",
-                "type": "item.deleted",
+                "type": "json.commit",
                 "time": "2025-01-15T17:10:00Z",
                 "datacontenttype": "application/json",
-                "dataschema": format!("{}/schemas/ItemEventData", base_url),
+                "dataschema": format!("{}/schemas/JSONCommit", base_url),
                 "data": {
-                    "item_type": "comment",
-                    "item_id": "comment-1001",
+                    "schema": format!("{}/schemas/Comment", base_url),
+                    "resource_id": "comment-1001",
                     "actor": "alice@gemeente.nl",
                     "timestamp": "2025-01-15T17:10:00Z",
-                    "itemschema": format!("{}/schemas/Comment", base_url)
+                    "patch": {
+                        "_deleted": true
+                    }
                 }
             }
         }),

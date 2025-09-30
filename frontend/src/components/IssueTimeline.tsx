@@ -94,11 +94,9 @@ const IssueTimeline: React.FC = () => {
 
   // Determine timeline item type from CloudEvent
   const getTimelineItemType = (event: CloudEvent): TimelineItemType => {
-    // Check for item events
+    // Check for json.commit or item events
     if (
-      event.type === "item.created" ||
-      event.type === "item.updated" ||
-      event.type === "item.deleted"
+      event.type === "json.commit"
     ) {
       if (event.data && typeof event.data === "object" && event.data !== null) {
         const data = event.data as Record<string, unknown>;
@@ -116,19 +114,25 @@ const IssueTimeline: React.FC = () => {
           return "system_event";
         }
 
+        // Determine if this is a create, update, or delete based on presence of fields
+        const isCreate = !!data.resource_data || !!data.item_data;
+        const isUpdate = !!data.patch && !data.resource_data && !data.item_data;
+        const isDelete = data.patch && typeof data.patch === "object" &&
+                        (data.patch as Record<string, unknown>)._deleted === true;
+
         // Map item types to timeline types
         if (itemType === "issue") {
-          if (event.type === "item.created") return "issue_created";
-          if (event.type === "item.updated") return "issue_updated";
-          if (event.type === "item.deleted") return "issue_deleted";
+          if (isCreate) return "issue_created";
+          if (isUpdate) return "issue_updated";
+          if (isDelete) return "issue_deleted";
         }
 
-        // For updated/deleted events of other items, use system_event (renders as line)
-        if (event.type === "item.updated" || event.type === "item.deleted") {
+        // For updates/deletes of other items, use system_event (renders as line)
+        if (isUpdate || isDelete) {
           return "system_event";
         }
 
-        // For created events, use the item type (renders as card with full content)
+        // For creates, use the item type (renders as card with full content)
         return (itemType as TimelineItemType) || "system_event";
       }
     }

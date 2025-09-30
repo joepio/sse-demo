@@ -17,15 +17,13 @@ const DEFAULT_SOURCE: &str = "server-demo-event";
 const HOURS_BACK_FOR_INITIAL_DATA: i64 = 3;
 
 // Event type constants
-const EVENT_TYPE_ITEM_CREATED: &str = "item.created";
-const EVENT_TYPE_ITEM_UPDATED: &str = "item.updated";
-const EVENT_TYPE_ITEM_DELETED: &str = "item.deleted";
+const EVENT_TYPE_JSON_COMMIT: &str = "json.commit";
 
 // Content type constants
 const CONTENT_TYPE_JSON: &str = "application/json";
 
 // Event schema constants
-const ITEM_EVENT_DATA_SCHEMA: &str = "http://localhost:8000/schemas/ItemEventData";
+const JSON_COMMIT_SCHEMA: &str = "http://localhost:8000/schemas/JSONCommit";
 const ISSUE_SCHEMA: &str = "http://localhost:8000/schemas/Issue";
 const COMMENT_SCHEMA: &str = "http://localhost:8000/schemas/Comment";
 const TASK_SCHEMA: &str = "http://localhost:8000/schemas/Task";
@@ -184,8 +182,8 @@ fn generate_initial_issues(
 
         // Extract issue data and add to issues state
         if let Some(data) = create_event.get("data") {
-            if let Some(item_data) = data.get("item_data").cloned() {
-                issues.insert(issue_id.clone(), item_data);
+            if let Some(resource_data) = data.get("resource_data").cloned() {
+                issues.insert(issue_id.clone(), resource_data);
             }
         }
 
@@ -244,11 +242,9 @@ fn add_timeline_events(events: &mut Vec<Value>, base_time: chrono::DateTime<chro
     for operation in timeline_operations.iter() {
         let schema = get_schema_for_item_type(operation.item_type);
         let mut timeline_event = create_cloud_event(
-            EVENT_TYPE_ITEM_CREATED,
             DEFAULT_SOURCE,
             Some(operation.issue_id),
             CONTENT_TYPE_JSON,
-            operation.item_type,
             operation.item_id,
             Some(&operation.item_data),
             None,
@@ -272,11 +268,9 @@ fn add_planning_events(events: &mut Vec<Value>, base_time: chrono::DateTime<chro
     let planning_operations = get_planning_operations();
     for operation in planning_operations.iter() {
         let mut planning_event = create_cloud_event(
-            EVENT_TYPE_ITEM_CREATED,
             DEFAULT_SOURCE,
             Some(operation.issue_id),
             CONTENT_TYPE_JSON,
-            operation.item_type,
             operation.item_id,
             Some(&operation.item_data),
             None,
@@ -302,11 +296,9 @@ fn add_timeline_update_event(events: &mut Vec<Value>, base_time: chrono::DateTim
     });
 
     let mut timeline_update_event = create_cloud_event(
-        EVENT_TYPE_ITEM_UPDATED,
         DEFAULT_SOURCE,
         Some("1"),
         CONTENT_TYPE_JSON,
-        "comment",
         "comment-1001",
         None,
         Some(&patch_data),
@@ -333,7 +325,7 @@ fn get_schema_for_item_type(item_type: &str) -> &'static str {
         "status_change" => STATUS_CHANGE_SCHEMA,
         "planning" => PLANNING_SCHEMA,
         "document" => DOCUMENT_SCHEMA,
-        _ => ITEM_EVENT_DATA_SCHEMA,
+        _ => JSON_COMMIT_SCHEMA,
     }
 }
 
@@ -715,12 +707,9 @@ mod tests {
         assert!(event.get("type").is_some());
         assert!(event.get("time").is_some());
 
-        // Should generate one of the valid event types
+        // Should use the json.commit event type
         let event_type = event["type"].as_str().unwrap();
-        assert!(matches!(
-            event_type,
-            "item.created" | "item.updated" | "item.deleted"
-        ));
+        assert_eq!(event_type, "json.commit");
     }
 
     #[test]
@@ -753,20 +742,15 @@ pub fn generate_demo_event(existing_issues: &HashMap<String, Value>) -> Option<V
 }
 
 /// Helper function to create a base CloudEvent structure
-fn create_base_cloud_event(
-    event_type: &str,
-    source: &str,
-    subject: Option<&str>,
-    datacontenttype: &str,
-) -> Value {
+fn create_base_cloud_event(source: &str, subject: Option<&str>, datacontenttype: &str) -> Value {
     let mut event = json!({
         "specversion": "1.0",
         "id": Uuid::now_v7().to_string(),
-        "type": event_type,
+        "type": EVENT_TYPE_JSON_COMMIT,
         "source": source,
         "time": Utc::now().to_rfc3339(),
         "datacontenttype": datacontenttype,
-        "dataschema": ITEM_EVENT_DATA_SCHEMA
+        "dataschema": JSON_COMMIT_SCHEMA
     });
 
     if let Some(subj) = subject {
@@ -776,24 +760,20 @@ fn create_base_cloud_event(
     event
 }
 
-/// Helper function to create event data payload
-fn create_event_data(
-    item_type: &str,
-    item_id: &str,
-    item_data: Option<&Value>,
+/// Helper function to create JSONCommit data payload
+fn create_commit_data(
+    resource_id: &str,
+    resource_data: Option<&Value>,
     patch_data: Option<&Value>,
-    item_schema: &str,
+    resource_schema: &str,
 ) -> Value {
-    let schema_url = format!("http://localhost:8000/schemas/{}", item_schema);
-
     let mut data = json!({
-        "schema": schema_url,
-        "item_id": item_id,
-        "item_type": item_type  // Keep for backwards compatibility
+        "schema": resource_schema,
+        "resource_id": resource_id
     });
 
-    if let Some(item_data) = item_data {
-        data["item_data"] = item_data.clone();
+    if let Some(resource_data) = resource_data {
+        data["resource_data"] = resource_data.clone();
     }
 
     if let Some(patch_data) = patch_data {
@@ -803,20 +783,18 @@ fn create_event_data(
     data
 }
 
-/// Helper function to create a complete CloudEvent
+/// Helper function to create a complete CloudEvent with JSONCommit
 fn create_cloud_event(
-    event_type: &str,
     source: &str,
     subject: Option<&str>,
     data_content_type: &str,
-    item_type: &str,
-    item_id: &str,
-    item_data: Option<&Value>,
+    resource_id: &str,
+    resource_data: Option<&Value>,
     patch_data: Option<&Value>,
-    item_schema: &str,
+    resource_schema: &str,
 ) -> Value {
-    let mut event = create_base_cloud_event(event_type, source, subject, data_content_type);
-    let data = create_event_data(item_type, item_id, item_data, patch_data, item_schema);
+    let mut event = create_base_cloud_event(source, subject, data_content_type);
+    let data = create_commit_data(resource_id, resource_data, patch_data, resource_schema);
     event["data"] = data;
     event
 }
@@ -860,11 +838,9 @@ fn generate_random_patch_event(issue_id: &str) -> Value {
 
 fn generate_patch_event_with_data(issue_id: &str, patch_data: &Value) -> Value {
     create_cloud_event(
-        EVENT_TYPE_ITEM_UPDATED,
         DEFAULT_SOURCE,
         Some(issue_id),
         CONTENT_TYPE_JSON,
-        "issue",
         issue_id,
         None,
         Some(patch_data),
@@ -891,11 +867,9 @@ fn generate_create_event_with_data(
     }
 
     create_cloud_event(
-        EVENT_TYPE_ITEM_CREATED,
         DEFAULT_SOURCE,
         Some(issue_id),
         CONTENT_TYPE_JSON,
-        "issue",
         issue_id,
         Some(&issue_data),
         None,
@@ -904,20 +878,20 @@ fn generate_create_event_with_data(
 }
 
 fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
-    let delete_data = json!({
-        "id": issue_id,
-        "reason": reason
+    // For deletion, we use a patch with _deleted flag
+    // When _deleted is true, the entire resource is removed from the store
+    let delete_patch = json!({
+        "_deleted": true,
+        "_deletion_reason": reason
     });
 
     create_cloud_event(
-        EVENT_TYPE_ITEM_DELETED,
         DEFAULT_SOURCE,
         Some(issue_id),
         CONTENT_TYPE_JSON,
-        "issue",
         issue_id,
         None,
-        Some(&delete_data),
+        Some(&delete_patch),
         ISSUE_SCHEMA,
     )
 }
@@ -1025,11 +999,9 @@ fn generate_comment_event_with_data(issue_id: &str, content: &str, actor: &str) 
     });
 
     let mut event = create_cloud_event(
-        EVENT_TYPE_ITEM_CREATED,
         DEFAULT_SOURCE,
         Some(issue_id),
         CONTENT_TYPE_JSON,
-        "comment",
         &comment_id,
         Some(&comment_data),
         None,
@@ -1120,30 +1092,34 @@ fn generate_task_event_with_data(
     let deadline = (Utc::now() + Duration::days(days_ahead as i64))
         .format("%Y-%m-%d")
         .to_string();
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": DEFAULT_SOURCE,
-        "subject": issue_id,
-        "type": EVENT_TYPE_ITEM_CREATED,
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": CONTENT_TYPE_JSON,
-        "dataschema": ITEM_EVENT_DATA_SCHEMA,
-        "data": {
-            "schema": TASK_SCHEMA,
-            "item_id": format!("task-{}", Uuid::now_v7().simple()),
-            "actor": actor,
-            "timestamp": Utc::now().to_rfc3339(),
-            "item_data": {
-                "cta": cta,
-                "description": description,
-                "url": url,
-                "completed": false,
-                "deadline": deadline
-            },
-            "item_type": "task"  // Keep for backwards compatibility
-        }
-    })
+
+    let task_id = format!("task-{}", Uuid::now_v7().simple());
+    let task_data = json!({
+        "id": task_id,
+        "cta": cta,
+        "description": description,
+        "url": url,
+        "completed": false,
+        "deadline": deadline
+    });
+
+    let mut event = create_cloud_event(
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_JSON,
+        &task_id,
+        Some(&task_data),
+        None,
+        TASK_SCHEMA,
+    );
+
+    // Add actor and timestamp to data level
+    if let Some(data) = event.get_mut("data") {
+        data["actor"] = json!(actor);
+        data["timestamp"] = json!(Utc::now().to_rfc3339());
+    }
+
+    event
 }
 
 /// Generate a random planning event for an issue
@@ -1227,28 +1203,31 @@ fn generate_planning_event_with_data(
         }));
     }
 
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": DEFAULT_SOURCE,
-        "subject": issue_id,
-        "type": EVENT_TYPE_ITEM_CREATED,
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": CONTENT_TYPE_JSON,
-        "dataschema": ITEM_EVENT_DATA_SCHEMA,
-        "data": {
-            "schema": PLANNING_SCHEMA,
-            "item_id": format!("planning-{}", Uuid::now_v7().simple()),
-            "actor": actor,
-            "timestamp": Utc::now().to_rfc3339(),
-            "item_data": {
-                "title": title,
-                "description": description,
-                "moments": moments
-            },
-            "item_type": "planning"  // Keep for backwards compatibility
-        }
-    })
+    let planning_id = format!("planning-{}", Uuid::now_v7().simple());
+    let planning_data = json!({
+        "id": planning_id,
+        "title": title,
+        "description": description,
+        "moments": moments
+    });
+
+    let mut event = create_cloud_event(
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_JSON,
+        &planning_id,
+        Some(&planning_data),
+        None,
+        PLANNING_SCHEMA,
+    );
+
+    // Add actor and timestamp to data level
+    if let Some(data) = event.get_mut("data") {
+        data["actor"] = json!(actor);
+        data["timestamp"] = json!(Utc::now().to_rfc3339());
+    }
+
+    event
 }
 
 fn generate_random_document_event(issue_id: &str) -> Value {
@@ -1284,29 +1263,30 @@ fn generate_random_document_event(issue_id: &str) -> Value {
 fn generate_document_event_with_data(issue_id: &str, title: &str, size: u64, actor: &str) -> Value {
     let document_id = format!("doc-{}", Uuid::now_v7().simple());
     let url = format!("https://example.com/documents/{}", document_id);
+    let document_data = json!({
+        "id": document_id,
+        "title": title,
+        "url": url,
+        "size": size
+    });
 
-    json!({
-        "specversion": "1.0",
-        "id": Uuid::now_v7().to_string(),
-        "source": DEFAULT_SOURCE,
-        "subject": issue_id,
-        "type": EVENT_TYPE_ITEM_CREATED,
-        "time": Utc::now().to_rfc3339(),
-        "datacontenttype": CONTENT_TYPE_JSON,
-        "dataschema": ITEM_EVENT_DATA_SCHEMA,
-        "data": {
-            "schema": DOCUMENT_SCHEMA,
-            "item_id": document_id,
-            "actor": actor,
-            "timestamp": Utc::now().to_rfc3339(),
-            "item_data": {
-                "title": title,
-                "url": url,
-                "size": size
-            },
-            "item_type": "document"  // Keep for backwards compatibility
-        }
-    })
+    let mut event = create_cloud_event(
+        DEFAULT_SOURCE,
+        Some(issue_id),
+        CONTENT_TYPE_JSON,
+        &document_id,
+        Some(&document_data),
+        None,
+        DOCUMENT_SCHEMA,
+    );
+
+    // Add actor and timestamp to data level
+    if let Some(data) = event.get_mut("data") {
+        data["actor"] = json!(actor);
+        data["timestamp"] = json!(Utc::now().to_rfc3339());
+    }
+
+    event
 }
 
 /// Convert a JSON CloudEvent to a CloudEvent struct
