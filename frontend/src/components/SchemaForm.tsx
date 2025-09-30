@@ -41,10 +41,9 @@ const DEFAULT_DESCRIPTIONS: Record<string, string> = {
 
 const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
-  const [selectedType, setSelectedType] = useState<string>("comment");
+  const [selectedType, setSelectedType] = useState<string>("");
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
   const [currentSchema, setCurrentSchema] = useState<any>(null);
 
   // Fetch available schemas on component mount
@@ -91,7 +90,13 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
   }, [selectedType]);
 
   const handleTypeChange = (newType: string) => {
-    setSelectedType(newType);
+    if (selectedType === newType) {
+      // Clicking the same type closes the form
+      setSelectedType("");
+      setFormData({});
+    } else {
+      setSelectedType(newType);
+    }
   };
 
   const handleInputChange = (field: string, value: any) => {
@@ -126,7 +131,7 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
 
       // Reset form
       setFormData({});
-      setShowForm(false);
+      setSelectedType("");
     } catch (error) {
       console.error("Failed to create item:", error);
       alert("Er ging iets mis bij het aanmaken van het item");
@@ -527,22 +532,6 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
     );
   };
 
-  if (!showForm) {
-    return (
-      <div className="mt-8">
-        <div
-          className="text-xs uppercase font-semibold tracking-wider mb-4"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          Item Toevoegen
-        </div>
-        <Button variant="secondary" size="md" onClick={() => setShowForm(true)}>
-          + Item Toevoegen
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="mt-8">
       <div
@@ -552,94 +541,85 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
         Item Toevoegen
       </div>
 
-      <div
-        className="border rounded-lg p-6 space-y-6"
-        style={{
-          backgroundColor: "var(--bg-secondary)",
-          borderColor: "var(--border-primary)",
-        }}
-      >
-        {/* Type Selection */}
-        <div className="space-y-3">
-          <h3
-            className="text-sm font-semibold"
-            style={{ color: "var(--text-primary)" }}
+      {/* Type Selection Buttons */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-6">
+        {availableSchemas.map((type) => (
+          <Button
+            key={type}
+            variant={selectedType === type ? "primary" : "secondary"}
+            size="md"
+            onClick={() => handleTypeChange(type)}
           >
-            Type Item
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {availableSchemas.map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleTypeChange(type)}
-                className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                  selectedType === type
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                }`}
-                style={
-                  selectedType === type
-                    ? {}
-                    : {
-                        backgroundColor: "var(--bg-primary)",
-                        borderColor: "var(--border-primary)",
-                        color: "var(--text-primary)",
-                      }
-                }
-              >
-                {DEFAULT_LABELS[type.toLowerCase()] || type}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-            {DEFAULT_DESCRIPTIONS[selectedType.toLowerCase()] ||
-              `Create a new ${selectedType}`}
-          </p>
-        </div>
-
-        {/* Dynamic Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-4">
-            {currentSchema &&
-              "properties" in currentSchema &&
-              currentSchema.properties &&
-              Object.keys(currentSchema.properties)
-                .filter(
-                  (field) =>
-                    !["id", "created_at", "updated_at"].includes(field),
-                ) // Skip auto-generated fields
-                .map((fieldName) => renderFormField(fieldName, currentSchema))}
-          </div>
-
-          {/* Form Actions */}
-          <div
-            className="flex items-center gap-3 pt-4 border-t"
-            style={{ borderColor: "var(--border-primary)" }}
-          >
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              disabled={isSubmitting}
-              loading={isSubmitting}
-            >
-              {isSubmitting ? "Aanmaken..." : "Item Aanmaken"}
-            </Button>
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={() => {
-                setShowForm(false);
-                setFormData({});
-                setSelectedType("");
-              }}
-            >
-              Annuleren
-            </Button>
-          </div>
-        </form>
+            {DEFAULT_LABELS[type.toLowerCase()] || type}
+          </Button>
+        ))}
       </div>
+
+      {/* Dynamic Form - only show when a type is selected */}
+      {selectedType && (
+        <div
+          className="border rounded-lg p-6 space-y-6"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            borderColor: "var(--border-primary)",
+          }}
+        >
+          {/* Type Description */}
+          <div>
+            <h3
+              className="text-sm font-semibold mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {DEFAULT_LABELS[selectedType.toLowerCase()] || selectedType}
+            </h3>
+            <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              {DEFAULT_DESCRIPTIONS[selectedType.toLowerCase()] ||
+                `Create a new ${selectedType}`}
+            </p>
+          </div>
+
+          {/* Dynamic Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              {currentSchema &&
+                "properties" in currentSchema &&
+                currentSchema.properties &&
+                Object.keys(currentSchema.properties)
+                  .filter(
+                    (field) =>
+                      !["id", "created_at", "updated_at"].includes(field),
+                  ) // Skip auto-generated fields
+                  .map((fieldName) => renderFormField(fieldName, currentSchema))}
+            </div>
+
+            {/* Form Actions */}
+            <div
+              className="flex items-center gap-3 pt-4 border-t"
+              style={{ borderColor: "var(--border-primary)" }}
+            >
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+              >
+                {isSubmitting ? "Aanmaken..." : "Item Aanmaken"}
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={() => {
+                  setFormData({});
+                  setSelectedType("");
+                }}
+              >
+                Annuleren
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 };
