@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { fetchSchema } from "../types/interfaces";
 import { Button } from "./ActionButton";
 import Modal from "./Modal";
+import SchemaField from "./SchemaField";
 import { createItemUpdatedEvent } from "../utils/cloudEvents";
 import type { ItemType } from "../types";
 
@@ -162,149 +163,6 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
     onClose();
   };
 
-  const renderFormField = (
-    fieldName: string,
-    fieldSchema: any,
-  ): React.ReactNode => {
-    const isRequired = currentSchema.required?.includes(fieldName) || false;
-    const fieldProps =
-      fieldSchema && "properties" in fieldSchema
-        ? fieldSchema.properties?.[fieldName]
-        : null;
-
-    if (!fieldProps) return null;
-
-    const fieldId = `edit-field-${fieldName}`;
-    const value = formData[fieldName] || "";
-
-    // Skip read-only fields like id, created_at, etc.
-    if (["id", "created_at"].includes(fieldName)) {
-      return null;
-    }
-
-    return (
-      <div key={fieldName} className="mb-4">
-        <label
-          htmlFor={fieldId}
-          className="block text-sm font-medium mb-2"
-          style={{ color: "var(--text-primary)" }}
-        >
-          {fieldProps.title || fieldName}
-          {isRequired && <span className="text-red-500 ml-1">*</span>}
-        </label>
-
-        {fieldProps.type === "string" && fieldProps.format === "textarea" ? (
-          <textarea
-            id={fieldId}
-            value={value}
-            onChange={(e) => handleInputChange(fieldName, e.target.value)}
-            required={isRequired}
-            placeholder={fieldProps.description || ""}
-            className="w-full px-3 py-2 border rounded-md resize-vertical"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-            rows={4}
-          />
-        ) : fieldProps.type === "string" && fieldProps.format === "date" ? (
-          <input
-            type="date"
-            id={fieldId}
-            value={value}
-            onChange={(e) => handleInputChange(fieldName, e.target.value)}
-            required={isRequired}
-            className="w-full px-3 py-2 border rounded-md"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          />
-        ) : fieldProps.type === "string" &&
-          fieldProps.format === "date-time" ? (
-          <input
-            type="datetime-local"
-            id={fieldId}
-            value={value ? new Date(value).toISOString().slice(0, -1) : ""}
-            onChange={(e) =>
-              handleInputChange(
-                fieldName,
-                new Date(e.target.value).toISOString(),
-              )
-            }
-            required={isRequired}
-            className="w-full px-3 py-2 border rounded-md"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          />
-        ) : fieldProps.type === "boolean" ? (
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id={fieldId}
-              checked={Boolean(value)}
-              onChange={(e) => handleInputChange(fieldName, e.target.checked)}
-              className="mr-2"
-            />
-            <span
-              className="text-sm"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {fieldProps.description || fieldName}
-            </span>
-          </div>
-        ) : fieldProps.type === "number" || fieldProps.type === "integer" ? (
-          <input
-            type="number"
-            id={fieldId}
-            value={value}
-            onChange={(e) =>
-              handleInputChange(
-                fieldName,
-                fieldProps.type === "integer"
-                  ? parseInt(e.target.value) || 0
-                  : parseFloat(e.target.value) || 0,
-              )
-            }
-            required={isRequired}
-            placeholder={fieldProps.description || ""}
-            className="w-full px-3 py-2 border rounded-md"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          />
-        ) : (
-          <input
-            type="text"
-            id={fieldId}
-            value={value}
-            onChange={(e) => handleInputChange(fieldName, e.target.value)}
-            required={isRequired}
-            placeholder={fieldProps.description || ""}
-            className="w-full px-3 py-2 border rounded-md"
-            style={{
-              backgroundColor: "var(--bg-primary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          />
-        )}
-
-        {fieldProps.description && (
-          <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
-            {fieldProps.description}
-          </p>
-        )}
-      </div>
-    );
-  };
 
   if (!isOpen) return null;
 
@@ -329,7 +187,18 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
                     currentSchema.properties.hasOwnProperty(fieldName)
                   );
                 })
-                .map((fieldName) => renderFormField(fieldName, currentSchema))}
+                .map((fieldName) => (
+                  <SchemaField
+                    key={fieldName}
+                    fieldName={fieldName}
+                    fieldSchema={currentSchema}
+                    currentSchema={currentSchema}
+                    value={formData[fieldName] || ""}
+                    onChange={handleInputChange}
+                    selectedType={itemType}
+                    idPrefix="edit-field"
+                  />
+                ))}
 
             <div className="flex justify-end gap-3 pt-4">
               <Button
