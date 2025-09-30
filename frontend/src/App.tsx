@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import ApiDocumentationView from "./components/documentation/ApiDocumentationView";
 import PageHeader from "./components/PageHeader";
+import ScrollToTop from "./components/ScrollToTop";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import CreateIssueForm from "./components/CreateIssueForm";
@@ -234,6 +235,7 @@ const App: React.FC = () => {
     <SSEProvider>
       <SearchProvider>
         <Router>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<ZakenDashboard />} />
             <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
