@@ -16,13 +16,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
         borderColor: "var(--border-primary)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
           {/* Left side - Logo/Title area */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             <div className="flex-shrink-0">
               <h1
-                className="text-xl font-bold"
+                className="text-base sm:text-xl font-bold"
                 style={{
                   color: "var(--logo-primary)",
                   transition: "color 0.2s ease",
@@ -56,10 +56,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
           <SearchBar />
 
           {/* Right side - Navigation and notifications */}
-          <div className="flex items-center space-x-4 flex-shrink-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             <Link
               to="/api-docs"
-              className="hidden sm:block text-sm font-medium"
+              className="hidden md:block text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
               API Docs

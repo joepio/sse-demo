@@ -169,7 +169,7 @@ const SearchBar: React.FC = () => {
   };
 
   return (
-    <div className="relative flex-1 max-w-md mx-4">
+    <div className="relative flex-1 max-w-md mx-1 sm:mx-2 md:mx-4">
       <div className="relative">
         <input
           ref={inputRef}
@@ -181,8 +181,8 @@ const SearchBar: React.FC = () => {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Zoeken... (⌘K)"
-          className="w-full px-4 py-2 pl-10 pr-4 rounded-md border text-sm focus:outline-none focus:ring-2"
+          placeholder="Zoeken..."
+          className="w-full px-3 sm:px-4 py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 rounded-md border text-xs sm:text-sm focus:outline-none focus:ring-2"
           style={{
             backgroundColor: "var(--bg-secondary)",
             borderColor: "var(--border-primary)",
@@ -190,7 +190,7 @@ const SearchBar: React.FC = () => {
           }}
         />
         <div
-          className="absolute left-3 top-1/2 transform -translate-y-1/2"
+          className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-sm sm:text-base"
           style={{ color: "var(--text-secondary)" }}
         >
           🔍
@@ -201,7 +201,7 @@ const SearchBar: React.FC = () => {
       {isOpen && query.trim() && (
         <div
           ref={dropdownRef}
-          className="absolute top-full left-0 right-0 mt-2 rounded-lg shadow-lg border max-h-96 overflow-y-auto z-50"
+          className="absolute top-full left-0 right-0 mt-2 rounded-lg shadow-lg border max-h-[70vh] sm:max-h-96 overflow-y-auto z-50"
           style={{
             backgroundColor: "var(--bg-primary)",
             borderColor: "var(--border-primary)",
@@ -219,14 +219,14 @@ const SearchBar: React.FC = () => {
                   <button
                     key={result.id}
                     onClick={() => handleResultClick(result.item_id, result.type)}
-                    className="w-full px-4 py-3 text-left transition-colors border-b last:border-b-0"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-left transition-colors border-b last:border-b-0"
                     style={{
                       borderColor: "var(--border-primary)",
                       backgroundColor: isSelected ? "var(--bg-secondary)" : "transparent",
                     }}
                   >
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl flex-shrink-0">
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <span className="text-xl sm:text-2xl flex-shrink-0">
                         {getItemIcon(result.type)}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -244,14 +244,14 @@ const SearchBar: React.FC = () => {
                           </div>
                         )}
                         <div
-                          className="font-medium text-sm mb-1"
+                          className="font-medium text-xs sm:text-sm mb-1 line-clamp-2"
                           style={{ color: "var(--text-primary)" }}
                         >
                           {highlightMatch(title, query)}
                         </div>
                         {description && (
                           <div
-                            className="text-xs line-clamp-2"
+                            className="text-xs line-clamp-1 sm:line-clamp-2"
                             style={{ color: "var(--text-secondary)" }}
                           >
                             {highlightMatch(description, query)}

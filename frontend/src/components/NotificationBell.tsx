@@ -166,7 +166,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
           data-testid="connection-indicator"
         />
         <span
-          className="text-xs font-medium"
+          className="hidden sm:inline text-xs font-medium"
           style={{ color: "var(--text-secondary)" }}
           data-testid="connection-status"
         >
