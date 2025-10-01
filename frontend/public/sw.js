@@ -80,16 +80,25 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon,
-      badge: data.badge,
-      tag: data.tag || 'default',
-      requireInteraction: false,
-      data: data.data || {},
-    })
-  );
+  event.waitUntil((async () => {
+    try {
+      await self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: data.icon,
+        badge: data.badge,
+        tag: data.tag || 'default',
+        requireInteraction: false,
+        data: data.data || {},
+      });
+    } catch (err) {
+      // Continue even if notifications are blocked in headless environment
+      console.warn('[Service Worker] showNotification failed:', err);
+    }
+    const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      client.postMessage({ type: 'TEST_PUSH_SHOWN', payload: data });
+    }
+  })());
 });
 
 // Notification click event
@@ -100,19 +109,53 @@ self.addEventListener('notificationclick', (event) => {
   // Extract URL from notification data
   const urlToOpen = event.notification.data?.url || '/';
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if there's already a window open
-      for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
-        }
+  event.waitUntil((async () => {
+    const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // Notify pages about click
+    for (const client of clientList) {
+      client.postMessage({ type: 'TEST_PUSH_CLICKED', payload: { url: urlToOpen } });
+    }
+    // Check if there's already a window open
+    for (const client of clientList) {
+      if (client.url === urlToOpen && 'focus' in client) {
+        return client.focus();
       }
-      // If not, open a new window
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
+    }
+    // If not, open a new window
+    if (clients.openWindow) {
+      return clients.openWindow(urlToOpen);
+    }
+  })());
 });
 
+// Message hook to simulate push in tests
+self.addEventListener('message', (event) => {
+  const msg = event.data || {};
+  if (msg.type === 'TEST_PUSH') {
+    const payload = msg.payload || {
+      title: 'Test Notification',
+      body: 'This is a test',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: '/' },
+    };
+    event.waitUntil((async () => {
+      try {
+        await self.registration.showNotification(payload.title, {
+          body: payload.body,
+          icon: payload.icon,
+          badge: payload.badge,
+          tag: payload.tag || 'default',
+          requireInteraction: false,
+          data: payload.data || {},
+        });
+      } catch (err) {
+        console.warn('[Service Worker] showNotification failed (test):', err);
+      }
+      const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clientList) {
+        client.postMessage({ type: 'TEST_PUSH_SHOWN', payload });
+      }
+    })());
+  }
+});

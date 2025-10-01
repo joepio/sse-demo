@@ -1,10 +1,12 @@
 import { test, expect, request } from "@playwright/test";
 
+const serverUrl = "http://localhost:8000";
+
 // Helper function to reset server state for individual tests
 async function resetServerState() {
   const requestContext = await request.newContext();
   try {
-    const response = await requestContext.post("http://localhost:8000/reset/");
+    const response = await requestContext.post(`${serverUrl}/reset/`);
     if (response.ok()) {
     }
   } catch (error) {
@@ -14,12 +16,17 @@ async function resetServerState() {
   }
 }
 
-// Helper function to wait for SSE connection
+// Helper function to wait for SSE connection (status now inside bell dropdown)
 async function waitForConnection(page) {
+  const bell = page.locator('button:has-text("🔔")');
+  await bell.waitFor({ state: "visible", timeout: 15000 });
+  await bell.click();
   await expect(page.locator('[data-testid="connection-status"]')).toHaveText(
     "Verbonden",
     { timeout: 15000 }
   );
+  // Close the dropdown to restore UI state
+  await bell.click();
 }
 
 // Helper function to navigate to first issue
@@ -83,10 +90,13 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       await expect(firstIssue.locator("h2")).toBeVisible(); // title
       await expect(firstIssue.locator('a[href*="/zaak/"]')).toBeVisible(); // link
 
-      // Verify connection status
+      // Verify connection status (inside dropdown)
+      const bellIcon = page.locator('button:has-text("🔔")');
+      await bellIcon.click();
       await expect(
         page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
+      await bellIcon.click();
     });
 
     test("shows task names as static text on home page (not buttons)", async ({
@@ -116,14 +126,14 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
     });
 
     test("shows connection status correctly", async ({ page }) => {
-      // Verify connection status
+      // Open dropdown and verify connection status text appears there
+      const bellIcon = page.locator('button:has-text("🔔")');
+      await bellIcon.click();
       await expect(
         page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
-
-      // Verify bell icon is present
-      const bellIcon = page.locator('button:has-text("🔔")');
-      await expect(bellIcon).toBeVisible();
+      // Close dropdown
+      await bellIcon.click();
     });
 
     test("can navigate to issue detail page", async ({ page }) => {
@@ -386,22 +396,31 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
     test("handles connection status changes", async ({ page }) => {
       // Initial connection should be established on home page
+      let bell = page.locator('button:has-text("🔔")');
+      await bell.click();
       await expect(
         page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
+      await bell.click();
 
       // Navigate to an issue
       await navigateToFirstIssue(page);
+      bell = page.locator('button:has-text("🔔")');
+      await bell.click();
       await expect(
         page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
+      await bell.click();
 
       // Navigate back to home
       await page.goto("/");
       await waitForConnection(page);
+      bell = page.locator('button:has-text("🔔")');
+      await bell.click();
       await expect(
         page.locator('[data-testid="connection-status"]')
       ).toHaveText("Verbonden");
+      await bell.click();
     });
 
     test("can search for comments and navigate to them", async ({ page }) => {
@@ -456,6 +475,71 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         .locator(`:has-text("${testComment}")`)
         .first();
       await expect(commentElement).toBeInViewport({ timeout: 5000 });
+    });
+
+    test("push notifications: subscribe and receive test push via SW hook", async ({
+      page,
+      context,
+    }) => {
+      // Always test against backend origin so SW is available
+      const origin = serverUrl;
+
+      // Allow notifications
+      await context.grantPermissions(["notifications"], { origin });
+
+      // Navigate to backend-served app (serves /sw.js)
+      await page.goto(origin + "/");
+
+      // Ensure service worker API exists
+      await page.waitForFunction(() => "serviceWorker" in navigator);
+      // Wait for ready
+      await page.waitForFunction(
+        async () => !!(await navigator.serviceWorker.ready),
+        { timeout: 20000 }
+      );
+      // Reload so page becomes controlled by SW (controller non-null)
+      await page.reload();
+      await page.waitForFunction(() => !!navigator.serviceWorker.controller, {
+        timeout: 20000,
+      });
+
+      // Set up listener for SW messages before triggering test push (in page context)
+      await page.evaluate(() => {
+        // @ts-ignore
+        window.__TEST_PUSH_SHOWN__ = undefined;
+        navigator.serviceWorker.addEventListener("message", (event) => {
+          if (event.data && event.data.type === "TEST_PUSH_SHOWN") {
+            // @ts-ignore
+            window.__TEST_PUSH_SHOWN__ = event.data.payload;
+          }
+        });
+      });
+
+      // Trigger test push via SW message
+      await page.evaluate(async () => {
+        (
+          navigator.serviceWorker.controller as ServiceWorker | null
+        )?.postMessage({
+          type: "TEST_PUSH",
+          payload: {
+            title: "Test Notificatie",
+            body: "E2E test push",
+            icon: "/icon-192.png",
+            badge: "/icon-192.png",
+            data: { url: "/" },
+          },
+        });
+      });
+
+      // Wait until SW posts that notification was shown
+      const handle = await page.waitForFunction(
+        () => (window as any).__TEST_PUSH_SHOWN__,
+        undefined,
+        { timeout: 15000 }
+      );
+      const payload: any = await handle.jsonValue();
+      expect(payload.title).toBe("Test Notificatie");
+      expect(payload.body).toBe("E2E test push");
     });
   });
 

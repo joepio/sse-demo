@@ -1,3 +1,4 @@
+use axum::{extract::Path, http::StatusCode, Json};
 use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -334,6 +335,19 @@ pub fn get_all_schemas() -> HashMap<String, Value> {
     ]
 }
 
+/// Get all available schemas as an index
+pub async fn handle_get_schemas_index() -> Json<Value> {
+    Json(get_schema_index())
+}
+
+/// Get a specific schema by name
+pub async fn handle_get_schema(Path(name): Path<String>) -> Result<Json<Value>, StatusCode> {
+    match get_schema(&name) {
+        Some(schema) => Ok(Json(schema)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
 /// Get a specific schema by name
 pub fn get_schema(name: &str) -> Option<Value> {
     let schemas = get_all_schemas();
@@ -546,4 +560,39 @@ mod tests {
             "ItemType enum schema should be available"
         );
     }
+}
+
+#[tokio::test]
+async fn test_get_specific_schema_endpoint() {
+    use axum::extract::Path;
+    // Call handler and unwrap Json wrapper
+    let path = Path("CloudEvent".to_string());
+    let json = handle_get_schema(path)
+        .await
+        .expect("CloudEvent schema should exist");
+    let schema = json.0;
+
+    assert!(schema.is_object());
+    assert!(schema.get("properties").is_some());
+
+    let properties = schema.get("properties").unwrap().as_object().unwrap();
+    assert!(properties.contains_key("specversion"));
+    assert!(properties.contains_key("id"));
+    assert!(properties.contains_key("source"));
+    assert!(properties.contains_key("dataschema"));
+    assert!(properties.contains_key("dataref"));
+}
+
+#[tokio::test]
+async fn test_get_nonexistent_schema_endpoint() {
+    use axum::extract::Path;
+    use axum::http::StatusCode;
+
+    // Test getting non-existent schema
+    let path = Path("NonExistentSchema".to_string());
+    let result = handle_get_schema(path).await;
+
+    assert!(result.is_err());
+    let status = result.unwrap_err();
+    assert_eq!(status, StatusCode::NOT_FOUND);
 }

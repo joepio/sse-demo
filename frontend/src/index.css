@@ -223,6 +223,9 @@
 
 /* Base body styles */
 @layer base {
+  html {
+  }
+
   * {
     font-family: "RijksoverheidSans", Arial, sans-serif;
   }

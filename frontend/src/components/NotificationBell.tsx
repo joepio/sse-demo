@@ -187,25 +187,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
 
   return (
     <div
-      className="relative ml-auto flex items-center space-x-3"
+      className="relative ml-auto flex items-center"
       ref={notificationRef}
     >
-      {/* Connection Status */}
-      <div className="flex items-center space-x-2">
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ backgroundColor: getConnectionStatusColor() }}
-          data-testid="connection-indicator"
-        />
-        <span
-          className="hidden sm:inline text-xs font-medium"
-          style={{ color: "var(--text-secondary)" }}
-          data-testid="connection-status"
-        >
-          {getConnectionStatusText()}
-        </span>
-      </div>
-
       <Button
         variant="ghost"
         size="md"
@@ -241,19 +225,35 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
               backgroundColor: "var(--bg-tertiary)",
             }}
           >
-            <h3
-              className="m-0 text-sm md:text-xs font-semibold mb-3"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Recente Activiteit
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3
+                className="m-0 text-sm md:text-xs font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Recente Activiteit
+              </h3>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: getConnectionStatusColor() }}
+                  data-testid="connection-indicator"
+                />
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                  data-testid="connection-status"
+                >
+                  {getConnectionStatusText()}
+                </span>
+              </div>
+            </div>
             {isSupported && (
               <Button
                 variant={isSubscribed ? "secondary" : "primary"}
                 size="sm"
                 onClick={handleTogglePushNotifications}
                 disabled={permission === "denied"}
-                className="w-full text-xs"
+                className="w-full text-xs mt-3"
                 title={
                   permission === "denied"
                     ? "Notificaties zijn geblokkeerd. Schakel ze in via de browserinstellingen."

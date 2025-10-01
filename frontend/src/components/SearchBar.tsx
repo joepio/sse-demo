@@ -226,39 +226,37 @@ const SearchBar: React.FC = () => {
                       backgroundColor: isSelected ? "var(--bg-secondary)" : "transparent",
                     }}
                   >
-                    <div className="flex items-start gap-2 sm:gap-3">
-                      <span className="text-xl sm:text-2xl flex-shrink-0">
-                        {getItemIcon(result.type)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        {result.type !== "unknown" && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className="text-xs px-2 py-0.5 rounded-full font-medium"
-                              style={{
-                                backgroundColor: "var(--bg-secondary)",
-                                color: "var(--text-secondary)",
-                              }}
-                            >
-                              {getItemTypeLabel(result.type)}
-                            </span>
-                          </div>
-                        )}
-                        <div
-                          className="font-medium text-xs sm:text-sm mb-1 line-clamp-2"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {highlightMatch(title, query)}
-                        </div>
-                        {description && (
-                          <div
-                            className="text-xs line-clamp-1 sm:line-clamp-2"
-                            style={{ color: "var(--text-secondary)" }}
+                    <div className="flex-1 min-w-0">
+                      {result.type !== "unknown" && (
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
+                            style={{
+                              backgroundColor: "var(--bg-secondary)",
+                              color: "var(--text-secondary)",
+                            }}
                           >
-                            {highlightMatch(description, query)}
-                          </div>
-                        )}
+                            <span className="text-sm leading-none">
+                              {getItemIcon(result.type)}
+                            </span>
+                            {getItemTypeLabel(result.type)}
+                          </span>
+                        </div>
+                      )}
+                      <div
+                        className="font-medium text-xs sm:text-sm mb-1 line-clamp-2"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {highlightMatch(title, query)}
                       </div>
+                      {description && (
+                        <div
+                          className="text-xs line-clamp-1 sm:line-clamp-2"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
+                          {highlightMatch(description, query)}
+                        </div>
+                      )}
                     </div>
                   </button>
                 );

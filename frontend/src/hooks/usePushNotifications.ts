@@ -20,43 +20,23 @@ export function usePushNotifications() {
   });
 
   useEffect(() => {
-    // Detailed diagnostics
-    console.log("🔍 Push Notification Diagnostics:");
-    console.log("  - Service Worker support:", "serviceWorker" in navigator);
-    console.log("  - Push Manager support:", "PushManager" in window);
-    console.log("  - Notification support:", "Notification" in window);
-    console.log("  - Protocol:", window.location.protocol);
-    console.log("  - Hostname:", window.location.hostname);
-    console.log("  - Is Secure Context:", window.isSecureContext);
-
     // Check if service workers and push notifications are supported
     const isSupported =
       "serviceWorker" in navigator &&
       "PushManager" in window &&
-      "Notification" in window;
+      "Notification" in window &&
+      window.isSecureContext;
 
     if (!isSupported) {
-      console.error("❌ Push notifications are not supported in this browser");
-      console.log("Missing features:", {
-        serviceWorker: !("serviceWorker" in navigator),
-        pushManager: !("PushManager" in window),
-        notification: !("Notification" in window),
-      });
-      return;
-    }
-
-    // Check if we're in a secure context
-    if (!window.isSecureContext) {
-      console.error(
-        "❌ Push notifications require a secure context (HTTPS or localhost)"
-      );
-      console.log(
-        "💡 Try accessing via http://localhost:8000 instead of http://127.0.0.1:8000"
+      console.warn(
+        "Push notifications not available:",
+        !window.isSecureContext
+          ? "Not a secure context (requires HTTPS or localhost)"
+          : "Missing browser support"
       );
       return;
     }
 
-    console.log("✅ Push notifications are supported!");
     setState((prev) => ({ ...prev, isSupported: true }));
 
     // Register service worker
@@ -69,7 +49,6 @@ export function usePushNotifications() {
   const registerServiceWorker = async () => {
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
-      console.log("Service Worker registered:", registration);
 
       // Check if already subscribed
       const subscription = await registration.pushManager.getSubscription();

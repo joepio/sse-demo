@@ -1,14 +1,14 @@
 mod issues;
+mod push;
 mod schemas;
 
-use chrono;
 use futures_util::stream::{self, Stream};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[cfg(feature = "shuttle")]
 use shuttle_axum::axum::{
-    extract::{Path, State},
+    extract::State,
     http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
     response::{Html, Response},
@@ -18,7 +18,7 @@ use shuttle_axum::axum::{
 
 #[cfg(not(feature = "shuttle"))]
 use axum::{
-    extract::{Path, State},
+    extract::State,
     http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
     response::{Html, Response},
@@ -196,10 +196,10 @@ async fn create_app() -> Router {
         .route("/events", get(sse_handler))
         .route("/events", post(handle_event)) // single endpoint for all CloudEvents
         .route("/reset/", post(reset_state_handler))
-        .route("/schemas", get(get_schemas_index))
-        .route("/schemas/{name}", get(get_schema))
-        .route("/api/push/subscribe", post(subscribe_push))
-        .route("/api/push/unsubscribe", post(unsubscribe_push))
+        .route("/schemas", get(crate::schemas::handle_get_schemas_index))
+        .route("/schemas/{name}", get(crate::schemas::handle_get_schema))
+        .route("/api/push/subscribe", post(crate::push::subscribe_push))
+        .route("/api/push/unsubscribe", post(crate::push::unsubscribe_push))
         .with_state(state);
 
     // Combine API routes with static file serving
@@ -294,11 +294,6 @@ async fn handle_event(
     if let Some(subject) = &cloud_event.subject {
         let subs = state.push_subscriptions.read().await;
 
-        println!(
-            "📊 Push notification check: {} active subscriptions",
-            subs.len()
-        );
-
         if !subs.is_empty() {
             let title = format!("Update voor zaak {}", subject);
             let body = match cloud_event.event_type.as_str() {
@@ -308,43 +303,25 @@ async fn handle_event(
             };
             let url = format!("/zaak/{}", subject);
 
-            println!("📤 Sending push notification: {} - {}", title, body);
-
             // Send notifications in background (don't block the response)
-            for (idx, subscription) in subs.iter().cloned().enumerate() {
+            for subscription in subs.iter().cloned() {
                 let title = title.clone();
                 let body = body.to_string();
                 let url = url.clone();
 
                 tokio::spawn(async move {
-                    println!("📮 Sending to subscription #{}", idx + 1);
-                    match send_push_notification(&subscription, &title, &body, &url).await {
-                        Ok(_) => println!("✅ Push notification #{} sent successfully", idx + 1),
-                        Err(e) => {
-                            eprintln!("❌ Failed to send push notification #{}: {}", idx + 1, e)
-                        }
+                    if let Err(e) =
+                        crate::push::send_push_notification(&subscription, &title, &body, &url)
+                            .await
+                    {
+                        eprintln!("Failed to send push notification: {}", e);
                     }
                 });
             }
-        } else {
-            println!("⚠️  No push subscriptions found");
         }
     }
 
     Ok(Json("ok"))
-}
-
-/// Get all available schemas as an index
-async fn get_schemas_index() -> Json<Value> {
-    Json(schemas::get_schema_index())
-}
-
-/// Get a specific schema by name
-async fn get_schema(Path(name): Path<String>) -> Result<Json<Value>, StatusCode> {
-    match schemas::get_schema(&name) {
-        Some(schema) => Ok(Json(schema)),
-        None => Err(StatusCode::NOT_FOUND),
-    }
 }
 
 /// Serve the AsyncAPI HTML documentation with fixed paths
@@ -628,9 +605,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_schema_endpoints() {
-        // Test get_schemas_index function
-        let index = get_schemas_index().await;
-        let index_value = index.0; // Extract the Json wrapper
+        // Test get_schemas_index function (call handler in schemas module)
+        let index_json = crate::schemas::handle_get_schemas_index().await;
+        let index_value = index_json.0; // Extract the Json wrapper
 
         assert!(index_value.is_object());
         assert!(index_value.get("schemas").is_some());
@@ -641,7 +618,7 @@ mod tests {
         );
 
         let schemas_array = index_value.get("schemas").unwrap().as_array().unwrap();
-        assert!(schemas_array.len() > 0);
+        assert!(!schemas_array.is_empty());
 
         // Check that key schemas are present
         let schema_names: Vec<String> = schemas_array
@@ -652,42 +629,6 @@ mod tests {
         assert!(schema_names.contains(&"CloudEvent".to_string()));
         assert!(schema_names.contains(&"Issue".to_string()));
         assert!(schema_names.contains(&"Task".to_string()));
-    }
-
-    #[tokio::test]
-    async fn test_get_specific_schema_endpoint() {
-        use shuttle_axum::axum::extract::Path;
-
-        // Test getting CloudEvent schema
-        let path = Path("CloudEvent".to_string());
-        let result = get_schema(path).await;
-
-        assert!(result.is_ok());
-        let schema = result.unwrap().0; // Extract Json wrapper
-
-        assert!(schema.is_object());
-        assert!(schema.get("properties").is_some());
-
-        let properties = schema.get("properties").unwrap().as_object().unwrap();
-        assert!(properties.contains_key("specversion"));
-        assert!(properties.contains_key("id"));
-        assert!(properties.contains_key("source"));
-        assert!(properties.contains_key("dataschema"));
-        assert!(properties.contains_key("dataref"));
-    }
-
-    #[tokio::test]
-    async fn test_get_nonexistent_schema_endpoint() {
-        use shuttle_axum::axum::extract::Path;
-        use shuttle_axum::axum::http::StatusCode;
-
-        // Test getting non-existent schema
-        let path = Path("NonExistentSchema".to_string());
-        let result = get_schema(path).await;
-
-        assert!(result.is_err());
-        let status = result.unwrap_err();
-        assert_eq!(status, StatusCode::NOT_FOUND);
     }
 
     #[test]
@@ -738,7 +679,7 @@ mod tests {
             "id": "test-789",
             "source": "test-source",
             "type": "json.commit",
-            "dataschema": "http://localhost:8000/schemas/JSONCommit",
+            "dataschema": "http://example.com/custom-schema",
             "data": {
                 "schema": "http://localhost:8000/schemas/Task",
                 "resource_id": "task-789"
@@ -777,96 +718,5 @@ fn add_dataschema_to_event(event: &mut Value, base_url: &str) {
         };
 
         event["dataschema"] = Value::String(schema_url);
-    }
-}
-
-// ===== Push Notification Handlers =====
-
-/// Subscribe to push notifications
-async fn subscribe_push(
-    State(state): State<AppState>,
-    Json(subscription): Json<PushSubscription>,
-) -> Result<StatusCode, StatusCode> {
-    let mut subs = state.push_subscriptions.write().await;
-
-    // Check if subscription already exists
-    if !subs.iter().any(|s| s.endpoint == subscription.endpoint) {
-        subs.push(subscription);
-        println!(
-            "✅ New push subscription added. Total subscriptions: {}",
-            subs.len()
-        );
-    } else {
-        println!("⚠️  Subscription already exists");
-    }
-
-    Ok(StatusCode::CREATED)
-}
-
-/// Unsubscribe from push notifications
-async fn unsubscribe_push(
-    State(state): State<AppState>,
-    Json(subscription): Json<PushSubscription>,
-) -> Result<StatusCode, StatusCode> {
-    let mut subs = state.push_subscriptions.write().await;
-    subs.retain(|s| s.endpoint != subscription.endpoint);
-    println!(
-        "🗑️  Push subscription removed. Total subscriptions: {}",
-        subs.len()
-    );
-    Ok(StatusCode::OK)
-}
-
-/// Send a push notification to a subscription
-async fn send_push_notification(
-    subscription: &PushSubscription,
-    title: &str,
-    body: &str,
-    url: &str,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    use web_push::*;
-
-    // VAPID private key - in production, load from environment variable
-    let vapid_private_key = "TyRumaZoZxriruLdV6XyHV8ZzcDb9yHqpV7pQsgBHDM";
-
-    // Create notification payload
-    let payload = serde_json::json!({
-        "title": title,
-        "body": body,
-        "icon": "/icon-192.png",
-        "badge": "/icon-192.png",
-        "data": {
-            "url": url
-        }
-    });
-
-    // Build subscription info for web-push
-    let subscription_info = SubscriptionInfo::new(
-        &subscription.endpoint,
-        &subscription.keys.p256dh,
-        &subscription.keys.auth,
-    );
-
-    // Build the message
-    let mut builder = WebPushMessageBuilder::new(&subscription_info)?;
-    let payload_json = payload.to_string();
-    builder.set_payload(ContentEncoding::Aes128Gcm, payload_json.as_bytes());
-
-    // Add VAPID signature
-    let sig_builder =
-        VapidSignatureBuilder::from_base64(vapid_private_key, URL_SAFE_NO_PAD, &subscription_info)?;
-    builder.set_vapid_signature(sig_builder.build()?);
-
-    // Send the notification
-    let client = WebPushClient::new()?;
-    match client.send(builder.build()?).await {
-        Ok(_) => {
-            println!("📤 Push notification sent successfully");
-            Ok(())
-        }
-        Err(e) => {
-            eprintln!("❌ Failed to send push notification: {}", e);
-            Err(Box::new(e))
-        }
     }
 }

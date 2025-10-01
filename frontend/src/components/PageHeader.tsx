@@ -59,7 +59,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ currentZaakId }) => {
           <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
             <Link
               to="/api-docs"
-              className="hidden md:block text-sm font-medium"
+              className="block text-xs sm:text-sm font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
               API Docs
