@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import ApiDocumentationView from "./components/documentation/ApiDocumentationView";
 import PageHeader from "./components/PageHeader";
+import InstallPrompt from "./components/InstallPrompt";
 import ScrollToTop from "./components/ScrollToTop";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import { SearchProvider } from "./contexts/SearchContext";
@@ -226,6 +227,7 @@ const ZakenDashboard: React.FC = () => {
           <CreateIssueForm onCreateIssue={handleCreateIssue} />
         </div>
       </Modal>
+      <InstallPrompt />
     </div>
   );
 };

@@ -37,6 +37,7 @@ const TimelineEventsList: React.FC<TimelineEventsListProps> = ({
         return (
           <div
             key={event.id}
+            id={event.id}
             className="flex mb-4 sm:mb-5 lg:mb-6 xl:mb-8 relative z-20"
             data-testid="timeline-event"
           >

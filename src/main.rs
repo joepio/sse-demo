@@ -301,18 +301,24 @@ async fn handle_event(
                 "system.reset" => "Systeem is gereset",
                 _ => "Nieuwe gebeurtenis",
             };
-            let url = format!("/zaak/{}", subject);
+            let url = format!("/zaak/{}#{}", subject, cloud_event.id);
 
             // Send notifications in background (don't block the response)
             for subscription in subs.iter().cloned() {
                 let title = title.clone();
                 let body = body.to_string();
                 let url = url.clone();
+                let event_id = cloud_event.id.clone();
 
                 tokio::spawn(async move {
-                    if let Err(e) =
-                        crate::push::send_push_notification(&subscription, &title, &body, &url)
-                            .await
+                    if let Err(e) = crate::push::send_push_notification(
+                        &subscription,
+                        &title,
+                        &body,
+                        &url,
+                        &event_id,
+                    )
+                    .await
                     {
                         eprintln!("Failed to send push notification: {}", e);
                     }

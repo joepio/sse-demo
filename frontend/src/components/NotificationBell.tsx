@@ -273,10 +273,13 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                 Geen recente activiteit
               </div>
             ) : (
-              recentActivities.map((activity) => (
+              recentActivities.map((activity) => {
+                const eventId = activity.event?.id as string | undefined;
+                const hash = eventId ? `#${eventId}` : "";
+                return (
                 <Link
                   key={activity.issueId}
-                  to={`/zaak/${activity.issueId}`}
+                  to={`/zaak/${activity.issueId}${hash}`}
                   className={`block px-4 py-3 border-b last:border-b-0 text-inherit no-underline transition-colors duration-200 ${
                     activity.isNew ? "relative" : ""
                   }`}
@@ -332,7 +335,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                     )}
                   </div>
                 </Link>
-              ))
+              )})
             )}
           </div>
         </div>
