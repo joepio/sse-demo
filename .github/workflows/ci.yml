@@ -122,8 +122,8 @@ jobs:
       - name: Install dependencies (frontend)
         run: pnpm install
 
-      - name: Build frontend
-        run: pnpm build
+      - name: Generate all JS assets (schemas, types, etc.)
+        run: pnpm generate-all
 
       - name: Deploy to Shuttle
         uses: shuttle-hq/deploy-action@v2
