@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
+import { usePushNotifications } from "../hooks/usePushNotifications";
 import { Button } from "./ActionButton";
 
 interface NotificationBellProps {
@@ -11,6 +12,13 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   currentZaakId,
 }) => {
   const { events, issues, connectionStatus } = useSSE();
+  const {
+    isSupported,
+    isSubscribed,
+    permission,
+    subscribe,
+    unsubscribe,
+  } = usePushNotifications();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [newEventsCount, setNewEventsCount] = useState(0);
   const [lastEventId, setLastEventId] = useState<string | null>(null);
@@ -163,6 +171,20 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
   };
 
+  const handleTogglePushNotifications = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+    } else {
+      await subscribe();
+    }
+  };
+
+  const getPushButtonText = () => {
+    if (isSubscribed) return "🔕 Notificaties uitschakelen";
+    if (permission === "denied") return "🔕 Notificaties geblokkeerd";
+    return "🔔 Notificaties inschakelen";
+  };
+
   return (
     <div
       className="relative ml-auto flex items-center space-x-3"
@@ -220,11 +242,27 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
             }}
           >
             <h3
-              className="m-0 text-sm md:text-xs font-semibold"
+              className="m-0 text-sm md:text-xs font-semibold mb-3"
               style={{ color: "var(--text-primary)" }}
             >
               Recente Activiteit
             </h3>
+            {isSupported && (
+              <Button
+                variant={isSubscribed ? "secondary" : "primary"}
+                size="sm"
+                onClick={handleTogglePushNotifications}
+                disabled={permission === "denied"}
+                className="w-full text-xs"
+                title={
+                  permission === "denied"
+                    ? "Notificaties zijn geblokkeerd. Schakel ze in via de browserinstellingen."
+                    : ""
+                }
+              >
+                {getPushButtonText()}
+              </Button>
+            )}
           </div>
           <div className="max-h-[300px] overflow-y-auto">
             {recentActivities.length === 0 ? (

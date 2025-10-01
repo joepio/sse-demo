@@ -24,6 +24,10 @@ export default defineConfig({
         target: serverUrl,
         changeOrigin: true,
       },
+      "/api/push": {
+        target: serverUrl,
+        changeOrigin: true,
+      },
     },
   },
   build: {

@@ -28,6 +28,8 @@ schemars = { version = "0.8", features = ["uuid1", "chrono"] }
 utoipa = { version = "5.0", features = ["axum_extras", "chrono", "uuid", "non_strict_integers"] }
 utoipa-axum = "0.2"
 serde_yaml = "0.9"
+web-push = "0.9"
+base64 = "0.22"
 
 [[bin]]
 name = "export_schemas"
