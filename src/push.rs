@@ -1,5 +1,3 @@
-// ===== Push Notification Handlers =====
-
 use axum::{extract::State, http::StatusCode, Json};
 
 use crate::{AppState, PushSubscription};

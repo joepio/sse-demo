@@ -3,6 +3,7 @@ import type { EventPluginProps } from "./types";
 import type { Document } from "../../types";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import InfoHelp from "../../components/InfoHelp";
 import SchemaEditForm from "../../components/SchemaEditForm";
 import { Button } from "../../components/ActionButton";
 import { useSSE } from "../../contexts/SSEContext";
@@ -57,7 +58,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
               className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
               style={{ color: "var(--text-primary)" }}
             >
-              <strong>🗑️ Document verwijderd</strong>
+              <strong><i className="fa-solid fa-trash" aria-hidden="true"></i> Document verwijderd</strong>
             </p>
             <div
               className="text-xs sm:text-sm lg:text-sm xl:text-base"
@@ -74,6 +75,8 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           title="CloudEvent"
           maxWidth="800px"
         >
+          <div className="relative">
+            <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
           <pre
             className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
             style={{
@@ -84,6 +87,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           >
             {JSON.stringify(event.originalEvent, null, 2)}
           </pre>
+          </div>
         </Modal>
       </>
     );
@@ -131,6 +135,8 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           title="CloudEvent"
           maxWidth="800px"
         >
+          <div className="relative">
+            <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
           <pre
             className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
             style={{
@@ -141,6 +147,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           >
             {JSON.stringify(event.originalEvent, null, 2)}
           </pre>
+          </div>
         </Modal>
       </>
     );
@@ -171,7 +178,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
               className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
               style={{ color: "var(--text-primary)" }}
             >
-              <strong>📄 Nieuw document toegevoegd</strong>
+              <strong><i className="fa-regular fa-file-lines" aria-hidden="true"></i> Nieuw document toegevoegd</strong>
             </p>
             <div
               className="text-xs sm:text-sm lg:text-sm xl:text-base"
@@ -188,6 +195,8 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           title="CloudEvent"
           maxWidth="800px"
         >
+          <div className="relative">
+            <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
           <pre
             className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
             style={{
@@ -198,6 +207,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           >
             {JSON.stringify(event.originalEvent, null, 2)}
           </pre>
+          </div>
         </Modal>
       </>
     );
@@ -241,7 +251,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
               onClick={() => setShowEditModal(true)}
               title="Bewerken"
             >
-              ✏️
+              <i className="fa-solid fa-pen" aria-hidden="true"></i>
             </Button>
             <Button
               variant="link"
@@ -257,7 +267,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         <div className="prose prose-sm max-w-none">
           <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className="text-xl">📄</span>
+              <span className="text-xl"><i className="fa-regular fa-file-lines" aria-hidden="true"></i></span>
               <div className="flex-1 min-w-0">
                 <h4
                   className="font-semibold m-0 leading-tight text-base sm:text-lg lg:text-xl xl:text-2xl"
@@ -282,7 +292,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
               onClick={handleDownload}
               className="self-start sm:self-auto flex-shrink-0"
             >
-              <span>⬇️</span>
+              <span><i className="fa-solid fa-download" aria-hidden="true"></i></span>
               Download
             </Button>
           </div>
@@ -309,6 +319,8 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         title="CloudEvent"
         maxWidth="800px"
       >
+        <div className="relative">
+          <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
         <pre
           className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
           style={{
@@ -319,6 +331,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         >
           {JSON.stringify(event.originalEvent, null, 2)}
         </pre>
+        </div>
       </Modal>
     </>
   );

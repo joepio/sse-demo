@@ -4,8 +4,8 @@ Dit is een simpele front-end applicatie om te demonstreren hoe Server-Sent Event
 
 Dit project bevat:
 
-- **Front-end voor MijnZaken**, met real-time updates, commenting, planningen, acties, schema-driven formulieren, en een zoekfunctionaliteit. Geschreven in React met Vite.
-- **Back-end** met een `/events` endpoint en `/schemas` endpoints voor JSON schema serving. Geschreven in Rust met Axum en Tokio.
+- **Front-end voor MijnZaken**, met real-time updates, commenting, planningen, acties, schema-driven formulieren, push-notificaties en een zoekfunctionaliteit. Geschreven in React met Vite.
+- **Back-end** met API endpoints voor `/events` voor JSONCommits / CloudEvents en `/schemas` endpoints voor JSON schema serving. Geschreven in Rust met Axum en Tokio.
 - **AsyncAPI specificatie** voor het protocol op basis van CloudEvents + SSE, met daarin schemas voor de verschillende berichten. Deze wordt gegenereerd door het back-end.
 
 ![Screenshot](screenshot.png)

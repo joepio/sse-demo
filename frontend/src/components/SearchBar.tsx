@@ -102,17 +102,17 @@ const SearchBar: React.FC = () => {
   const getItemIcon = (type: string) => {
     switch (type) {
       case "issue":
-        return "📋";
+        return <i className="fa-solid fa-clipboard" aria-hidden="true"></i>;
       case "comment":
-        return "💬";
+        return <i className="fa-regular fa-comment" aria-hidden="true"></i>;
       case "task":
-        return "✓";
+        return <i className="fa-solid fa-check" aria-hidden="true"></i>;
       case "planning":
-        return "📅";
+        return <i className="fa-regular fa-calendar" aria-hidden="true"></i>;
       case "document":
-        return "📄";
+        return <i className="fa-regular fa-file-lines" aria-hidden="true"></i>;
       default:
-        return "📌";
+        return <i className="fa-solid fa-thumbtack" aria-hidden="true"></i>;
     }
   };
 
@@ -194,7 +194,7 @@ const SearchBar: React.FC = () => {
           className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-sm sm:text-base"
           style={{ color: "var(--text-secondary)" }}
         >
-          🔍
+          <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
         </div>
       </div>
 

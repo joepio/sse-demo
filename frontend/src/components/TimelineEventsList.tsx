@@ -54,9 +54,7 @@ const TimelineEventsList: React.FC<TimelineEventsListProps> = ({
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div>
                 <TimelineItem event={event} itemType={itemType} />
-              </div>
             </div>
           </div>
         );

@@ -3,6 +3,7 @@ import type { EventPluginProps } from "./types";
 import type { Comment } from "../../types";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import InfoHelp from "../../components/InfoHelp";
 import SchemaEditForm from "../../components/SchemaEditForm";
 import { Button } from "../../components/ActionButton";
 import { useSSE } from "../../contexts/SSEContext";
@@ -40,7 +41,7 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
               onClick={() => setShowEditModal(true)}
               title="Bewerken"
             >
-              ✏️
+              <i className="fa-solid fa-pen" aria-hidden="true"></i>
             </Button>
             <Button
               variant="link"
@@ -88,6 +89,8 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
         title="CloudEvent"
         maxWidth="800px"
       >
+        <div className="relative">
+          <InfoHelp variant="cloudevent" schemaUrl={(data as any)?.schema as string | undefined} />
         <pre
           className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
           style={{
@@ -98,6 +101,7 @@ const CommentPlugin: React.FC<EventPluginProps> = ({
         >
           {JSON.stringify(event.originalEvent, null, 2)}
         </pre>
+        </div>
       </Modal>
     </>
   );

@@ -56,7 +56,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
         <div className="flex items-center gap-1">
           {onEdit && (
             <Button variant="icon" size="sm" onClick={onEdit} title="Bewerken">
-              ✏️
+              <i className="fa-solid fa-pen" aria-hidden="true"></i>
             </Button>
           )}
           <Button
@@ -67,7 +67,7 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
             loading={isDeleting}
             title={isDeleting ? "Verwijderen..." : "Verwijderen"}
           >
-            🗑️
+            <i className="fa-solid fa-trash" aria-hidden="true"></i>
           </Button>
         </div>
       </div>

@@ -43,8 +43,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, zaakId }) => {
             size="sm"
             onClick={() => setShowEditModal(true)}
             title="Taak bewerken"
-          >
-            ✏️
+            >
+              <i className="fa-solid fa-pen" aria-hidden="true"></i>
           </Button>
         </div>
         <div className="mt-2 flex gap-2 items-center">

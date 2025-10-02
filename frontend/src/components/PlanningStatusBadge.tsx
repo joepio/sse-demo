@@ -61,7 +61,7 @@ const PlanningStatusBadge: React.FC<PlanningStatusBadgeProps> = ({
         borderColor: "var(--border-primary)",
       }}
     >
-      <span className="text-xl opacity-80">📅</span>
+      <span className="text-xl opacity-80"><i className="fa-regular fa-calendar" aria-hidden="true"></i></span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="text-sm font-semibold text-text-primary truncate">
@@ -129,7 +129,7 @@ const PlanningStatusBadge: React.FC<PlanningStatusBadgeProps> = ({
                   borderColor: "var(--status-open)",
                 }}
               >
-                ✓
+                <i className="fa-solid fa-check" aria-hidden="true"></i>
               </div>
               <span>{completed} voltooid</span>
             </div>

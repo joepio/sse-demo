@@ -5,15 +5,8 @@ const RUNTIME_CACHE = 'runtime-cache';
 // Install event - cache essential resources
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll([
-        '/',
-        '/index.html',
-        '/manifest.json',
-      ]);
-    })
-  );
+  // Do not precache HTML to avoid serving stale index with old asset links
+  event.waitUntil(caches.open(CACHE_NAME));
   self.skipWaiting();
 });
 
@@ -21,43 +14,68 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
+    (async () => {
+      // Remove old caches that don't match our current name
+      const cacheNames = await caches.keys();
+      await Promise.all(
         cacheNames
           .filter((name) => name !== CACHE_NAME && name !== RUNTIME_CACHE)
           .map((name) => caches.delete(name))
       );
-    })
+      // Cleanup any cached HTML entries to prevent stale pages
+      const cache = await caches.open(CACHE_NAME);
+      const requests = await cache.keys();
+      await Promise.all(
+        requests
+          .filter((req) => req.mode === 'navigate' || req.url.endsWith('/') || req.url.endsWith('/index.html'))
+          .map((req) => cache.delete(req))
+      );
+    })()
   );
   self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  // Skip SSE requests and API calls - always use network
-  if (event.request.url.includes('/events') ||
-    event.request.url.includes('/api/') ||
-    event.request.method !== 'GET') {
+  const { request } = event;
+
+  // Always pass through non-GET, API and SSE requests
+  if (request.method !== 'GET' || request.url.includes('/events') || request.url.includes('/api/')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request).then((response) => {
-        // Cache successful responses
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+  // Network-first for navigations/HTML to avoid stale index.html
+  const accept = request.headers.get('accept') || '';
+  const isNavigation = request.mode === 'navigate' || accept.includes('text/html');
+  if (isNavigation) {
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request);
+          return fresh;
+        } catch (e) {
+          const cache = await caches.open(CACHE_NAME);
+          const cached = await cache.match('/index.html');
+          return cached || new Response('Offline', { status: 503 });
         }
-        return response;
-      });
-    })
+      })()
+    );
+    return;
+  }
+
+  // Cache-first for static assets (CSS/JS/fonts/images)
+  event.respondWith(
+    (async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response && response.status === 200) {
+        const clone = response.clone();
+        const cache = await caches.open(RUNTIME_CACHE);
+        cache.put(request, clone);
+      }
+      return response;
+    })()
   );
 });
 

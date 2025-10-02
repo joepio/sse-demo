@@ -42,7 +42,13 @@ const TimelineItem: React.FC<TimelineItemProps> = ({ event, itemType }) => {
 
   // Delegate everything to the plugin system
   const PluginComponent = getEventPlugin(itemType);
-  return <PluginComponent event={event} data={data} timeInfo={timeInfo} />;
+  return (
+    <div className="relative">
+      {/* Info icon only on the modal (not on timeline cards) will be handled by plugins */}
+      <PluginComponent event={event} data={data} timeInfo={timeInfo} />
+      {/* No inline help on timeline cards per requirement */}
+    </div>
+  );
 };
 
 export default TimelineItem;

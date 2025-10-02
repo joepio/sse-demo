@@ -179,10 +179,27 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
   };
 
-  const getPushButtonText = () => {
-    if (isSubscribed) return "🔕 Notificaties uitschakelen";
-    if (permission === "denied") return "🔕 Notificaties geblokkeerd";
-    return "🔔 Notificaties inschakelen";
+  const getPushButtonContent = () => {
+    if (isSubscribed)
+      return (
+        <>
+          <i className="fa-regular fa-bell-slash" aria-hidden="true"></i>{" "}
+          Notificaties uitschakelen
+        </>
+      );
+    if (permission === "denied")
+      return (
+        <>
+          <i className="fa-regular fa-bell-slash" aria-hidden="true"></i>{" "}
+          Notificaties geblokkeerd
+        </>
+      );
+    return (
+      <>
+        <i className="fa-regular fa-bell" aria-hidden="true"></i>{" "}
+        Notificaties inschakelen
+      </>
+    );
   };
 
   return (
@@ -199,7 +216,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
           borderColor: "var(--border-primary)",
         }}
       >
-        🔔
+        <i className="fa-solid fa-bell" aria-hidden="true"></i>
         {newEventsCount > 0 && (
           <span
             className="absolute -top-1 -right-1 text-xs font-semibold px-1.5 py-0.5 rounded-full min-w-[16px] text-center text-white"
@@ -260,7 +277,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                     : ""
                 }
               >
-                {getPushButtonText()}
+                {getPushButtonContent()}
               </Button>
             )}
           </div>

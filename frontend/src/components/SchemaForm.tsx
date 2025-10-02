@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchSchemaIndex, fetchSchema } from "../types/interfaces";
 import { Button } from "./ActionButton";
+import InfoHelp from "./InfoHelp";
 import SchemaField from "./SchemaField";
 import { generateUUID } from "../utils/uuid";
 import { createItemCreatedEvent } from "../utils/cloudEvents";
@@ -145,11 +146,13 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
 
   return (
     <div className="mt-8">
-      <div
-        className="text-xs uppercase font-semibold tracking-wider mb-4"
-        style={{ color: "var(--text-secondary)" }}
-      >
-        Item Toevoegen
+      <div className="mb-4">
+        <div
+          className="text-xs uppercase font-semibold tracking-wider"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Item Toevoegen
+        </div>
       </div>
 
       {/* Type Selection Buttons */}
@@ -175,6 +178,10 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
             borderColor: "var(--border-primary)",
           }}
         >
+          <div className="relative min-h-0">
+            {/* anchor bottom-right so opening the popover does not shift the icon */}
+            <InfoHelp variant="schemas" anchor="bottom-right" />
+          </div>
           {/* Type Description */}
           <div>
             <h3

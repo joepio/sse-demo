@@ -30,13 +30,13 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning, zaakId }) => {
   const getStatusIcon = (status: "completed" | "current" | "planned") => {
     switch (status) {
       case "completed":
-        return "✓";
+        return <i className="fa-solid fa-check" aria-hidden="true"></i>;
       case "current":
-        return "●";
+        return <i className="fa-solid fa-circle" aria-hidden="true"></i>;
       case "planned":
-        return "○";
+        return <i className="fa-regular fa-circle" aria-hidden="true"></i>;
       default:
-        return "○";
+        return <i className="fa-regular fa-circle" aria-hidden="true"></i>;
     }
   };
 
@@ -46,7 +46,7 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning, zaakId }) => {
       <div className="mb-3">
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-lg">📅</span>
+            <span className="text-lg"><i className="fa-regular fa-calendar" aria-hidden="true"></i></span>
             <h4 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-medium text-text-primary m-0">
               {title || "Planning"}
             </h4>
@@ -58,7 +58,7 @@ const PlanningCard: React.FC<PlanningCardProps> = ({ planning, zaakId }) => {
               onClick={() => setShowEditModal(true)}
               title="Planning bewerken"
             >
-              ✏️
+              <i className="fa-solid fa-pen" aria-hidden="true"></i>
             </Button>
           )}
         </div>
