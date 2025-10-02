@@ -38,7 +38,7 @@ const JSONCommitSection: React.FC = () => {
             </li>
             <li>
               <strong>Het verwijderen</strong> van een resource →{" "}
-              <code>patch._deleted: true</code> markeert de resource als
+              <code>deleted: true</code> markeert de resource als
               verwijderd. De hele resource (en al zijn events) worden dan uit
               de store verwijderd.
             </li>
@@ -135,10 +135,8 @@ const JSONCommitSection: React.FC = () => {
   }
 
   // OF voor DELETE:
-  "patch": {
-    "_deleted": true,
-    "_deletion_reason": "spam"
-  }
+  "deleted": true,
+  "deletion_reason": "spam"
 }`}
           />
         </div>
@@ -214,7 +212,7 @@ const JSONCommitSection: React.FC = () => {
                 🗑️ Voorbeeld 3: Taak Verwijderen
               </h4>
               <p className="mb-2 text-sm" style={{ color: "var(--text-secondary)" }}>
-                Wanneer <code>patch._deleted</code> op <code>true</code> staat, wordt de hele resource verwijderd uit de store. Optionele metadata zoals <code>_deletion_reason</code> kan toegevoegd worden maar wordt niet opgeslagen.
+                Wanneer <code>deleted</code> op <code>true</code> staat, wordt de hele resource verwijderd uit de store. Optionele metadata zoals <code>deletion_reason</code> kan toegevoegd worden maar wordt niet opgeslagen.
               </p>
               <CodeBlock
                 language="json"
@@ -230,10 +228,8 @@ const JSONCommitSection: React.FC = () => {
     "schema": "http://localhost:8000/schemas/Task",
     "resource_id": "task-456",
     "actor": "alice@gemeente.nl",
-    "patch": {
-      "_deleted": true,
-      "_deletion_reason": "duplicaat"
-    }
+    "deleted": true,
+    "deletion_reason": "duplicaat"
   }
 }`}
               />
@@ -255,24 +251,22 @@ const JSONCommitSection: React.FC = () => {
             language="typescript"
             code={`// Pseudocode voor event processing
 function processJSONCommit(event: CloudEvent) {
-  const { resource_id, resource_data, patch } = event.data;
+  const { resource_id, resource_data, patch, deleted } = event.data;
 
+  // DELETE: heeft deleted?
+  if (deleted) {
+    delete store[resource_id];
+  }
   // CREATE: heeft resource_data?
-  if (resource_data) {
+  else if (resource_data) {
     store[resource_id] = resource_data;
   }
-  // UPDATE of DELETE: heeft patch?
+  // UPDATE: heeft patch?
   else if (patch) {
-    if (patch._deleted) {
-      // DELETE
-      delete store[resource_id];
-    } else {
-      // UPDATE: apply JSON Merge Patch
-      store[resource_id] = applyMergePatch(
-        store[resource_id],
-        patch
-      );
-    }
+    store[resource_id] = applyMergePatch(
+      store[resource_id],
+      patch
+    );
   }
 }`}
           />

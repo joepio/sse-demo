@@ -110,7 +110,7 @@ describe("cloudEvents", () => {
   });
 
   describe("createItemDeletedEvent", () => {
-    it("creates a valid json.commit CloudEvent with _deleted flag", () => {
+    it("creates a valid json.commit CloudEvent with deleted flag", () => {
       const event = createItemDeletedEvent("task", "task-1", {
         actor: "test-actor",
       });
@@ -128,9 +128,7 @@ describe("cloudEvents", () => {
           schema: "http://localhost:8000/schemas/Task",
           resource_id: "task-1",
           actor: "test-actor",
-          patch: {
-            _deleted: true,
-          },
+          deleted: true,
         },
       });
     });

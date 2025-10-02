@@ -83,7 +83,7 @@ const handleNewEvent = (cloudEvent) => {
       if (schema?.endsWith('/Issue')) {
         if (data.resource_data) {
           addIssue(subject, data.resource_data);
-        } else if (data.patch?._deleted) {
+        } else if (data.deleted) {
           removeIssue(subject);
         } else if (data.patch) {
           updateIssue(subject, data.patch);

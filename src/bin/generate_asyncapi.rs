@@ -322,10 +322,8 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                     "resource_id": "1",
                     "actor": "admin@gemeente.nl",
                     "timestamp": "2025-01-15T16:45:00Z",
-                    "patch": {
-                        "_deleted": true,
-                        "_deletion_reason": "Duplicate case - merged with case #3"
-                    }
+                    "deleted": true,
+                    "deletion_reason": "Duplicate case - merged with case #3"
                 }
             }
         }),
@@ -441,10 +439,8 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                     "resource_id": "doc-1001",
                     "actor": "alice@gemeente.nl",
                     "timestamp": "2025-01-15T15:20:00Z",
-                    "patch": {
-                        "_deleted": true,
-                        "_deletion_reason": "Incorrect document uploaded"
-                    }
+                    "deleted": true,
+                    "deletion_reason": "Incorrect document uploaded"
                 }
             }
         }),
@@ -613,9 +609,7 @@ fn generate_message_examples(base_url: &str, embed_schemas: bool) -> Vec<Value> 
                     "resource_id": "comment-1001",
                     "actor": "alice@gemeente.nl",
                     "timestamp": "2025-01-15T17:10:00Z",
-                    "patch": {
-                        "_deleted": true
-                    }
+                    "deleted": true
                 }
             }
         }),

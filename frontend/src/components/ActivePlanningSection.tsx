@@ -1,6 +1,7 @@
 import React from "react";
 import type { CloudEvent } from "../types";
-import { getLatestPlanningForIssue } from "../utils/planningUtils";
+import { getPlanningForIssue } from "../utils/planningUtils";
+import { useSSE } from "../contexts/SSEContext";
 import SectionLabel from "./SectionLabel";
 import PlanningCard from "./PlanningCard";
 import Card from "./Card";
@@ -14,9 +15,11 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
   events,
   zaakId,
 }) => {
-  const latestPlanning = getLatestPlanningForIssue(events, zaakId);
+  const { items } = useSSE();
+  const planningItems = getPlanningForIssue(events, zaakId, items);
+  const planningArray = Array.from(planningItems.values());
 
-  if (!latestPlanning) return null;
+  if (planningArray.length === 0) return null;
 
   return (
     <div
@@ -25,9 +28,13 @@ const ActivePlanningSection: React.FC<ActivePlanningSectionProps> = ({
       data-testid="active-planning-section"
     >
       <SectionLabel>Planning</SectionLabel>
-      <Card padding="sm" id={latestPlanning.id}>
-        <PlanningCard planning={latestPlanning} zaakId={zaakId} />
-      </Card>
+      {planningArray.map((planning) => (
+        <div key={`planning-${planning.id}`} className="mb-3">
+          <Card padding="sm" id={planning.id}>
+            <PlanningCard planning={planning} zaakId={zaakId} />
+          </Card>
+        </div>
+      ))}
     </div>
   );
 };

@@ -1,9 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
-import { useActor } from "../contexts/ActorContext";
 import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
-import { createItemDeletedEvent } from "../utils/cloudEvents";
 
 import IssueHeader from "./IssueHeader";
 import PageHeader from "./PageHeader";
@@ -17,12 +15,9 @@ import SectionLabel from "./SectionLabel";
 
 const IssueTimeline: React.FC = () => {
   const { zaakId } = useParams<{ zaakId: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const { events, issues, sendEvent } = useSSE();
-  const { actor } = useActor();
 
-  const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const issue = zaakId ? issues[zaakId] : null;
@@ -119,8 +114,7 @@ const IssueTimeline: React.FC = () => {
         // Determine if this is a create, update, or delete based on presence of fields
         const isCreate = !!data.resource_data || !!data.item_data;
         const isUpdate = !!data.patch && !data.resource_data && !data.item_data;
-        const isDelete = data.patch && typeof data.patch === "object" &&
-                        (data.patch as Record<string, unknown>)._deleted === true;
+        const isDelete = data.deleted === true;
 
         // Map item types to timeline types
         if (itemType === "issue") {
@@ -144,36 +138,6 @@ const IssueTimeline: React.FC = () => {
 
   const handleCommentSubmit = async (event: CloudEvent) => {
     await sendEvent(event);
-  };
-
-  const handleDeleteIssue = async () => {
-    if (
-      !zaakId ||
-      !window.confirm(`Weet u zeker dat u zaak #${zaakId} wilt verwijderen?`)
-    ) {
-      return;
-    }
-
-    setIsDeleting(true);
-
-    try {
-      // Use the schema-based CloudEvent utility for deletion with session actor
-      const deleteEvent = createItemDeletedEvent("issue", zaakId, {
-        source: "frontend-demo-event",
-        subject: zaakId,
-        actor,
-      });
-
-      await sendEvent(deleteEvent);
-
-      // Navigate back to main page after successful deletion
-      navigate("/");
-    } catch (error) {
-      console.error("Failed to delete issue:", error);
-      alert("Verwijderen van zaak mislukt");
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   const handleEditIssue = () => {
@@ -227,8 +191,6 @@ const IssueTimeline: React.FC = () => {
             <IssueHeader
               issue={issue}
               onEdit={handleEditIssue}
-              onDelete={handleDeleteIssue}
-              isDeleting={isDeleting}
             />
           )}
         </div>

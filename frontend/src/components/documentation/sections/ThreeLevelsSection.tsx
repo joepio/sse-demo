@@ -80,7 +80,7 @@ const ThreeLevelsSection: React.FC = () => {
                   color: "var(--text-primary)",
                 }}
               >
-                patch._deleted: true
+                deleted: true
               </code>
             </Card>
           </div>

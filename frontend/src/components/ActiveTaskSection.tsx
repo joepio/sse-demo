@@ -1,6 +1,7 @@
 import React from "react";
 import type { CloudEvent } from "../types";
 import { getUncompletedTasksForIssue } from "../utils/taskUtils";
+import { useSSE } from "../contexts/SSEContext";
 import SectionLabel from "./SectionLabel";
 import TaskCard from "./TaskCard";
 import Card from "./Card";
@@ -14,7 +15,8 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
   events,
   zaakId,
 }) => {
-  const openTasks = getUncompletedTasksForIssue(events, zaakId);
+  const { items } = useSSE();
+  const openTasks = getUncompletedTasksForIssue(events, zaakId, items);
 
   if (openTasks.length === 0) return null;
 
@@ -27,7 +29,7 @@ const ActiveTaskSection: React.FC<ActiveTaskSectionProps> = ({
       <SectionLabel>Mijn taken</SectionLabel>
       <div className="space-y-3">
         {openTasks.map((task) => (
-          <Card key={task.id} padding="sm" id={task.id} data-testid="task-card">
+          <Card key={`task-${task.id}`} padding="sm" id={task.id} data-testid="task-card">
             <TaskCard task={task} zaakId={zaakId} />
           </Card>
         ))}

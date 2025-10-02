@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import type { EventPluginProps } from "./types";
 import type { Document } from "../../types";
-import Card from "../../components/Card";
-import { EventHeader, CloudEventModal } from "../shared/TimelineEventUI";
-import SchemaEditForm from "../../components/SchemaEditForm";
+import { ResourcePluginWrapper, EventPluginWrapper } from "../shared/TimelineEventUI";
+import SchemaEditFormContent from "../../components/SchemaEditFormContent";
+import DeletedItem from "../../components/DeletedItem";
 import { Button } from "../../components/ActionButton";
 import { useSSE } from "../../contexts/SSEContext";
 
@@ -13,132 +13,58 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   timeInfo,
 }) => {
   const { sendEvent, items } = useSSE();
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const eventData = data as Record<string, unknown>;
 
   // Support both new (resource_id) and old (item_id) field names
   const documentId = (eventData.resource_id || eventData.item_id) as string;
 
+  if (!documentId) {
+    return <p>Document ID not found</p>;
+  }
+
   const isUpdateEvent = event.originalEvent.type.includes("updated") ||
                         (event.originalEvent.type === "json.commit" && !!eventData.patch && !eventData.resource_data);
-  const isDeleteEvent = event.originalEvent.type.includes("deleted") ||
-                        (eventData.patch && typeof eventData.patch === "object" &&
-                         (eventData.patch as Record<string, unknown>)._deleted === true);
 
   // Get the current state of the document from the items store
-  const documentData = (items[documentId] ||
-                       eventData.resource_data ||
-                       eventData.item_data ||
-                       eventData) as Partial<Document>;
+  const documentData = items[documentId] as Partial<Document> | undefined;
 
-  // Handle delete events
-  if (isDeleteEvent) {
+  // If the document is not in the store, it's been deleted
+  if (!documentData) {
     return (
-      <>
-        <Card padding="sm" id={documentId}>
-          <EventHeader actor={event.actor} timeLabel={timeInfo.relative} onTimeClick={() => setShowEventModal(true)} />
-          <div className="prose prose-sm max-w-none">
-            <p
-              className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
-              style={{ color: "var(--text-primary)" }}
-            >
-              <strong><i className="fa-solid fa-trash" aria-hidden="true"></i> Document verwijderd</strong>
-            </p>
-            <div
-              className="text-xs sm:text-sm lg:text-sm xl:text-base"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Document ID: {documentId}
-            </div>
-          </div>
-        </Card>
-
-        <CloudEventModal
-          open={showEventModal}
-          onClose={() => setShowEventModal(false)}
-          cloudEvent={event.originalEvent}
-          schemaUrl={(eventData as any)?.schema as string | undefined}
-        />
-      </>
+      <DeletedItem
+        itemId={documentId}
+        itemType="document"
+        actor={event.actor || "onbekend"}
+        timeLabel={timeInfo.relative}
+        onTimeClick={() => {}} // Will be handled by wrapper
+        title={undefined} // We don't have the title since the item is deleted
+      />
     );
   }
 
-  // Handle update events
+  // Handle update events - these are simple one-liners
   if (isUpdateEvent) {
     return (
-      <>
-        <Card padding="sm" id={documentId}>
-          <EventHeader actor={event.actor} timeLabel={timeInfo.relative} onTimeClick={() => setShowEventModal(true)} />
-          <div className="prose prose-sm max-w-none">
-            <p
-              className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
-              style={{ color: "var(--text-primary)" }}
-            >
-              <strong>📝 Document bijgewerkt</strong>
-            </p>
-            <div
-              className="text-xs sm:text-sm lg:text-sm xl:text-base"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Document ID: {documentId}
-            </div>
-          </div>
-        </Card>
-
-        <CloudEventModal
-          open={showEventModal}
-          onClose={() => setShowEventModal(false)}
-          cloudEvent={event.originalEvent}
-          schemaUrl={(eventData as any)?.schema as string | undefined}
-        />
-      </>
+      <EventPluginWrapper
+        event={event}
+        data={data}
+        timeInfo={timeInfo}
+      >
+        <span>document bijgewerkt</span>
+      </EventPluginWrapper>
     );
   }
 
-  // Handle create events - show document card
+  // Handle create events with incomplete data - these are simple one-liners
   if (!documentData.title || !documentData.url) {
     return (
-      <>
-        <Card padding="sm" id={documentId}>
-          <div className="flex items-center justify-between gap-4 w-full mb-3">
-            {event.actor && event.actor !== "system" && (
-              <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
-                {event.actor}
-              </span>
-            )}
-            <Button
-              variant="link"
-              size="sm"
-              title={`${timeInfo.date} at ${timeInfo.time}`}
-              onClick={() => setShowEventModal(true)}
-            >
-              {timeInfo.relative}
-            </Button>
-          </div>
-          <div className="prose prose-sm max-w-none">
-            <p
-              className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
-              style={{ color: "var(--text-primary)" }}
-            >
-              <strong><i className="fa-regular fa-file-lines" aria-hidden="true"></i> Nieuw document toegevoegd</strong>
-            </p>
-            <div
-              className="text-xs sm:text-sm lg:text-sm xl:text-base"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Document informatie niet volledig beschikbaar
-            </div>
-          </div>
-        </Card>
-
-        <CloudEventModal
-          open={showEventModal}
-          onClose={() => setShowEventModal(false)}
-          cloudEvent={event.originalEvent}
-          schemaUrl={(eventData as any)?.schema as string | undefined}
-        />
-      </>
+      <EventPluginWrapper
+        event={event}
+        data={data}
+        timeInfo={timeInfo}
+      >
+        <span>document toegevoegd</span>
+      </EventPluginWrapper>
     );
   }
 
@@ -164,91 +90,62 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
     }
   };
 
+  const editFormComponent = (
+    <SchemaEditFormContent
+      itemType="document"
+      itemId={(documentData as Record<string, unknown>)?.id as string || event.id}
+      initialData={{
+        title: documentData.title,
+        url: documentData.url,
+        size: documentData.size,
+      }}
+      onSubmit={sendEvent}
+      onCancel={() => {}} // Will be handled by wrapper
+      zaakId={event.originalEvent.subject || ""}
+    />
+  );
+
   return (
-    <>
-      <Card padding="sm" id={documentId}>
-        <div className="flex items-center justify-between gap-4 w-full mb-3">
-          {event.actor && event.actor !== "system" && (
-            <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
-              {event.actor}
-            </span>
-          )}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="icon"
-              size="sm"
-              onClick={() => setShowEditModal(true)}
-              title="Bewerken"
+    <ResourcePluginWrapper
+      event={event}
+      data={data}
+      timeInfo={timeInfo}
+      actionText="document toegevoegd"
+      editFormComponent={editFormComponent}
+      showEditButton={true}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="text-xl"><i className="fa-regular fa-file-lines" aria-hidden="true"></i></span>
+          <div className="flex-1 min-w-0">
+            <h4
+              className="font-semibold m-0 leading-tight text-base sm:text-lg lg:text-xl xl:text-2xl"
+              style={{ color: "var(--text-primary)" }}
             >
-              <i className="fa-solid fa-pen" aria-hidden="true"></i>
-            </Button>
-            <Button
-              variant="link"
-              size="sm"
-              title={`${timeInfo.date} at ${timeInfo.time}`}
-              onClick={() => setShowEventModal(true)}
-            >
-              {timeInfo.relative}
-            </Button>
+              {documentData.title}
+            </h4>
+            {documentData.size && (
+              <p
+                className="text-xs sm:text-sm lg:text-sm xl:text-base m-0 mt-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {formatFileSize(documentData.size)}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="prose prose-sm max-w-none">
-          <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4 mb-3">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className="text-xl"><i className="fa-regular fa-file-lines" aria-hidden="true"></i></span>
-              <div className="flex-1 min-w-0">
-                <h4
-                  className="font-semibold m-0 leading-tight text-base sm:text-lg lg:text-xl xl:text-2xl"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {documentData.title}
-                </h4>
-                {documentData.size && (
-                  <p
-                    className="text-xs sm:text-sm lg:text-sm xl:text-base m-0 mt-1"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {formatFileSize(documentData.size)}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <Button
-              variant="secondary"
-              size="md"
-              onClick={handleDownload}
-              className="self-start sm:self-auto flex-shrink-0"
-            >
-              <span><i className="fa-solid fa-download" aria-hidden="true"></i></span>
-              Download
-            </Button>
-          </div>
-        </div>
-      </Card>
-
-      <SchemaEditForm
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        itemType="document"
-        itemId={(documentData as any)?.id || event.id}
-        initialData={{
-          title: documentData.title,
-          url: documentData.url,
-          size: documentData.size,
-        }}
-        onSubmit={sendEvent}
-        zaakId={event.originalEvent.subject || ""}
-      />
-
-      <CloudEventModal
-        open={showEventModal}
-        onClose={() => setShowEventModal(false)}
-        cloudEvent={event.originalEvent}
-        schemaUrl={(eventData as any)?.schema as string | undefined}
-      />
-    </>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={handleDownload}
+          className="self-start sm:self-auto flex-shrink-0"
+        >
+          <span><i className="fa-solid fa-download" aria-hidden="true"></i></span>
+          Download
+        </Button>
+      </div>
+    </ResourcePluginWrapper>
   );
 };
 

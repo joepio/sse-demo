@@ -1,11 +1,13 @@
-import type { CloudEvent, ExtendedTask, TimelineItemData } from "../types";
+import type { CloudEvent, ExtendedTask, Task } from "../types";
+import { createItemUpdatedEvent } from "./cloudEvents";
 
 /**
- * Extract tasks from events for a specific issue
+ * Extract tasks from events for a specific issue using the items store
  */
 export const getTasksForIssue = (
   events: CloudEvent[],
-  issueId: string
+  issueId: string,
+  items: Record<string, Record<string, unknown>>
 ): ExtendedTask[] => {
   // Get json.commit events for tasks
   const taskEvents = events.filter(
@@ -19,73 +21,43 @@ export const getTasksForIssue = (
       )
   );
 
-  // Group events by task ID to handle updates
-  const taskMap = new Map<string, ExtendedTask>();
+  // Get unique task IDs from events
+  const taskIds = new Set<string>();
+  for (const event of taskEvents) {
+    const data = event.data as Record<string, unknown>;
+    const taskId = String(data.resource_id || data.item_id);
+    if (taskId) {
+      taskIds.add(taskId);
+    }
+  }
 
-  // Process events in chronological order
-  taskEvents
-    .sort(
-      (a, b) =>
-        new Date(a.time || "").getTime() - new Date(b.time || "").getTime()
-    )
-    .forEach((event) => {
-      const data = event.data as Record<string, unknown>;
-      const taskId = (data.resource_id || data.item_id) as string;
+  // Get task data from items store and create ExtendedTask
+  const tasks: ExtendedTask[] = [];
+  for (const taskId of taskIds) {
+    const task = items[taskId] as unknown as Task | undefined;
+    if (task) {
+      // Find the most recent event for this task to get timestamp
+      const recentEvent = taskEvents
+        .filter((event) => {
+          const data = event.data as Record<string, unknown>;
+          return String(data.resource_id || data.item_id) === taskId;
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime()
+        )[0];
 
-      // Check if this is a create (has resource_data) or update (has patch)
-      const resourceData = data.resource_data || data.item_data;
-      const patch = data.patch;
+      const extendedTask: ExtendedTask = {
+        ...task,
+        id: taskId, // Ensure the ID is set correctly
+        timestamp: recentEvent?.time || new Date().toISOString(),
+      };
 
-      if (resourceData) {
-        // Create new task
-        const itemData = resourceData as TimelineItemData;
-        if (itemData.cta && itemData.description && itemData.url) {
-          taskMap.set(taskId, {
-            id: taskId,
-            cta: itemData.cta,
-            description: itemData.description,
-            url: itemData.url || null,
-            completed: itemData.completed || false,
-            deadline: itemData.deadline || null,
-            actor: String(data.actor || "system"),
-            timestamp: event.time || new Date().toISOString(),
-          } as ExtendedTask);
-        }
-      } else if (patch) {
-        // Update existing task
-        const existingTask = taskMap.get(taskId);
-        if (existingTask) {
-          const patchData = patch as Record<string, unknown>;
-          // Check for deletion
-          if (patchData._deleted === true) {
-            taskMap.delete(taskId);
-            return;
-          }
-          // Apply patch to existing task
-          const updatedTask = { ...existingTask };
-          if (patchData.completed !== undefined) {
-            updatedTask.completed = patchData.completed as boolean;
-          }
-          if (patchData.cta !== undefined) {
-            updatedTask.cta = patchData.cta as string;
-          }
-          if (patchData.description !== undefined) {
-            updatedTask.description = patchData.description as string;
-          }
-          if (patchData.url !== undefined) {
-            updatedTask.url = patchData.url as string;
-          }
-          if (patchData.deadline !== undefined) {
-            updatedTask.deadline = patchData.deadline as string;
-          }
-          taskMap.set(taskId, updatedTask);
-        }
-      }
-    });
+      tasks.push(extendedTask);
+    }
+  }
 
-  return Array.from(taskMap.values()).sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  return tasks;
 };
 
 /**
@@ -93,9 +65,10 @@ export const getTasksForIssue = (
  */
 export const getLatestTaskForIssue = (
   events: CloudEvent[],
-  issueId: string
+  issueId: string,
+  items: Record<string, Record<string, unknown>>
 ): ExtendedTask | null => {
-  const tasks = getTasksForIssue(events, issueId);
+  const tasks = getTasksForIssue(events, issueId, items);
   return tasks.find((task) => !task.completed) || null;
 };
 
@@ -104,34 +77,35 @@ export const getLatestTaskForIssue = (
  */
 export const getUncompletedTasksForIssue = (
   events: CloudEvent[],
-  issueId: string
+  issueId: string,
+  items: Record<string, Record<string, unknown>>
 ): ExtendedTask[] => {
-  const tasks = getTasksForIssue(events, issueId);
+  const tasks = getTasksForIssue(events, issueId, items);
   return tasks.filter((task) => !task.completed);
 };
 
 /**
  * Create a task completion event
  */
-export const createTaskCompletionEvent = (taskId: string): CloudEvent => {
-  return {
-    specversion: "1.0",
-    id: `completion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    source: "frontend-user-action",
-    type: "json.commit",
-    time: new Date().toISOString(),
-    datacontenttype: "application/json",
-    dataschema: "http://localhost:8000/schemas/JSONCommit",
-    data: {
-      schema: "http://localhost:8000/schemas/Task",
-      resource_id: taskId,
-      actor: "user@gemeente.nl",
-      patch: {
-        completed: true,
-        completed_at: new Date().toISOString(),
-      },
+export const createTaskCompletionEvent = (
+  taskId: string,
+  zaakId: string,
+  actor: string
+): CloudEvent => {
+  return createItemUpdatedEvent(
+    "task",
+    taskId,
+    {
+      completed: true,
+      completed_at: new Date().toISOString(),
+      completed_by: actor,
     },
-  };
+    {
+      source: "frontend-user-action",
+      subject: zaakId,
+      actor: actor,
+    }
+  );
 };
 
 /**
@@ -181,13 +155,14 @@ export const formatTaskDeadline = (deadline: string): string => {
  */
 export const getTaskSummary = (
   events: CloudEvent[],
-  issueId: string
+  issueId: string,
+  items: Record<string, Record<string, unknown>>
 ): {
   hasTask: boolean;
   taskCount: number;
   latestTask: ExtendedTask | null;
 } => {
-  const tasks = getTasksForIssue(events, issueId);
+  const tasks = getTasksForIssue(events, issueId, items);
   const uncompletedTasks = tasks.filter((task) => !task.completed);
 
   return {

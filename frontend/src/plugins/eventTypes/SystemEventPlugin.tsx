@@ -1,13 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import type { EventPluginProps } from "./types";
-import { EventHeader, CloudEventModal } from "../shared/TimelineEventUI";
+import { EventPluginWrapper } from "../shared/TimelineEventUI";
 
 const SystemEventPlugin: React.FC<EventPluginProps> = ({
   event,
   data,
   timeInfo,
 }) => {
-  const [showEventModal, setShowEventModal] = useState(false);
 
   const getChangeText = (): string => {
     // Extract item type from schema URL or fall back to item_type field
@@ -26,7 +25,7 @@ const SystemEventPlugin: React.FC<EventPluginProps> = ({
     const resourceData = data.resource_data || data.item_data;
     const patch = data.patch as Record<string, unknown> | undefined;
     const isCreate = !!resourceData;
-    const isDelete = patch && patch._deleted === true;
+    const isDelete = data.deleted === true;
     const isUpdate = patch && !isDelete;
 
     // Handle different item types with meaningful messages
@@ -124,23 +123,13 @@ const SystemEventPlugin: React.FC<EventPluginProps> = ({
   };
 
   return (
-    <>
-      <EventHeader
-        actor={event.actor}
-        timeLabel={timeInfo.relative}
-        onTimeClick={() => setShowEventModal(true)}
-      />
-      <div className="text-sm sm:text-base lg:text-lg xl:text-xl" style={{ color: "var(--text-secondary)" }}>
-        {getChangeText()}
-      </div>
-
-      <CloudEventModal
-        open={showEventModal}
-        onClose={() => setShowEventModal(false)}
-        cloudEvent={event.originalEvent}
-        schemaUrl={(data as any)?.schema as string | undefined}
-      />
-    </>
+    <EventPluginWrapper
+      event={event}
+      data={data}
+      timeInfo={timeInfo}
+    >
+      <span>{getChangeText()}</span>
+    </EventPluginWrapper>
   );
 };
 

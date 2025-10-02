@@ -23,7 +23,7 @@ import type { CloudEvent, Issue } from "./types";
 import "./App.css";
 
 const ZakenDashboard: React.FC = () => {
-  const { issues, events, sendEvent, completeTask } = useSSE();
+  const { issues, events, items, sendEvent, completeTask } = useSSE();
   const [animatingIssues, setAnimatingIssues] = useState<Set<string>>(
     new Set(),
   );
@@ -116,8 +116,8 @@ const ZakenDashboard: React.FC = () => {
             </p>
           ) : (
             issueEntries.map(([id, issue]) => {
-              const latestTask = getLatestTaskForIssue(events, id);
-              const showPlanning = shouldShowPlanningStatus(events, id);
+              const latestTask = getLatestTaskForIssue(events, id, items);
+              const showPlanning = shouldShowPlanningStatus(events, id, items);
 
               return (
                 <Card

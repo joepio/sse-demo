@@ -73,7 +73,7 @@ export function createItemUpdatedEvent<T = Record<string, unknown>>(
 
 /**
  * Generic function to create a JSONCommit CloudEvent for resource deletion
- * Deletion is represented as a patch with _deleted flag
+ * Deletion is represented with the deleted field set to true
  */
 export function createItemDeletedEvent(
   itemType: ItemType,
@@ -93,9 +93,7 @@ export function createItemDeletedEvent(
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       resource_id: resourceId,
       actor: options.actor,
-      patch: {
-        _deleted: true,
-      },
+      deleted: true,
     },
   };
 }

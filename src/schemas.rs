@@ -37,7 +37,8 @@ pub struct CloudEvent {
     /// Type van de volgnummering die gebruikt wordt
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sequencetype: Option<String>,
-    /// De eigenlijke gebeurtenis data - bevat informatie over wat er is gebeurd
+    /// De inhoud van de eigenlijke gebeurtenis.
+    /// Bij JSONCommits zit hier de daadwerkelijke JSONCommit data in.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Value>,
 }
@@ -47,12 +48,13 @@ pub struct CloudEvent {
 /// Dit event type vertegenwoordigt elke wijziging aan een JSON resource, of het nu gaat om:
 /// - Het aanmaken van een nieuwe resource (resource_data bevat de volledige resource)
 /// - Het updaten van een bestaande resource (patch bevat de wijzigingen)
-/// - Het verwijderen van een resource (patch bevat null waarden of expliciete verwijdering)
+/// - Het verwijderen van een resource (deleted: true markeert de resource als verwijderd)
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct JSONCommit {
     /// URL naar het JSON Schema dat de structuur van de resource beschrijft (bijv. "http://localhost:8000/schemas/Comment")
+    /// Dit bepaalt welke velden de resource moet hebben en wat hun dataype is.
     pub schema: String,
-    /// Unieke identificatie van de resource waar deze commit over gaat
+    /// Unieke identificatie van de resource waar deze commit over gaat.
     pub resource_id: String,
     /// Email van de persoon die de actie heeft uitgevoerd (bijv. "alice@gemeente.nl", "user@gemeente.nl")
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -63,9 +65,15 @@ pub struct JSONCommit {
     /// Complete resource data (bij aanmaken van nieuwe resources)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resource_data: Option<Value>,
-    /// JSON Merge Patch (RFC 7396) met wijzigingen (bij updates of verwijderingen)
+    /// JSON Merge Patch (RFC 7396) met wijzigingen (bij updates).
+    /// Velden met een null waarde worden verwijderd.
+    /// Alle andere velden worden bijgewerkt / overgeschreven.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub patch: Option<Value>,
+    /// Markeert de resource als verwijderd (bij verwijderingen).
+    /// De resource (en de gerelateerde events) moeten dan uit de store verwijderd worden.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deleted: Option<bool>,
 }
 
 /// Soorten items in het zaaksysteem
@@ -87,8 +95,6 @@ pub enum ItemType {
 /// Document dat bij een zaak hoort (bijv. paspoortfoto, uittreksel GBA)
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Document {
-    /// Unieke identificatie van het document
-    pub id: String,
     /// Bestandsnaam of titel van het document (bijv. "Paspoortfoto_Jan_Jansen.jpg")
     pub title: String,
     /// Download URL van het document - moet toegankelijk zijn voor geautoriseerde gebruikers
@@ -100,8 +106,6 @@ pub struct Document {
 /// Zaak - een burgerzaak of aanvraag die door de gemeente behandeld wordt
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Issue {
-    /// Unieke zaaknummer
-    pub id: String,
     /// Korte, duidelijke titel van de zaak (bijv. "Paspoort aanvragen", "Kapvergunning Dorpsstraat 12")
     pub title: String,
     /// Uitgebreide beschrijving: wat is de aanvraag, welke stappen zijn al ondernomen
@@ -153,8 +157,6 @@ pub enum IssueStatus {
 /// Reactie - een opmerking, vraag of toelichting bij een zaak
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Comment {
-    /// Unieke reactie ID
-    pub id: String,
     /// De tekst van de reactie (bijv. "Documenten zijn goedgekeurd", "Burger gebeld voor aanvullende info")
     pub content: String,
     /// ID van de reactie waar dit een antwoord op is (voor discussies met meerdere berichten)
@@ -168,8 +170,6 @@ pub struct Comment {
 /// Planning - een tijdlijn met verschillende stappen of fasen voor zaakbehandeling
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Planning {
-    /// Unieke planning ID
-    pub id: String,
     /// Naam van de planning (bijv. "Vergunningsprocedure", "Paspoort aanvraag proces")
     pub title: String,
     /// Uitleg over wat deze planning behelst en welke stappen doorlopen worden
@@ -182,8 +182,6 @@ pub struct Planning {
 /// Een specifieke stap of mijlpaal binnen een planning
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct PlanningMoment {
-    /// Unieke identificatie van dit moment
-    pub id: String,
     /// Geplande of gerealiseerde datum (YYYY-MM-DD, bijv. "2024-01-15")
     pub date: String,
     /// Naam van deze stap (bijv. "Intake gesprek", "Documentcheck", "Besluit gemeente")

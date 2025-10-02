@@ -878,11 +878,15 @@ fn generate_create_event_with_data(
 }
 
 fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
-    // For deletion, we use a patch with _deleted flag
-    // When _deleted is true, the entire resource is removed from the store
-    let delete_patch = json!({
-        "_deleted": true,
-        "_deletion_reason": reason
+    // For deletion, we use the deleted field directly
+    // When deleted is true, the entire resource is removed from the store
+    let delete_data = json!({
+        "schema": ISSUE_SCHEMA,
+        "resource_id": issue_id,
+        "actor": "system@gemeente.nl",
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+        "deleted": true,
+        "deletion_reason": reason
     });
 
     create_cloud_event(
@@ -890,8 +894,8 @@ fn generate_delete_event_with_data(issue_id: &str, reason: &str) -> Value {
         Some(issue_id),
         CONTENT_TYPE_JSON,
         issue_id,
+        Some(&delete_data),
         None,
-        Some(&delete_patch),
         ISSUE_SCHEMA,
     )
 }

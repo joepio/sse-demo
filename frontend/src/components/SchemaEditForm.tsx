@@ -4,7 +4,7 @@ import { Button } from "./ActionButton";
 import Modal from "./Modal";
 import SchemaField from "./SchemaField";
 import InfoHelp from "./InfoHelp";
-import { createItemUpdatedEvent } from "../utils/cloudEvents";
+import { createItemUpdatedEvent, createItemDeletedEvent } from "../utils/cloudEvents";
 import { useActor } from "../contexts/ActorContext";
 import type { ItemType } from "../types";
 import type { CloudEvent } from "../types/interfaces";
@@ -46,6 +46,7 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
   const { actor } = useActor();
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [currentSchema, setCurrentSchema] = useState<Record<string, unknown> | null>(null);
 
   // Initialize form data when modal opens or initialData changes
@@ -110,6 +111,35 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!confirm(`Weet je zeker dat je dit ${typeLabel.toLowerCase()} wilt verwijderen?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      // Use the schema-based CloudEvent utility for deletion with session actor
+      const event = createItemDeletedEvent(
+        itemType.toLowerCase() as ItemType,
+        itemId,
+        {
+          source: "frontend-delete",
+          subject: zaakId,
+          actor,
+        }
+      );
+
+      await onSubmit(event);
+      onClose();
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+      alert("Er ging iets mis bij het verwijderen van het item");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleClose = () => {
     setFormData({});
     onClose();
@@ -156,25 +186,37 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
                     ))
                 : null}
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-between pt-4">
               <Button
                 type="button"
-                variant="secondary"
+                variant="danger"
                 size="md"
-                onClick={handleClose}
-                disabled={isSubmitting}
+                onClick={handleDelete}
+                disabled={isSubmitting || isDeleting}
+                loading={isDeleting}
               >
-                Annuleren
+                {isDeleting ? "Verwijderen..." : "Verwijderen"}
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                loading={isSubmitting}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Opslaan..." : "Opslaan"}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  onClick={handleClose}
+                  disabled={isSubmitting || isDeleting}
+                >
+                  Annuleren
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  loading={isSubmitting}
+                  disabled={isSubmitting || isDeleting}
+                >
+                  {isSubmitting ? "Opslaan..." : "Opslaan"}
+                </Button>
+              </div>
             </div>
           </form>
         ) : (

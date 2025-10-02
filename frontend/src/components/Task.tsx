@@ -44,7 +44,7 @@ const Task: React.FC<TaskProps> = ({
             </span>
             {showActor && (
               <span className="text-text-tertiary text-xs">
-                door {task.actor}
+                voltooid
               </span>
             )}
           </div>

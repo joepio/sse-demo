@@ -283,6 +283,85 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         expect(ctaFieldVisible || submitButtonVisible).toBeTruthy();
       }
     });
+
+    test("can create and delete a document using schema form", async ({
+      page,
+    }) => {
+      await navigateToFirstIssue(page);
+
+      // Scroll to the Item Toevoegen section
+      await page.locator('text="Item Toevoegen"').scrollIntoViewIfNeeded();
+
+      // Select document type
+      const documentButton = page.locator('button:has-text("Document")');
+      await documentButton.click({ timeout: 10000 });
+
+      // Should show document form fields
+      await expect(page.getByRole("textbox", { name: "Title*" })).toBeVisible({
+        timeout: 15000,
+      });
+      await expect(page.getByRole("textbox", { name: "Url*" })).toBeVisible();
+      await expect(
+        page.getByRole("spinbutton", { name: "Size*" })
+      ).toBeVisible();
+
+      // Fill out the document form
+      const testTitle = `Test Document ${generateTestId()}`;
+      const testUrl = `https://example.com/document-${generateTestId()}.pdf`;
+
+      await page.getByRole("textbox", { name: "Title*" }).fill(testTitle);
+      await page.getByRole("textbox", { name: "Url*" }).fill(testUrl);
+      await page.getByRole("spinbutton", { name: "Size*" }).fill("1024");
+
+      // Submit the form
+      const submitButton = page.locator('button:has-text("Item Aanmaken")');
+      await submitButton.click();
+
+      // Wait for document to appear in timeline
+      await page.waitForTimeout(2000);
+
+      // Find the document in the timeline and click the edit button
+      // Look for the document card more specifically in the timeline area
+      const timelineArea = page
+        .locator("text=TIJDLIJN")
+        .locator("..")
+        .locator("..");
+      const documentCard = timelineArea
+        .locator(`:has-text("${testTitle}")`)
+        .first();
+      await expect(documentCard).toBeVisible({ timeout: 10000 });
+
+      // Look for edit button (pen icon) in the document card - be more specific
+      const editButton = documentCard.locator(
+        'button[title="Bewerken"]:has(i.fa-pen)'
+      );
+      await expect(editButton).toBeVisible();
+      await editButton.click();
+
+      // Should open edit modal
+      await expect(page.locator('text="Document bewerken"')).toBeVisible();
+
+      // Set up dialog handler before clicking delete
+      page.on("dialog", (dialog) => dialog.accept());
+
+      // Click the delete button (red button on the left)
+      const deleteButton = page.locator('button:has-text("Verwijderen")');
+      await expect(deleteButton).toBeVisible();
+      await deleteButton.click();
+
+      // Wait for deletion to process
+      await page.waitForTimeout(2000);
+
+      await expect(
+        documentCard,
+        "Document should no longer be visible"
+      ).not.toBeVisible({
+        timeout: 10000,
+      });
+
+      // Verify the edit modal is closed
+      await expect(page.locator('text="Document bewerken"')).not.toBeVisible();
+    });
   });
 
   test.describe("Navigation and Real-time Updates", () => {

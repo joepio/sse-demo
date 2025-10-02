@@ -4,6 +4,7 @@ import {
   getLatestPlanningForIssue,
   getPlanningProgress,
 } from "../utils/planningUtils";
+import { useSSE } from "../contexts/SSEContext";
 
 interface PlanningStatusBadgeProps {
   events: CloudEvent[];
@@ -16,7 +17,8 @@ const PlanningStatusBadge: React.FC<PlanningStatusBadgeProps> = ({
   issueId,
   variant = "compact",
 }) => {
-  const latestPlanning = getLatestPlanningForIssue(events, issueId);
+  const { items } = useSSE();
+  const latestPlanning = getLatestPlanningForIssue(events, issueId, items);
 
   if (!latestPlanning) return null;
 

@@ -9,6 +9,8 @@ import React, {
   type ReactNode,
 } from "react";
 import type { CloudEvent, Issue } from "../types";
+import { useActor } from "./ActorContext";
+import { createTaskCompletionEvent } from "../utils/taskUtils";
 
 interface IssueWithActivity extends Issue {
   lastActivity?: string;
@@ -36,6 +38,7 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
   const eventSourceRef = useRef<EventSource | null>(null);
+  const { actor } = useActor();
 
   // Derive issues from items store with lastActivity calculated from events
   const issues = useMemo(() => {
@@ -112,58 +115,58 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   );
 
 
+  // Process a single CloudEvent into items store
+  const processCloudEventToItems = useCallback(
+    (cloudEvent: CloudEvent, items: Record<string, Record<string, unknown>>) => {
+      if (!cloudEvent.data) return items;
+
+      const JSONCommit = cloudEvent.data as Record<string, unknown>;
+      const resourceId = (JSONCommit.resource_id || JSONCommit.item_id) as string;
+      if (!resourceId) return items;
+
+      const newItems = { ...items };
+
+      // Handle both old event types and new json.commit type
+      if (cloudEvent.type === "json.commit") {
+        const resourceData = JSONCommit.resource_data || JSONCommit.item_data;
+        const patch = JSONCommit.patch;
+        const deleted = JSONCommit.deleted;
+
+        // Check if this is a deletion
+        if (deleted === true) {
+          delete newItems[resourceId];
+        }
+        // If resource_data exists, it's a create (full resource)
+        else if (resourceData) {
+          newItems[resourceId] = resourceData as Record<string, unknown>;
+        }
+        // If patch exists, apply it to existing resource or create new one
+        else if (patch) {
+          if (newItems[resourceId]) {
+            const patched = applyMergePatch(
+              newItems[resourceId],
+              patch,
+            ) as Record<string, unknown>;
+            newItems[resourceId] = patched;
+          } else {
+            // Resource doesn't exist yet, create it with the patch data
+            const patchData = patch as Record<string, unknown>;
+            newItems[resourceId] = patchData;
+          }
+        }
+      }
+
+      return newItems;
+    },
+    [applyMergePatch],
+  );
+
   // Process items (comments, tasks, planning, documents, etc.) into unified items store
   const processItemEvent = useCallback(
     (cloudEvent: CloudEvent) => {
-      if (!cloudEvent.data) return;
-
-      const data = cloudEvent.data as Record<string, unknown>;
-
-      // Support both new field names (resource_id, resource_data) and old ones (item_id, item_data)
-      const resourceId = (data.resource_id || data.item_id) as string;
-      if (!resourceId) return;
-
-      setItems((prevItems) => {
-        const newItems = { ...prevItems };
-
-        // Handle both old event types and new json.commit type
-        if (cloudEvent.type === "json.commit") {
-
-          const resourceData = data.resource_data || data.item_data;
-          const patch = data.patch;
-
-          // If resource_data exists, it's a create (full resource)
-          if (resourceData) {
-            newItems[resourceId] = resourceData as Record<string, unknown>;
-          }
-          // If patch exists, apply it to existing resource or create new one
-          else if (patch) {
-            if (newItems[resourceId]) {
-              const patched = applyMergePatch(
-                newItems[resourceId],
-                patch,
-              ) as Record<string, unknown>;
-
-              // Check if this is a deletion (has _deleted flag)
-              if (patched._deleted === true) {
-                delete newItems[resourceId];
-              } else {
-                newItems[resourceId] = patched;
-              }
-            } else {
-              // Resource doesn't exist yet, create it with the patch data
-              const patchData = patch as Record<string, unknown>;
-              if (patchData._deleted !== true) {
-                newItems[resourceId] = patchData;
-              }
-            }
-          }
-        }
-
-        return newItems;
-      });
+      setItems((prevItems) => processCloudEventToItems(cloudEvent, prevItems));
     },
-    [applyMergePatch],
+    [processCloudEventToItems],
   );
 
   // Process a single CloudEvent
@@ -184,48 +187,16 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   // Process snapshot events to build initial state
   const processSnapshot = useCallback(
     (snapshotEvents: CloudEvent[]) => {
-      const initialItems: Record<string, Record<string, unknown>> = {};
+      let initialItems: Record<string, Record<string, unknown>> = {};
 
       for (const event of snapshotEvents) {
-        // Process all items into the unified store
-        if (event.data) {
-          const data = event.data as Record<string, unknown>;
-          const itemId = (data.resource_id || data.item_id) as string;
-
-          if (itemId) {
-            // Handle both new json.commit and old event types for backwards compatibility
-            const resourceData = data.resource_data || data.item_data;
-            const patch = data.patch;
-
-            if (resourceData) {
-              // Create or replace item with full resource data
-              initialItems[itemId] = resourceData as Record<string, unknown>;
-            } else if (patch) {
-              // Apply patch to existing item
-              const patchData = patch as Record<string, unknown>;
-
-              // Check for deletion
-              if (patchData._deleted === true) {
-                delete initialItems[itemId];
-              } else if (initialItems[itemId]) {
-                const patched = applyMergePatch(
-                  initialItems[itemId],
-                  patch,
-                ) as Record<string, unknown>;
-                initialItems[itemId] = patched;
-              } else {
-                // No existing item, create from patch data
-                initialItems[itemId] = patchData;
-              }
-            }
-          }
-        }
+        initialItems = processCloudEventToItems(event, initialItems);
       }
 
       // Set the items state (issues will be derived from this)
       setItems(initialItems);
     },
-    [applyMergePatch],
+    [processCloudEventToItems],
   );
 
   // Send CloudEvent to server
@@ -258,34 +229,18 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const completeTask = useCallback(
     async (taskId: string, issueId?: string) => {
       try {
-        const taskUpdateEvent: CloudEvent = {
-          specversion: "1.0",
-          id: `update-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          source: "frontend-user-action",
-          subject: issueId,
-          type: "json.commit",
-          time: new Date().toISOString(),
-          datacontenttype: "application/json",
-          dataschema: "http://localhost:8000/schemas/JSONCommit",
-          data: {
-            schema: "http://localhost:8000/schemas/Task",
-            resource_id: taskId,
-            actor: "user@gemeente.nl",
-            patch: {
-              completed: true,
-              completed_at: new Date().toISOString(),
-            },
-          },
-        };
+        if (!issueId) {
+          throw new Error("Issue ID is required to complete a task");
+        }
 
-        console.log("Sending task update event:", taskUpdateEvent);
+        const taskUpdateEvent = createTaskCompletionEvent(taskId, issueId, actor);
         await sendEvent(taskUpdateEvent);
       } catch (error) {
         console.error("Error completing task:", error);
         throw error;
       }
     },
-    [sendEvent],
+    [sendEvent, actor],
   );
 
   // Setup SSE connection handlers

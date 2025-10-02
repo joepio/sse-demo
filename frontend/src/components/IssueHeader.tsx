@@ -6,8 +6,6 @@ import { Button } from "./ActionButton";
 interface IssueHeaderProps {
   issue: Issue;
   onEdit?: () => void;
-  onDelete: () => void;
-  isDeleting?: boolean;
 }
 
 const getStatusColor = (status: string): string => {
@@ -26,8 +24,6 @@ const getStatusColor = (status: string): string => {
 const IssueHeader: React.FC<IssueHeaderProps> = ({
   issue,
   onEdit,
-  onDelete,
-  isDeleting = false,
 }) => {
   return (
     <Card padding="md">
@@ -59,16 +55,6 @@ const IssueHeader: React.FC<IssueHeaderProps> = ({
               <i className="fa-solid fa-pen" aria-hidden="true"></i>
             </Button>
           )}
-          <Button
-            variant="icon"
-            size="sm"
-            onClick={onDelete}
-            disabled={isDeleting}
-            loading={isDeleting}
-            title={isDeleting ? "Verwijderen..." : "Verwijderen"}
-          >
-            <i className="fa-solid fa-trash" aria-hidden="true"></i>
-          </Button>
         </div>
       </div>
 

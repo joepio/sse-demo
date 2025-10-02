@@ -1,15 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import type { EventPluginProps } from "./types";
-import { CloudEventModal } from "../shared/TimelineEventUI";
-import { Button } from "../../components/ActionButton";
+import { EventPluginWrapper } from "../shared/TimelineEventUI";
 
 const IssueUpdatedPlugin: React.FC<EventPluginProps> = ({
   event,
   data,
   timeInfo,
 }) => {
-  const [showEventModal, setShowEventModal] = useState(false);
-
   // Generate a clean summary of changes from item_data
   const itemData = data.item_data as Record<string, unknown>;
   const changeKeys = itemData
@@ -52,36 +49,13 @@ const IssueUpdatedPlugin: React.FC<EventPluginProps> = ({
   }
 
   return (
-    <>
-      <div className="flex items-center justify-between w-full py-2">
-        <span
-          className="text-sm sm:text-base lg:text-lg xl:text-xl"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          {event.actor && event.actor !== "system" && (
-            <strong style={{ color: "var(--text-primary)" }}>
-              {event.actor}
-            </strong>
-          )}{" "}
-          {changeText}
-        </span>
-        <Button
-          variant="link"
-          size="sm"
-          title={`${timeInfo.date} at ${timeInfo.time}`}
-          onClick={() => setShowEventModal(true)}
-        >
-          {timeInfo.relative}
-        </Button>
-      </div>
-
-      <CloudEventModal
-        open={showEventModal}
-        onClose={() => setShowEventModal(false)}
-        cloudEvent={event.originalEvent}
-        schemaUrl={(event.originalEvent.data as any)?.schema as string | undefined}
-      />
-    </>
+    <EventPluginWrapper
+      event={event}
+      data={data}
+      timeInfo={timeInfo}
+    >
+      <span>{changeText}</span>
+    </EventPluginWrapper>
   );
 };
 
