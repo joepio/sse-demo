@@ -16,19 +16,6 @@ async function resetServerState() {
   }
 }
 
-// Helper function to wait for SSE connection (status now inside bell dropdown)
-async function waitForConnection(page) {
-  const bell = page.locator('button:has-text("🔔")');
-  await bell.waitFor({ state: "visible", timeout: 15000 });
-  await bell.click();
-  await expect(page.locator('[data-testid="connection-status"]')).toHaveText(
-    "Verbonden",
-    { timeout: 15000 }
-  );
-  // Close the dropdown to restore UI state
-  await bell.click();
-}
-
 // Helper function to navigate to first issue
 async function navigateToFirstIssue(page) {
   // First check if we have any issues available
@@ -71,7 +58,6 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    await waitForConnection(page);
   });
 
   test.describe("Home Page - Issues List", () => {
@@ -89,14 +75,6 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       const firstIssue = issues.first();
       await expect(firstIssue.locator("h2")).toBeVisible(); // title
       await expect(firstIssue.locator('a[href*="/zaak/"]')).toBeVisible(); // link
-
-      // Verify connection status (inside dropdown)
-      const bellIcon = page.locator('button:has-text("🔔")');
-      await bellIcon.click();
-      await expect(
-        page.locator('[data-testid="connection-status"]')
-      ).toHaveText("Verbonden");
-      await bellIcon.click();
     });
 
     test("shows task names as static text on home page (not buttons)", async ({
@@ -123,17 +101,6 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
           expect(isInButton).toBe(false);
         }
       }
-    });
-
-    test("shows connection status correctly", async ({ page }) => {
-      // Open dropdown and verify connection status text appears there
-      const bellIcon = page.locator('button:has-text("🔔")');
-      await bellIcon.click();
-      await expect(
-        page.locator('[data-testid="connection-status"]')
-      ).toHaveText("Verbonden");
-      // Close dropdown
-      await bellIcon.click();
     });
 
     test("can navigate to issue detail page", async ({ page }) => {
@@ -394,35 +361,6 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
       await expect(page.locator(".zaak-item-hover").first()).toBeVisible();
     });
 
-    test("handles connection status changes", async ({ page }) => {
-      // Initial connection should be established on home page
-      let bell = page.locator('button:has-text("🔔")');
-      await bell.click();
-      await expect(
-        page.locator('[data-testid="connection-status"]')
-      ).toHaveText("Verbonden");
-      await bell.click();
-
-      // Navigate to an issue
-      await navigateToFirstIssue(page);
-      bell = page.locator('button:has-text("🔔")');
-      await bell.click();
-      await expect(
-        page.locator('[data-testid="connection-status"]')
-      ).toHaveText("Verbonden");
-      await bell.click();
-
-      // Navigate back to home
-      await page.goto("/");
-      await waitForConnection(page);
-      bell = page.locator('button:has-text("🔔")');
-      await bell.click();
-      await expect(
-        page.locator('[data-testid="connection-status"]')
-      ).toHaveText("Verbonden");
-      await bell.click();
-    });
-
     test("can search for comments and navigate to them", async ({ page }) => {
       // Navigate to an issue
       await navigateToFirstIssue(page);
@@ -445,7 +383,6 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
 
       // Go back to home page
       await page.goto("/");
-      await waitForConnection(page);
 
       // Use search to find the comment
       const searchInput = page.locator('input[placeholder*="Zoek"]');

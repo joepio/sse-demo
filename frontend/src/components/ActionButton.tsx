@@ -156,7 +156,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 
   const baseClasses = [
     // Base styles
-    "inline-flex items-center justify-center font-medium cursor-pointer transition-all duration-150",
+    "inline-flex items-center justify-center font-medium cursor-pointer transition-all duration-150 select-none",
 
     // Conditional classes
     icon ? "rounded-full flex-shrink-0" : "gap-2 rounded-md",
@@ -182,6 +182,18 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     Object.assign(e.currentTarget.style, originalStyles);
   };
 
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled || loading) return;
+    e.currentTarget.style.transform = "scale(0.95)";
+    e.currentTarget.style.opacity = "0.8";
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (disabled || loading) return;
+    e.currentTarget.style.transform = "scale(1)";
+    e.currentTarget.style.opacity = "1";
+  };
+
   const handleClick = () => {
     if (!disabled && !loading && onClick) {
       onClick();
@@ -196,6 +208,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       disabled={disabled || loading}
       {...(title && { title })}
     >
