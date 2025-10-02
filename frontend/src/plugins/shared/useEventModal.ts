@@ -66,7 +66,7 @@ export const EventModalWrapper: React.FC<EventModalWrapperProps> = ({
   return (
     <>
       {children}
-      
+
       {/* CloudEvent Modal */}
       <CloudEventModal
         open={showEventModal}
