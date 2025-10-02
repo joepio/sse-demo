@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import type { EventPluginProps } from "./types";
-import Modal from "../../components/Modal";
-import InfoHelp from "../../components/InfoHelp";
+import { CloudEventModal } from "../shared/TimelineEventUI";
 import { Button } from "../../components/ActionButton";
 
 const IssueUpdatedPlugin: React.FC<EventPluginProps> = ({
@@ -76,26 +75,12 @@ const IssueUpdatedPlugin: React.FC<EventPluginProps> = ({
         </Button>
       </div>
 
-      <Modal
-        isOpen={showEventModal}
+      <CloudEventModal
+        open={showEventModal}
         onClose={() => setShowEventModal(false)}
-        title="CloudEvent"
-        maxWidth="800px"
-      >
-        <div className="relative">
-          <InfoHelp variant="cloudevent" schemaUrl={(event.originalEvent.data as any)?.schema as string | undefined} />
-        <pre
-          className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
-          style={{
-            backgroundColor: "var(--bg-tertiary)",
-            borderColor: "var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-        >
-          {JSON.stringify(event.originalEvent, null, 2)}
-        </pre>
-        </div>
-      </Modal>
+        cloudEvent={event.originalEvent}
+        schemaUrl={(event.originalEvent.data as any)?.schema as string | undefined}
+      />
     </>
   );
 };

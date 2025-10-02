@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import type { EventPluginProps } from "./types";
 import type { Document } from "../../types";
 import Card from "../../components/Card";
-import Modal from "../../components/Modal";
-import InfoHelp from "../../components/InfoHelp";
+import { EventHeader, CloudEventModal } from "../shared/TimelineEventUI";
 import SchemaEditForm from "../../components/SchemaEditForm";
 import { Button } from "../../components/ActionButton";
 import { useSSE } from "../../contexts/SSEContext";
@@ -38,21 +37,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
     return (
       <>
         <Card padding="sm" id={documentId}>
-          <div className="flex items-center justify-between gap-4 w-full mb-3">
-            {event.actor && event.actor !== "system" && (
-              <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
-                {event.actor}
-              </span>
-            )}
-            <Button
-              variant="link"
-              size="sm"
-              title={`${timeInfo.date} at ${timeInfo.time}`}
-              onClick={() => setShowEventModal(true)}
-            >
-              {timeInfo.relative}
-            </Button>
-          </div>
+          <EventHeader actor={event.actor} timeLabel={timeInfo.relative} onTimeClick={() => setShowEventModal(true)} />
           <div className="prose prose-sm max-w-none">
             <p
               className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
@@ -69,26 +54,12 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           </div>
         </Card>
 
-        <Modal
-          isOpen={showEventModal}
+        <CloudEventModal
+          open={showEventModal}
           onClose={() => setShowEventModal(false)}
-          title="CloudEvent"
-          maxWidth="800px"
-        >
-          <div className="relative">
-            <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
-          <pre
-            className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
-            style={{
-              backgroundColor: "var(--bg-tertiary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          >
-            {JSON.stringify(event.originalEvent, null, 2)}
-          </pre>
-          </div>
-        </Modal>
+          cloudEvent={event.originalEvent}
+          schemaUrl={(eventData as any)?.schema as string | undefined}
+        />
       </>
     );
   }
@@ -98,21 +69,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
     return (
       <>
         <Card padding="sm" id={documentId}>
-          <div className="flex items-center justify-between gap-4 w-full mb-3">
-            {event.actor && event.actor !== "system" && (
-              <span className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl">
-                {event.actor}
-              </span>
-            )}
-            <Button
-              variant="link"
-              size="sm"
-              title={`${timeInfo.date} at ${timeInfo.time}`}
-              onClick={() => setShowEventModal(true)}
-            >
-              {timeInfo.relative}
-            </Button>
-          </div>
+          <EventHeader actor={event.actor} timeLabel={timeInfo.relative} onTimeClick={() => setShowEventModal(true)} />
           <div className="prose prose-sm max-w-none">
             <p
               className="m-0 mb-2 leading-relaxed text-sm sm:text-base lg:text-lg xl:text-xl"
@@ -129,26 +86,12 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           </div>
         </Card>
 
-        <Modal
-          isOpen={showEventModal}
+        <CloudEventModal
+          open={showEventModal}
           onClose={() => setShowEventModal(false)}
-          title="CloudEvent"
-          maxWidth="800px"
-        >
-          <div className="relative">
-            <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
-          <pre
-            className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
-            style={{
-              backgroundColor: "var(--bg-tertiary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          >
-            {JSON.stringify(event.originalEvent, null, 2)}
-          </pre>
-          </div>
-        </Modal>
+          cloudEvent={event.originalEvent}
+          schemaUrl={(eventData as any)?.schema as string | undefined}
+        />
       </>
     );
   }
@@ -189,26 +132,12 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           </div>
         </Card>
 
-        <Modal
-          isOpen={showEventModal}
+        <CloudEventModal
+          open={showEventModal}
           onClose={() => setShowEventModal(false)}
-          title="CloudEvent"
-          maxWidth="800px"
-        >
-          <div className="relative">
-            <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
-          <pre
-            className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
-            style={{
-              backgroundColor: "var(--bg-tertiary)",
-              borderColor: "var(--border-primary)",
-              color: "var(--text-primary)",
-            }}
-          >
-            {JSON.stringify(event.originalEvent, null, 2)}
-          </pre>
-          </div>
-        </Modal>
+          cloudEvent={event.originalEvent}
+          schemaUrl={(eventData as any)?.schema as string | undefined}
+        />
       </>
     );
   }
@@ -313,26 +242,12 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
         zaakId={event.originalEvent.subject || ""}
       />
 
-      <Modal
-        isOpen={showEventModal}
+      <CloudEventModal
+        open={showEventModal}
         onClose={() => setShowEventModal(false)}
-        title="CloudEvent"
-        maxWidth="800px"
-      >
-        <div className="relative">
-          <InfoHelp variant="cloudevent" schemaUrl={(eventData as any)?.schema as string | undefined} />
-        <pre
-          className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
-          style={{
-            backgroundColor: "var(--bg-tertiary)",
-            borderColor: "var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-        >
-          {JSON.stringify(event.originalEvent, null, 2)}
-        </pre>
-        </div>
-      </Modal>
+        cloudEvent={event.originalEvent}
+        schemaUrl={(eventData as any)?.schema as string | undefined}
+      />
     </>
   );
 };

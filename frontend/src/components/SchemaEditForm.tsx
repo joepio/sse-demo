@@ -3,6 +3,7 @@ import { fetchSchema } from "../types/interfaces";
 import { Button } from "./ActionButton";
 import Modal from "./Modal";
 import SchemaField from "./SchemaField";
+import InfoHelp from "./InfoHelp";
 import { createItemUpdatedEvent } from "../utils/cloudEvents";
 import type { ItemType } from "../types";
 import type { CloudEvent } from "../types/interfaces";
@@ -124,7 +125,8 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
       title={`${typeLabel} bewerken`}
       maxWidth="600px"
     >
-      <div style={{ backgroundColor: "var(--bg-secondary)" }}>
+      <div style={{ backgroundColor: "var(--bg-secondary)" }} className="relative">
+        <InfoHelp variant="schemas" anchor="top-right" />
         {currentSchema ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             {currentSchema.properties &&

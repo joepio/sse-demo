@@ -172,16 +172,13 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
       {/* Dynamic Form - only show when a type is selected */}
       {selectedType && (
         <div
-          className="border rounded-lg p-6 space-y-6"
+          className="border rounded-lg p-6 space-y-6 relative"
           style={{
             backgroundColor: "var(--bg-secondary)",
             borderColor: "var(--border-primary)",
           }}
         >
-          <div className="relative min-h-0">
-            {/* anchor bottom-right so opening the popover does not shift the icon */}
-            <InfoHelp variant="schemas" anchor="bottom-right" />
-          </div>
+          <InfoHelp variant="schemas" anchor="top-right" />
           {/* Type Description */}
           <div>
             <h3

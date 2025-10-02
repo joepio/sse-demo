@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import type { EventPluginProps } from "./types";
-import Modal from "../../components/Modal";
-import { Button } from "../../components/ActionButton";
+import { EventHeader, CloudEventModal } from "../shared/TimelineEventUI";
 
 const SystemEventPlugin: React.FC<EventPluginProps> = ({
   event,
@@ -126,45 +125,21 @@ const SystemEventPlugin: React.FC<EventPluginProps> = ({
 
   return (
     <>
-      <div className="flex items-center justify-between w-full py-2">
-        <span
-          className="text-sm sm:text-base lg:text-lg xl:text-xl"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          {event.actor && event.actor !== "system" && (
-            <strong style={{ color: "var(--text-primary)" }}>
-              {event.actor}
-            </strong>
-          )}{" "}
-          {getChangeText()}
-        </span>
-        <Button
-          variant="link"
-          size="sm"
-          title={`${timeInfo.date} at ${timeInfo.time}`}
-          onClick={() => setShowEventModal(true)}
-        >
-          {timeInfo.relative}
-        </Button>
+      <EventHeader
+        actor={event.actor}
+        timeLabel={timeInfo.relative}
+        onTimeClick={() => setShowEventModal(true)}
+      />
+      <div className="text-sm sm:text-base lg:text-lg xl:text-xl" style={{ color: "var(--text-secondary)" }}>
+        {getChangeText()}
       </div>
 
-      <Modal
-        isOpen={showEventModal}
+      <CloudEventModal
+        open={showEventModal}
         onClose={() => setShowEventModal(false)}
-        title="CloudEvent"
-        maxWidth="800px"
-      >
-        <pre
-          className="border rounded-md p-4 font-mono text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed overflow-x-auto m-0 whitespace-pre-wrap break-words"
-          style={{
-            backgroundColor: "var(--bg-tertiary)",
-            borderColor: "var(--border-primary)",
-            color: "var(--text-primary)",
-          }}
-        >
-          {JSON.stringify(event.originalEvent, null, 2)}
-        </pre>
-      </Modal>
+        cloudEvent={event.originalEvent}
+        schemaUrl={(data as any)?.schema as string | undefined}
+      />
     </>
   );
 };

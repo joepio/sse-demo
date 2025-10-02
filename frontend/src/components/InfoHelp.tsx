@@ -26,7 +26,7 @@ const InfoHelp: React.FC<InfoHelpProps> = ({ variant, schemaUrl, className, anch
         type="button"
         aria-label="Informatie"
         onClick={() => setOpen((v) => !v)}
-        className={`w-6 h-6 flex items-center justify-center rounded-full border text-xs font-bold ${
+        className={`w-6 h-6 flex items-center justify-center rounded-full border text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity ${
           className || ""
         }`}
         style={{
