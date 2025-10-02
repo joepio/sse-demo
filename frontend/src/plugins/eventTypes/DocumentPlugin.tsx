@@ -1,7 +1,10 @@
 import React from "react";
 import type { EventPluginProps } from "./types";
 import type { Document } from "../../types";
-import { ResourcePluginWrapper, EventPluginWrapper } from "../shared/TimelineEventUI";
+import {
+  ResourcePluginWrapper,
+  EventPluginWrapper,
+} from "../shared/TimelineEventUI";
 import SchemaEditFormContent from "../../components/SchemaEditFormContent";
 import DeletedItem from "../../components/DeletedItem";
 import { Button } from "../../components/ActionButton";
@@ -22,11 +25,10 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
     return <p>Document ID not found</p>;
   }
 
-  const isUpdateEvent = event.originalEvent.type.includes("updated") ||
-                        (event.originalEvent.type === "json.commit" && !!eventData.patch && !eventData.resource_data);
-
   // Get the current state of the document from the items store
   const documentData = items[documentId] as Partial<Document> | undefined;
+
+  console.log("doc data", documentData);
 
   // If the document is not in the store, it's been deleted
   if (!documentData) {
@@ -42,27 +44,10 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
     );
   }
 
-  // Handle update events - these are simple one-liners
-  if (isUpdateEvent) {
-    return (
-      <EventPluginWrapper
-        event={event}
-        data={data}
-        timeInfo={timeInfo}
-      >
-        <span>document bijgewerkt</span>
-      </EventPluginWrapper>
-    );
-  }
-
   // Handle create events with incomplete data - these are simple one-liners
   if (!documentData.title || !documentData.url) {
     return (
-      <EventPluginWrapper
-        event={event}
-        data={data}
-        timeInfo={timeInfo}
-      >
+      <EventPluginWrapper event={event} data={data} timeInfo={timeInfo}>
         <span>document toegevoegd</span>
       </EventPluginWrapper>
     );
@@ -93,7 +78,7 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
   const editFormComponent = (
     <SchemaEditFormContent
       itemType="document"
-      itemId={(documentData as Record<string, unknown>)?.id as string || event.id}
+      itemId={documentId} // Use documentId here
       initialData={{
         title: documentData.title,
         url: documentData.url,
@@ -116,7 +101,9 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
     >
       <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <span className="text-xl"><i className="fa-regular fa-file-lines" aria-hidden="true"></i></span>
+          <span className="text-xl">
+            <i className="fa-regular fa-file-lines" aria-hidden="true"></i>
+          </span>
           <div className="flex-1 min-w-0">
             <h4
               className="font-semibold m-0 leading-tight text-base sm:text-lg lg:text-xl xl:text-2xl"
@@ -141,7 +128,9 @@ const DocumentPlugin: React.FC<EventPluginProps> = ({
           onClick={handleDownload}
           className="self-start sm:self-auto flex-shrink-0"
         >
-          <span><i className="fa-solid fa-download" aria-hidden="true"></i></span>
+          <span>
+            <i className="fa-solid fa-download" aria-hidden="true"></i>
+          </span>
           Download
         </Button>
       </div>
