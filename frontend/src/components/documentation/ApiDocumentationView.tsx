@@ -31,12 +31,12 @@ const ApiDocumentationView: React.FC = () => {
           </h1>
           <div className="mb-4">
             <DocumentationLink
-              href="/asyncapi-docs"
+              href="/asyncapi.yaml"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium"
             >
-              📋 Volledige AsyncAPI Specificatie →
+             AsyncAPI Specificatie .yaml
             </DocumentationLink>
           </div>
         </div>
