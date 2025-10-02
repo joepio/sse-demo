@@ -135,9 +135,6 @@ pub struct Task {
     /// Uiterste datum voor voltooiing (YYYY-MM-DD, bijv. "2024-01-25")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deadline: Option<String>,
-    /// Email van degene die de taak heeft toegewezen of aangemaakt
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub actor: Option<String>,
 }
 
 /// Status van een zaak in behandeling
@@ -160,9 +157,6 @@ pub struct Comment {
     pub id: String,
     /// De tekst van de reactie (bijv. "Documenten zijn goedgekeurd", "Burger gebeld voor aanvullende info")
     pub content: String,
-    /// Email van degene die de reactie heeft geschreven
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub author: Option<String>,
     /// ID van de reactie waar dit een antwoord op is (voor discussies met meerdere berichten)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,

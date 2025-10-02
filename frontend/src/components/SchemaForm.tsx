@@ -5,6 +5,7 @@ import InfoHelp from "./InfoHelp";
 import SchemaField from "./SchemaField";
 import { generateUUID } from "../utils/uuid";
 import { createItemCreatedEvent } from "../utils/cloudEvents";
+import { useActor } from "../contexts/ActorContext";
 import type { ItemType } from "../types";
 import type { CloudEvent } from "../types/interfaces";
 
@@ -43,6 +44,7 @@ const DEFAULT_DESCRIPTIONS: Record<string, string> = {
 };
 
 const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
+  const { actor } = useActor();
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<string>("");
   const [formData, setFormData] = useState<Record<string, unknown>>({});
@@ -119,14 +121,14 @@ const SchemaForm: React.FC<SchemaFormProps> = ({ zaakId, onSubmit }) => {
         ...formData,
       };
 
-      // Use the schema-based CloudEvent utility
+      // Use the schema-based CloudEvent utility with session actor
       const event = createItemCreatedEvent(
         selectedType.toLowerCase() as ItemType,
         itemData,
         {
           source: "frontend-create",
           subject: zaakId,
-          actor: "frontend-user",
+          actor,
         }
       );
 

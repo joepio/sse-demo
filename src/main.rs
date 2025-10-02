@@ -295,6 +295,13 @@ async fn handle_event(
         let subs = state.push_subscriptions.read().await;
 
         if !subs.is_empty() {
+            // Extract actor from cloud event data
+            let event_actor = cloud_event
+                .data
+                .as_ref()
+                .and_then(|data| data.get("actor"))
+                .and_then(|actor| actor.as_str());
+
             let title = format!("Update voor zaak {}", subject);
             let body = match cloud_event.event_type.as_str() {
                 "json.commit" => "Er is een nieuwe update",
@@ -309,6 +316,7 @@ async fn handle_event(
                 let body = body.to_string();
                 let url = url.clone();
                 let event_id = cloud_event.id.clone();
+                let event_actor = event_actor.map(|s| s.to_string());
 
                 tokio::spawn(async move {
                     if let Err(e) = crate::push::send_push_notification(
@@ -317,6 +325,7 @@ async fn handle_event(
                         &body,
                         &url,
                         &event_id,
+                        event_actor.as_deref(),
                     )
                     .await
                     {

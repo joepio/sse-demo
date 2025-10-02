@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
+import { useActor } from "../contexts/ActorContext";
 import { usePushNotifications } from "../hooks/usePushNotifications";
 import { Button } from "./ActionButton";
 
@@ -12,6 +13,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   currentZaakId,
 }) => {
   const { events, issues, connectionStatus } = useSSE();
+  const { actor } = useActor();
   const {
     isSupported,
     isSubscribed,
@@ -30,7 +32,23 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   // Get recent activities (events for other issues) to show in dropdown
   const recentActivities = useMemo(() => {
     const recentEvents = events
-      .filter((event) => event.subject && event.subject !== currentZaakId)
+      .filter((event) => {
+        // Filter out events for current zaak
+        if (!event.subject || event.subject === currentZaakId) {
+          return false;
+        }
+
+        // Filter out events from current actor
+        if (event.type === "json.commit" && event.data) {
+          const data = event.data as any;
+          const eventActor = data.actor;
+          if (eventActor && eventActor === actor) {
+            return false;
+          }
+        }
+
+        return true;
+      })
       .slice(-10) // Get last 10 events
       .reverse(); // Most recent first
 
@@ -79,7 +97,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     });
 
     return Array.from(activitiesByIssue.values()).slice(0, 5);
-  }, [events, issues, currentZaakId]);
+  }, [events, issues, currentZaakId, actor]);
 
   // Close notification dropdown when clicking outside
   useEffect(() => {
@@ -119,12 +137,25 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
 
     // Only count events that are NOT for the current zaak (since we're viewing it)
+    // and NOT from the current actor
     if (latestEvent.subject !== currentZaakId) {
-      setNewEventsCount((prev) => prev + 1);
+      // Check if event is from current actor
+      let isFromCurrentActor = false;
+      if (latestEvent.type === "json.commit" && latestEvent.data) {
+        const data = latestEvent.data as any;
+        const eventActor = data.actor;
+        if (eventActor && eventActor === actor) {
+          isFromCurrentActor = true;
+        }
+      }
+
+      if (!isFromCurrentActor) {
+        setNewEventsCount((prev) => prev + 1);
+      }
     }
 
     setLastEventId(latestEvent.id);
-  }, [events, lastEventId, currentZaakId]);
+  }, [events, lastEventId, currentZaakId, actor]);
 
   // Reset notification counter when changing zaak
   useEffect(() => {

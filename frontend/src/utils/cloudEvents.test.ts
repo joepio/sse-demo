@@ -34,10 +34,11 @@ describe("cloudEvents", () => {
         url: "http://example.com",
         completed: false,
         deadline: null,
-        actor: null,
       };
 
-      const event = createItemCreatedEvent("task", task);
+      const event = createItemCreatedEvent("task", task, {
+        actor: "test-actor",
+      });
 
       expect(event).toEqual({
         specversion: "1.0",
@@ -51,7 +52,7 @@ describe("cloudEvents", () => {
         data: {
           schema: "http://localhost:8000/schemas/Task",
           resource_id: "task-1",
-          actor: "frontend-user",
+          actor: "test-actor",
           resource_data: task,
         },
       });
@@ -61,7 +62,6 @@ describe("cloudEvents", () => {
       const comment: Comment = {
         id: "comment-1",
         content: "Hello",
-        author: null,
         parent_id: null,
         mentions: null,
       };
@@ -84,7 +84,9 @@ describe("cloudEvents", () => {
         completed: true,
       };
 
-      const event = createItemUpdatedEvent<Task>("task", "task-1", patch);
+      const event = createItemUpdatedEvent<Task>("task", "task-1", patch, {
+        actor: "test-actor",
+      });
 
       expect(event).toEqual({
         specversion: "1.0",
@@ -98,7 +100,7 @@ describe("cloudEvents", () => {
         data: {
           schema: "http://localhost:8000/schemas/Task",
           resource_id: "task-1",
-          actor: "frontend-user",
+          actor: "test-actor",
           patch: {
             completed: true,
           },
@@ -109,7 +111,9 @@ describe("cloudEvents", () => {
 
   describe("createItemDeletedEvent", () => {
     it("creates a valid json.commit CloudEvent with _deleted flag", () => {
-      const event = createItemDeletedEvent("task", "task-1");
+      const event = createItemDeletedEvent("task", "task-1", {
+        actor: "test-actor",
+      });
 
       expect(event).toEqual({
         specversion: "1.0",
@@ -123,7 +127,7 @@ describe("cloudEvents", () => {
         data: {
           schema: "http://localhost:8000/schemas/Task",
           resource_id: "task-1",
-          actor: "frontend-user",
+          actor: "test-actor",
           patch: {
             _deleted: true,
           },
@@ -144,7 +148,7 @@ describe("cloudEvents", () => {
         resolution: null,
       };
 
-      const event = createIssueCreatedEvent(issue);
+      const event = createIssueCreatedEvent(issue, { actor: "test-actor" });
 
       expect(event.type).toBe("json.commit");
       expect(event.data?.schema).toBe("http://localhost:8000/schemas/Issue");
@@ -158,12 +162,13 @@ describe("cloudEvents", () => {
       const comment: Comment = {
         id: "comment-test-uuid-123",
         content: "Test comment",
-        author: "user@example.com",
         parent_id: null,
         mentions: null,
       };
 
-      const event = createCommentCreatedEvent(comment, "zaak-1");
+      const event = createCommentCreatedEvent(comment, "zaak-1", {
+        actor: "test-actor",
+      });
 
       expect(event.type).toBe("json.commit");
       expect(event.source).toBe("frontend-demo-event");
@@ -176,7 +181,6 @@ describe("cloudEvents", () => {
       const comment: Comment = {
         id: "comment-123",
         content: "Test with options",
-        author: "user@example.com",
         parent_id: "parent-comment-123",
         mentions: ["alice@gemeente.nl"],
       };
@@ -199,10 +203,11 @@ describe("cloudEvents", () => {
         url: "http://example.com/task",
         completed: false,
         deadline: "2025-02-01",
-        actor: "admin@example.com",
       };
 
-      const event = createTaskCreatedEvent(task, "zaak-1");
+      const event = createTaskCreatedEvent(task, "zaak-1", {
+        actor: "test-actor",
+      });
 
       expect(event.type).toBe("json.commit");
       expect(event.data?.schema).toBe("http://localhost:8000/schemas/Task");

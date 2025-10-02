@@ -7,6 +7,7 @@ import InstallPrompt from "./components/InstallPrompt";
 import ScrollToTop from "./components/ScrollToTop";
 import { SSEProvider, useSSE } from "./contexts/SSEContext";
 import { SearchProvider } from "./contexts/SearchContext";
+import { ActorProvider } from "./contexts/ActorContext";
 import CreateIssueForm from "./components/CreateIssueForm";
 import IssueTimeline from "./components/IssueTimeline";
 import Modal from "./components/Modal";
@@ -234,18 +235,20 @@ const ZakenDashboard: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <SSEProvider>
-      <SearchProvider>
-        <Router>
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<ZakenDashboard />} />
-            <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
-            <Route path="/api-docs" element={<ApiDocumentationView />} />
-          </Routes>
-        </Router>
-      </SearchProvider>
-    </SSEProvider>
+    <ActorProvider>
+      <SSEProvider>
+        <SearchProvider>
+          <Router>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<ZakenDashboard />} />
+              <Route path="/zaak/:zaakId" element={<IssueTimeline />} />
+              <Route path="/api-docs" element={<ApiDocumentationView />} />
+            </Routes>
+          </Router>
+        </SearchProvider>
+      </SSEProvider>
+    </ActorProvider>
   );
 };
 

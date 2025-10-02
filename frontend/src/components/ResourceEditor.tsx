@@ -3,6 +3,7 @@ import Modal from "./Modal";
 import type { CloudEvent, BaseEntity, ItemType } from "../types";
 import { Button } from "./ActionButton";
 import { createItemCreatedEvent } from "../utils/cloudEvents";
+import { useActor } from "../contexts/ActorContext";
 
 interface ResourceEditorProps<T extends BaseEntity = BaseEntity> {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const ResourceEditor = <T extends BaseEntity>({
   resourceType,
   onSave,
 }: ResourceEditorProps<T>) => {
+  const { actor } = useActor();
   const [jsonText, setJsonText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -35,13 +37,14 @@ const ResourceEditor = <T extends BaseEntity>({
       const newData = JSON.parse(jsonText);
       setIsSubmitting(true);
 
-      // Use the schema-based CloudEvent creation utility
+      // Use the schema-based CloudEvent creation utility with session actor
       const cloudEvent = createItemCreatedEvent(
         resourceType as ItemType,
         newData,
         {
           source: `/${resourceType}s`,
           subject: resource.id,
+          actor,
         }
       );
 

@@ -12,7 +12,7 @@ import { generateUUID } from "./uuid";
 interface CloudEventOptions {
   source?: string;
   subject?: string;
-  actor?: string;
+  actor: string; // Required - must be provided from session
 }
 
 /**
@@ -22,15 +22,15 @@ interface CloudEventOptions {
 export function createItemCreatedEvent<T extends { id: string }>(
   itemType: ItemType,
   itemData: T,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   const resourceId = itemData.id;
 
   return {
     specversion: "1.0",
     id: generateUUID(),
-    source: options?.source || "frontend-create",
-    subject: options?.subject || resourceId,
+    source: options.source || "frontend-create",
+    subject: options.subject || resourceId,
     type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
@@ -38,7 +38,7 @@ export function createItemCreatedEvent<T extends { id: string }>(
     data: {
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       resource_id: resourceId,
-      actor: options?.actor || "frontend-user",
+      actor: options.actor,
       resource_data: itemData,
     },
   };
@@ -51,13 +51,13 @@ export function createItemUpdatedEvent<T = Record<string, unknown>>(
   itemType: ItemType,
   resourceId: string,
   patch: Partial<T>,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return {
     specversion: "1.0",
     id: generateUUID(),
-    source: options?.source || "frontend-edit",
-    subject: options?.subject || resourceId,
+    source: options.source || "frontend-edit",
+    subject: options.subject || resourceId,
     type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
@@ -65,7 +65,7 @@ export function createItemUpdatedEvent<T = Record<string, unknown>>(
     data: {
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       resource_id: resourceId,
-      actor: options?.actor || "frontend-user",
+      actor: options.actor,
       patch,
     },
   };
@@ -78,13 +78,13 @@ export function createItemUpdatedEvent<T = Record<string, unknown>>(
 export function createItemDeletedEvent(
   itemType: ItemType,
   resourceId: string,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return {
     specversion: "1.0",
     id: generateUUID(),
-    source: options?.source || "frontend-delete",
-    subject: options?.subject || resourceId,
+    source: options.source || "frontend-delete",
+    subject: options.subject || resourceId,
     type: "json.commit",
     time: new Date().toISOString(),
     datacontenttype: "application/json",
@@ -92,7 +92,7 @@ export function createItemDeletedEvent(
     data: {
       schema: `http://localhost:8000/schemas/${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`,
       resource_id: resourceId,
-      actor: options?.actor || "frontend-user",
+      actor: options.actor,
       patch: {
         _deleted: true,
       },
@@ -107,7 +107,7 @@ export function createItemDeletedEvent(
  */
 export function createIssueCreatedEvent(
   issue: Issue,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return createItemCreatedEvent("issue", issue, {
     subject: issue.id,
@@ -121,7 +121,7 @@ export function createIssueCreatedEvent(
 export function createCommentCreatedEvent(
   comment: Comment,
   zaakId: string,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return createItemCreatedEvent("comment", comment, {
     source: "frontend-demo-event",
@@ -136,7 +136,7 @@ export function createCommentCreatedEvent(
 export function createTaskCreatedEvent(
   task: Task,
   zaakId: string,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return createItemCreatedEvent("task", task, {
     subject: zaakId,
@@ -150,7 +150,7 @@ export function createTaskCreatedEvent(
 export function createPlanningCreatedEvent(
   planning: Planning,
   zaakId: string,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return createItemCreatedEvent("planning", planning, {
     subject: zaakId,
@@ -164,7 +164,7 @@ export function createPlanningCreatedEvent(
 export function createDocumentCreatedEvent(
   document: Document,
   zaakId: string,
-  options?: CloudEventOptions
+  options: CloudEventOptions
 ): CloudEvent {
   return createItemCreatedEvent("document", document, {
     subject: zaakId,

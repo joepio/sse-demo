@@ -4,6 +4,7 @@ import type { CloudEvent, IssueFormData, Issue } from "../types";
 import { Button } from "./ActionButton";
 import { generateUUID } from "../utils/uuid";
 import { createIssueCreatedEvent } from "../utils/cloudEvents";
+import { useActor } from "../contexts/ActorContext";
 
 interface CreateIssueFormProps {
   onCreateIssue: (event: CloudEvent) => Promise<void>;
@@ -11,6 +12,7 @@ interface CreateIssueFormProps {
 
 const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
   const navigate = useNavigate();
+  const { actor } = useActor();
   const [formData, setFormData] = useState<IssueFormData>({
     title: "",
     description: "",
@@ -56,8 +58,8 @@ const CreateIssueForm: React.FC<CreateIssueFormProps> = ({ onCreateIssue }) => {
         resolution: null,
       };
 
-      // Use the schema-based CloudEvent utility
-      const cloudEvent = createIssueCreatedEvent(issue);
+      // Use the schema-based CloudEvent utility with session actor
+      const cloudEvent = createIssueCreatedEvent(issue, { actor });
 
       await onCreateIssue(cloudEvent);
 

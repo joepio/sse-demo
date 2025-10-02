@@ -44,6 +44,7 @@ pub async fn send_push_notification(
     body: &str,
     url: &str,
     event_id: &str,
+    event_actor: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use web_push::*;
 
@@ -58,7 +59,8 @@ pub async fn send_push_notification(
         "badge": "/icon-192.png",
         "data": {
             "url": url,
-            "eventId": event_id
+            "eventId": event_id,
+            "actor": event_actor
         }
     });
 

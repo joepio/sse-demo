@@ -5,6 +5,7 @@ import Modal from "./Modal";
 import SchemaField from "./SchemaField";
 import InfoHelp from "./InfoHelp";
 import { createItemUpdatedEvent } from "../utils/cloudEvents";
+import { useActor } from "../contexts/ActorContext";
 import type { ItemType } from "../types";
 import type { CloudEvent } from "../types/interfaces";
 
@@ -42,6 +43,7 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
   onSubmit,
   zaakId,
 }) => {
+  const { actor } = useActor();
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentSchema, setCurrentSchema] = useState<Record<string, unknown> | null>(null);
@@ -86,7 +88,7 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
     setIsSubmitting(true);
 
     try {
-      // Use the schema-based CloudEvent utility for updates
+      // Use the schema-based CloudEvent utility for updates with session actor
       const event = createItemUpdatedEvent(
         itemType.toLowerCase() as ItemType,
         itemId,
@@ -94,7 +96,7 @@ const SchemaEditForm: React.FC<SchemaEditFormProps> = ({
         {
           source: "frontend-edit",
           subject: zaakId,
-          actor: "frontend-user",
+          actor,
         }
       );
 

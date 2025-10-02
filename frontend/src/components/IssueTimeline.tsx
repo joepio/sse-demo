@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { useSSE } from "../contexts/SSEContext";
+import { useActor } from "../contexts/ActorContext";
 import type { CloudEvent, TimelineEvent, TimelineItemType } from "../types";
 import { createItemDeletedEvent } from "../utils/cloudEvents";
 
@@ -19,6 +20,7 @@ const IssueTimeline: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { events, issues, sendEvent } = useSSE();
+  const { actor } = useActor();
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -155,11 +157,11 @@ const IssueTimeline: React.FC = () => {
     setIsDeleting(true);
 
     try {
-      // Use the schema-based CloudEvent utility for deletion
+      // Use the schema-based CloudEvent utility for deletion with session actor
       const deleteEvent = createItemDeletedEvent("issue", zaakId, {
         source: "frontend-demo-event",
         subject: zaakId,
-        actor: "frontend-user",
+        actor,
       });
 
       await sendEvent(deleteEvent);

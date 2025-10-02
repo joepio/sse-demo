@@ -99,6 +99,16 @@ self.addEventListener('push', (event) => {
   }
 
   event.waitUntil((async () => {
+    // Get current actor from localStorage
+    const currentActor = await getCurrentActor();
+    const eventActor = data.data?.actor;
+
+    // Skip notification if it's from the current actor
+    if (currentActor && eventActor && currentActor === eventActor) {
+      console.log('[Service Worker] Skipping notification from current actor:', eventActor);
+      return;
+    }
+
     try {
       await self.registration.showNotification(data.title, {
         body: data.body,
@@ -118,6 +128,29 @@ self.addEventListener('push', (event) => {
     }
   })());
 });
+
+// Helper function to get current actor from localStorage
+async function getCurrentActor() {
+  try {
+    const clientList = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      // Request current actor from the client
+      return new Promise((resolve) => {
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+          resolve(event.data.actor || null);
+        };
+        client.postMessage({ type: 'GET_CURRENT_ACTOR' }, [messageChannel.port2]);
+
+        // Timeout after 100ms
+        setTimeout(() => resolve(null), 100);
+      });
+    }
+  } catch (e) {
+    console.warn('[Service Worker] Failed to get current actor:', e);
+  }
+  return null;
+}
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {

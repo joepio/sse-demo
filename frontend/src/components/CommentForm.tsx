@@ -3,6 +3,7 @@ import type { CloudEvent, Comment } from "../types";
 import Card from "./Card";
 import { Button } from "./ActionButton";
 import { createCommentCreatedEvent } from "../utils/cloudEvents";
+import { useActor } from "../contexts/ActorContext";
 import { generateUUID } from "../utils/uuid";
 
 interface CommentFormProps {
@@ -11,6 +12,7 @@ interface CommentFormProps {
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
+  const { actor } = useActor();
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -27,14 +29,13 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
       const comment: Comment = {
         id: `comment-${generateUUID()}`,
         content: commentText.trim(),
-        author: "user@example.com", // In a real app, this would come from auth
         parent_id: null,
         mentions: null,
       };
 
-      // Create a CloudEvent with the Comment schema
+      // Create a CloudEvent with the Comment schema using session actor
       const commentEvent = createCommentCreatedEvent(comment, zaakId, {
-        actor: "user@example.com",
+        actor,
       });
 
       // Send the comment event to the server

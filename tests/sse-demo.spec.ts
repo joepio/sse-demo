@@ -245,7 +245,6 @@ test.describe("SSE Demo Application - Comprehensive Tests", () => {
         page.getByRole("textbox", { name: "Description*" })
       ).toBeVisible();
       await expect(page.getByRole("textbox", { name: "Url*" })).toBeVisible();
-      await expect(page.getByRole("textbox", { name: "Actor" })).toBeVisible();
 
       // Fill out the task form
       const testCta = `Test Task ${generateTestId()}`;
