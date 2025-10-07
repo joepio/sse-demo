@@ -858,8 +858,7 @@ fn generate_create_event_with_data(
         "id": issue_id,
         "title": title,
         "description": description,
-        "status": "open",
-        "created_at": Utc::now().to_rfc3339()
+        "status": "open"
     });
 
     if let Some(assignee_email) = assignee {

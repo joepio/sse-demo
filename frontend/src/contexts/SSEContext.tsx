@@ -33,7 +33,9 @@ interface SSEProviderProps {
 
 export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const [events, setEvents] = useState<CloudEvent[]>([]);
-  const [items, setItems] = useState<Record<string, Record<string, unknown>>>({});
+  const [items, setItems] = useState<Record<string, Record<string, unknown>>>(
+    {},
+  );
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("connecting");
@@ -44,8 +46,9 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
   const issues = useMemo(() => {
     const issuesMap: Record<string, IssueWithActivity> = {};
     const activityMap: Record<string, string> = {};
+    const creationMap: Record<string, string> = {}; // To store creation time
 
-    // Build activity map from events
+    // Build activity and creation map from events
     for (const event of events) {
       if (event.subject) {
         const eventTime = event.time || new Date().toISOString();
@@ -55,17 +58,21 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
         ) {
           activityMap[event.subject] = eventTime;
         }
+        // Store the first event time as creation time
+        if (!creationMap[event.subject]) {
+          creationMap[event.subject] = eventTime;
+        }
       }
     }
 
     // Extract issues from items and add lastActivity
     for (const [itemId, itemData] of Object.entries(items)) {
       // Check if this is an issue (issues have their ID as the item_id)
-      if (itemData.status && itemData.title && itemData.created_at) {
+      if (itemData.status && itemData.title) {
         const issue = itemData as unknown as Issue;
         issuesMap[itemId] = {
           ...issue,
-          lastActivity: activityMap[itemId] || issue.created_at,
+          lastActivity: activityMap[itemId] || creationMap[itemId],
         };
       }
     }
@@ -114,14 +121,17 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     [],
   );
 
-
   // Process a single CloudEvent into items store
   const processCloudEventToItems = useCallback(
-    (cloudEvent: CloudEvent, items: Record<string, Record<string, unknown>>) => {
+    (
+      cloudEvent: CloudEvent,
+      items: Record<string, Record<string, unknown>>,
+    ) => {
       if (!cloudEvent.data) return items;
 
       const JSONCommit = cloudEvent.data as Record<string, unknown>;
-      const resourceId = (JSONCommit.resource_id || JSONCommit.item_id) as string;
+      const resourceId = (JSONCommit.resource_id ||
+        JSONCommit.item_id) as string;
       if (!resourceId) return items;
 
       const newItems = { ...items };
@@ -183,7 +193,6 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
     [processItemEvent],
   );
 
-
   // Process snapshot events to build initial state
   const processSnapshot = useCallback(
     (snapshotEvents: CloudEvent[]) => {
@@ -233,7 +242,11 @@ export const SSEProvider: React.FC<SSEProviderProps> = ({ children }) => {
           throw new Error("Issue ID is required to complete a task");
         }
 
-        const taskUpdateEvent = createTaskCompletionEvent(taskId, issueId, actor);
+        const taskUpdateEvent = createTaskCompletionEvent(
+          taskId,
+          issueId,
+          actor,
+        );
         await sendEvent(taskUpdateEvent);
       } catch (error) {
         console.error("Error completing task:", error);

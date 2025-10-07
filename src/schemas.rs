@@ -116,9 +116,6 @@ pub struct Issue {
     /// Email van de ambtenaar die de zaak behandelt (bijv. "alice@gemeente.nl")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub assignee: Option<String>,
-    /// Wanneer de zaak is aangemaakt (ISO 8601 formaat: 2024-01-15T10:30:00Z)
-    pub created_at: String,
-    /// Hoe de zaak is afgesloten (alleen bij status "gesloten")
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolution: Option<String>,
 }
@@ -126,8 +123,6 @@ pub struct Issue {
 /// Taak - een actie die uitgevoerd moet worden om een zaak te behandelen
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct Task {
-    /// Unieke taaknummer
-    pub id: String,
     /// Korte actie-omschrijving (bijv. "Documenten controleren", "Afspraak inplannen")
     pub cta: String,
     /// Uitgebreide uitleg: wat moet er precies gebeuren, welke voorwaarden gelden
@@ -447,10 +442,8 @@ mod tests {
         let properties = schema.get("properties").unwrap().as_object().unwrap();
 
         // Verify key Issue fields
-        assert!(properties.contains_key("id"));
         assert!(properties.contains_key("title"));
         assert!(properties.contains_key("status"));
-        assert!(properties.contains_key("created_at"));
     }
 
     #[test]

@@ -36,7 +36,6 @@ async function createNewIssue(title: string, description: string) {
         title,
         description,
         status: "open",
-        created_at: new Date().toISOString(),
       },
     },
   };
