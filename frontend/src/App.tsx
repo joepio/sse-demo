@@ -67,8 +67,8 @@ const ZakenDashboard: React.FC = () => {
     const [, issueB] = b;
 
     // Sort by lastActivity (newest first), fallback to created_at
-    const timeA = issueA.lastActivity || issueA.created_at || "1970-01-01";
-    const timeB = issueB.lastActivity || issueB.created_at || "1970-01-01";
+    const timeA = issueA.lastActivity || "1970-01-01";
+    const timeB = issueB.lastActivity || "1970-01-01";
 
     return new Date(timeB).getTime() - new Date(timeA).getTime();
   });

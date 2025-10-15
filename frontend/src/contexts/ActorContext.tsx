@@ -1,9 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
+import type { ReactNode } from "react";
 
 interface ActorContextType {
   actor: string;
-  generateNewActor: () => void;
+  formattedUserName: string;
+  userInitial: string;
 }
 
 const ActorContext = createContext<ActorContextType | undefined>(undefined);
@@ -14,9 +21,31 @@ interface ActorProviderProps {
 
 // Generate a random email-like actor for the session
 const generateRandomActor = (): string => {
-  const domains = ['gmail.com', 'outlook.com'];
-  const firstNames = ['alice', 'bob', 'charlie', 'diana', 'eve', 'frank', 'grace', 'henry', 'iris', 'jack'];
-  const lastNames = ['jansen', 'de-vries', 'bakker', 'visser', 'smit', 'meijer', 'de-jong', 'mulder', 'de-groot', 'janssen'];
+  const domains = ["gmail.com", "outlook.com"];
+  const firstNames = [
+    "alice",
+    "bob",
+    "charlie",
+    "diana",
+    "eve",
+    "frank",
+    "grace",
+    "henry",
+    "iris",
+    "jack",
+  ];
+  const lastNames = [
+    "jansen",
+    "de-vries",
+    "bakker",
+    "visser",
+    "smit",
+    "meijer",
+    "de-jong",
+    "mulder",
+    "de-groot",
+    "janssen",
+  ];
 
   const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
   const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
@@ -26,24 +55,24 @@ const generateRandomActor = (): string => {
 };
 
 export const ActorProvider: React.FC<ActorProviderProps> = ({ children }) => {
-  const [actor, setActor] = useState<string>('');
+  const [actor, setActor] = useState<string>("");
 
   // Generate actor on mount or if not in localStorage
   useEffect(() => {
-    const storedActor = localStorage.getItem('session-actor');
+    const storedActor = localStorage.getItem("session-actor");
     if (storedActor) {
       setActor(storedActor);
     } else {
       const newActor = generateRandomActor();
       setActor(newActor);
-      localStorage.setItem('session-actor', newActor);
+      localStorage.setItem("session-actor", newActor);
     }
   }, []);
 
   // Listen for service worker requests for current actor
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'GET_CURRENT_ACTOR') {
+      if (event.data?.type === "GET_CURRENT_ACTOR") {
         // Respond with current actor
         if (event.ports && event.ports[0]) {
           event.ports[0].postMessage({ actor });
@@ -51,35 +80,41 @@ export const ActorProvider: React.FC<ActorProviderProps> = ({ children }) => {
       }
     };
 
-    navigator.serviceWorker?.addEventListener('message', handleMessage);
+    navigator.serviceWorker?.addEventListener("message", handleMessage);
 
     return () => {
-      navigator.serviceWorker?.removeEventListener('message', handleMessage);
+      navigator.serviceWorker?.removeEventListener("message", handleMessage);
     };
   }, [actor]);
 
-  const generateNewActor = () => {
-    const newActor = generateRandomActor();
-    setActor(newActor);
-    localStorage.setItem('session-actor', newActor);
-  };
+  const { formattedUserName, userInitial } = useMemo(() => {
+    if (!actor) {
+      return { formattedUserName: "Gebruiker", userInitial: "U" };
+    }
+    const userInitial = actor.charAt(0).toUpperCase();
+    const userName = actor.split("@")[0].replace(".", " ");
+    const formattedUserName = userName
+      .split(" ")
+      .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
+      .join(" ");
+    return { formattedUserName, userInitial };
+  }, [actor]);
 
   const value: ActorContextType = {
     actor,
-    generateNewActor,
+    formattedUserName,
+    userInitial,
   };
 
   return (
-    <ActorContext.Provider value={value}>
-      {children}
-    </ActorContext.Provider>
+    <ActorContext.Provider value={value}>{children}</ActorContext.Provider>
   );
 };
 
 export const useActor = (): ActorContextType => {
   const context = useContext(ActorContext);
   if (context === undefined) {
-    throw new Error('useActor must be used within an ActorProvider');
+    throw new Error("useActor must be used within an ActorProvider");
   }
   return context;
 };

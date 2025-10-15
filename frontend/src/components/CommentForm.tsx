@@ -12,7 +12,7 @@ interface CommentFormProps {
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
-  const { actor } = useActor();
+  const { actor, formattedUserName, userInitial } = useActor();
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -65,7 +65,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
             borderColor: "var(--bg-primary)",
           }}
         >
-          U
+          {userInitial}
         </div>
       </div>
 
@@ -76,7 +76,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ zaakId, onSubmit }) => {
               className="m-0 text-sm sm:text-base lg:text-lg xl:text-xl font-semibold"
               style={{ color: "var(--text-primary)" }}
             >
-              Bericht schrijven
+              Bericht schrijven als {formattedUserName}
             </h3>
           </div>
 
