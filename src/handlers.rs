@@ -89,6 +89,10 @@ pub struct EventsListParams {
     /// Optional format hint (e.g. "json"). When "json" is set, the handler will return JSON rather than SSE.
     #[serde(default)]
     pub format: Option<String>,
+    /// Optional sequence key to fetch events after (zero-padded sequence string).
+    /// Example: "00000000000000000042"
+    #[serde(default)]
+    pub after_seq: Option<String>,
 }
 
 /// GET /events - Returns an SSE stream by default. If the query `?format=json` is present,
@@ -109,7 +113,7 @@ pub async fn get_or_stream_events(
         // Return JSON listing (paginated + optional topic filter)
         let events = state
             .storage
-            .list_events(params.offset, params.limit)
+            .list_events_after(params.after_seq.clone(), params.limit)
             .await
             .map_err(|e| {
                 eprintln!("Failed to list events: {}", e);
@@ -141,9 +145,9 @@ pub async fn get_or_stream_events(
     let rx = state.tx.subscribe();
 
     // Use storage to build a snapshot (paginated)
-    let mut snapshot_events = state
+    let snapshot_events = state
         .storage
-        .list_events(params.offset, params.limit)
+        .list_events_after(params.after_seq.clone(), params.limit)
         .await
         .map_err(|e| {
             eprintln!("Failed to build snapshot events: {}", e);
@@ -190,13 +194,16 @@ pub struct ErrorResponse {
 /// This is where resources are created, updated, and deleted
 pub async fn handle_event(
     State(state): State<AppState>,
-    Json(event): Json<CloudEvent>,
+    Json(mut event): Json<CloudEvent>,
 ) -> Result<Response, StatusCode> {
-    // Store the event
-    state.storage.store_event(&event).await.map_err(|e| {
+    // Store the event and get the assigned server sequence key
+    let seq_key = state.storage.store_event(&event).await.map_err(|e| {
         eprintln!("Failed to store event: {}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
+
+    // Attach the assigned sequence to the CloudEvent so clients can use it for ordering/pagination
+    event.sequence = Some(seq_key.clone());
 
     // Process the event to update resources
     if let Err(e) = process_event(&state, &event).await {
@@ -204,7 +211,7 @@ pub async fn handle_event(
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     }
 
-    // Broadcast the event to SSE subscribers
+    // Broadcast the event (with attached sequence) to SSE subscribers
     let _ = state.tx.send(event.clone());
 
     Ok((StatusCode::ACCEPTED, Json(event)).into_response())

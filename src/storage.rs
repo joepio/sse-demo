@@ -21,8 +21,11 @@ use tokio::sync::RwLock;
 use crate::schemas::CloudEvent;
 
 // Define redb tables
-const EVENTS_TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("events");
+// EVENTS_BY_SEQ maps zero-padded sequence keys to serialized event records so iteration is lexicographic by sequence
+const EVENTS_BY_SEQ_TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("events_by_seq");
 const RESOURCES_TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("resources");
+/// Meta table for storing counters and small metadata (e.g. last assigned sequence)
+const META_TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("meta");
 
 /// Record for storing events
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,11 +72,12 @@ impl Storage {
         // Initialize redb database
         let db = Database::create(&db_path)?;
 
-        // Initialize tables
+        // Initialize tables (include meta & sequence tables)
         let write_txn = db.begin_write()?;
         {
-            let _ = write_txn.open_table(EVENTS_TABLE)?;
+            let _ = write_txn.open_table(EVENTS_BY_SEQ_TABLE)?;
             let _ = write_txn.open_table(RESOURCES_TABLE)?;
+            let _ = write_txn.open_table(META_TABLE)?;
         }
         write_txn.commit()?;
 
@@ -125,35 +129,90 @@ impl Storage {
         })
     }
 
-    /// Store an event in the K/V store (with diagnostic logging)
-    pub async fn store_event(&self, event: &CloudEvent) -> Result<(), Box<dyn std::error::Error>> {
+    /// Store an event in the K/V store (with diagnostic logging) and assign a monotonically increasing sequence.
+    /// Returns the assigned sequence string (zero-padded) on success.
+    pub async fn store_event(
+        &self,
+        event: &CloudEvent,
+    ) -> Result<String, Box<dyn std::error::Error>> {
         // Diagnostic: log attempt to store event
         println!(
             "[storage] attempt store_event: id={} type={} source={}",
             event.id, event.event_type, event.source
         );
 
+        // Atomically get the next sequence number using the META_TABLE.
+        // We perform this with a small write transaction that reads the last_seq value,
+        // increments it, writes it back and commits. The new sequence is then returned.
+        let seq = {
+            // start a write txn to update the counter atomically
+            let mut wtx = self.db.begin_write()?;
+            // Read, compute and write within an inner scope so the table guard is dropped
+            // before committing the transaction (avoids borrow conflicts).
+            let next = {
+                let mut meta = wtx.open_table(META_TABLE)?;
+
+                // Try to read the last sequence value and convert to owned bytes immediately.
+                let last_seq_bytes = match meta.get("last_seq")? {
+                    Some(g) => Some(g.value().to_vec()),
+                    None => None,
+                };
+
+                // Compute next sequence (u128) robustly
+                let next_seq: u128 = if let Some(bytes) = last_seq_bytes {
+                    match std::str::from_utf8(&bytes)
+                        .ok()
+                        .and_then(|s| s.parse::<u128>().ok())
+                    {
+                        Some(val) => val + 1,
+                        None => 1u128,
+                    }
+                } else {
+                    1u128
+                };
+
+                // store back the new last_seq as bytes
+                meta.insert("last_seq", next_seq.to_string().as_bytes())?;
+
+                // drop meta (end of inner scope) so we can commit safely
+                next_seq
+            };
+
+            // commit the write transaction after the table guard has been dropped
+            wtx.commit()?;
+
+            next
+        };
+
+        // Create record and include sequence as string
         let record = EventRecord {
             id: event.id.clone(),
             event_type: event.event_type.clone(),
             source: event.source.clone(),
             subject: event.subject.clone(),
             time: event.time.clone(),
-            sequence: event.sequence.clone(),
+            sequence: Some(seq.to_string()),
             data: serde_json::to_string(&event.data)?,
         };
 
         let serialized = bincode::serialize(&record)?;
 
+        // Write seq->record mapping (we store only sequence keyed records for ordered iteration)
         let write_txn = self.db.begin_write()?;
         {
-            let mut table = write_txn.open_table(EVENTS_TABLE)?;
-            table.insert(event.id.as_str(), serialized.as_slice())?;
+            let mut seq_table = write_txn.open_table(EVENTS_BY_SEQ_TABLE)?;
+            // create sequence key with fixed width (e.g. 020 digits) to ensure lexicographic ordering
+            let seq_key = format!("{:020}", seq);
+            seq_table.insert(seq_key.as_str(), serialized.as_slice())?;
         }
         write_txn.commit()?;
 
         // Diagnostic: confirm persisted to DB
-        println!("[storage] persisted event to DB: id={}", event.id);
+        let seq_key = format!("{:020}", seq);
+        println!(
+            "[storage] persisted event to DB: id={} seq={}",
+            event.id, seq_key
+        );
 
         // Schedule background indexing for the event (do not block the store operation)
         println!(
@@ -168,12 +227,13 @@ impl Storage {
         let type_field = self.type_field;
         let content_field = self.content_field;
         let timestamp_field = self.timestamp_field;
+        let seq_for_log = seq_key.clone();
 
         // Spawn a background task to perform indexing asynchronously.
         tokio::spawn(async move {
             println!(
-                "[storage][bg] start indexing event: id={}",
-                event_for_index.id
+                "[storage][bg] start indexing event: id={} seq={}",
+                event_for_index.id, seq_for_log
             );
 
             // Build timestamp
@@ -213,43 +273,44 @@ impl Storage {
                 );
             }
 
-            // Perform the add_document + commit, logging any error
+            // Perform the add_document (commit deferred to periodic committer)
             if let Err(e) = (|| -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 writer.add_document(doc)?;
                 // Commit deferred to periodic committer to reduce per-document latency
                 Ok(())
             })() {
                 eprintln!(
-                    "[storage][bg] failed adding document for event id={} error={}",
-                    event_for_index.id, e
+                    "[storage][bg] failed adding document for event id={} seq={} error={}",
+                    event_for_index.id, seq_for_log, e
                 );
             } else {
                 println!(
-                    "[storage][bg] added doc for event id={} (commit deferred)",
-                    event_for_index.id
+                    "[storage][bg] added doc for event id={} seq={} (commit deferred)",
+                    event_for_index.id, seq_for_log
                 );
             }
         });
 
-        Ok(())
+        // Return the assigned sequence key to the caller
+        Ok(seq_key)
     }
 
-    /// Get an event by ID
+    /// Get an event by ID (scan events_by_seq and return the matching event)
     #[allow(dead_code)]
     pub async fn get_event(
         &self,
         id: &str,
     ) -> Result<Option<CloudEvent>, Box<dyn std::error::Error>> {
         let read_txn = self.db.begin_read()?;
-        let table = read_txn.open_table(EVENTS_TABLE)?;
+        let table = read_txn.open_table(EVENTS_BY_SEQ_TABLE)?;
 
-        let result = table.get(id)?;
-
-        match result {
-            Some(bytes) => {
-                let rec: EventRecord = bincode::deserialize(bytes.value())?;
+        let iter = table.iter()?;
+        for item in iter {
+            let (_key, value) = item?;
+            let rec: EventRecord = bincode::deserialize(value.value())?;
+            if rec.id == id {
                 let data: Option<JsonValue> = serde_json::from_str(&rec.data)?;
-                Ok(Some(CloudEvent {
+                return Ok(Some(CloudEvent {
                     specversion: "1.0".to_string(),
                     id: rec.id,
                     source: rec.source,
@@ -262,10 +323,11 @@ impl Storage {
                     sequence: rec.sequence,
                     sequencetype: None,
                     data,
-                }))
+                }));
             }
-            None => Ok(None),
         }
+
+        Ok(None)
     }
 
     /// Store a resource in the K/V store (with diagnostic logging)
@@ -485,27 +547,34 @@ impl Storage {
         Ok(results)
     }
 
-    /// Get all events (paginated). Returns newest-first order by parsing CloudEvent.time.
-    /// We load events from the DB, sort them by timestamp (descending), then apply
-    /// offset and limit for pagination.
-    pub async fn list_events(
+    /// List events by sequence with pagination after a given sequence key.
+    ///
+    /// This function returns events in backend processing order (ascending by sequence).
+    /// Use `after_seq` to fetch events after a particular zero-padded sequence key
+    /// (e.g. "00000000000000000042"). If `after_seq` is `None`, iteration starts at the beginning.
+    pub async fn list_events_after(
         &self,
-        offset: usize,
+        after_seq: Option<String>,
         limit: usize,
     ) -> Result<Vec<CloudEvent>, Box<dyn std::error::Error>> {
-        use chrono::offset::Utc;
-        use chrono::DateTime;
-
-        // Collect all events first
-        let mut all_events: Vec<CloudEvent> = Vec::new();
-
+        // Read events by sequence lexicographic order from EVENTS_BY_SEQ_TABLE (ensures server processing order).
         let read_txn = self.db.begin_read()?;
-        let table = read_txn.open_table(EVENTS_TABLE)?;
+        let table = read_txn.open_table(EVENTS_BY_SEQ_TABLE)?;
 
-        let iter = table.iter()?;
+        let mut results: Vec<CloudEvent> = Vec::new();
+
+        let mut iter = table.iter()?;
 
         for item in iter {
-            let (_, value) = item?;
+            let (key, value) = item?;
+            // If after_seq is provided, skip until key > after_seq
+            if let Some(ref after) = after_seq {
+                // key.value() returns &str; compare lexicographically
+                if key.value() <= after.as_str() {
+                    continue;
+                }
+            }
+
             let rec: EventRecord = bincode::deserialize(value.value())?;
             let data: Option<JsonValue> = serde_json::from_str(&rec.data)?;
 
@@ -524,31 +593,45 @@ impl Storage {
                 data,
             };
 
-            all_events.push(event);
+            results.push(event);
+            if results.len() >= limit {
+                break;
+            }
         }
 
-        // Sort by timestamp ascending (earliest first). If parsing fails or time missing,
-        // treat as epoch 0 so they appear first.
-        all_events.sort_by(|a, b| {
-            let a_ts = a
-                .time
-                .as_deref()
-                .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                .map(|dt| dt.with_timezone(&Utc).timestamp())
-                .unwrap_or(0);
-            let b_ts = b
-                .time
-                .as_deref()
-                .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-                .map(|dt| dt.with_timezone(&Utc).timestamp())
-                .unwrap_or(0);
-            a_ts.cmp(&b_ts)
-        });
-
-        // Apply pagination (offset, limit)
-        let results: Vec<CloudEvent> = all_events.into_iter().skip(offset).take(limit).collect();
-
         Ok(results)
+    }
+
+    /// Backwards-compatible wrapper: list events by offset (legacy).
+    /// This calls `list_events_after` by computing `after_seq` from offset = number to skip.
+    /// Note: this wrapper is less efficient for large offsets and is provided for compatibility.
+    pub async fn list_events(
+        &self,
+        offset: usize,
+        limit: usize,
+    ) -> Result<Vec<CloudEvent>, Box<dyn std::error::Error>> {
+        // If offset is zero, simply return first `limit` events
+        if offset == 0 {
+            return self.list_events_after(None, limit).await;
+        }
+
+        // Otherwise, we need to skip `offset` keys - iterate and find the key at position `offset - 1`
+        let read_txn = self.db.begin_read()?;
+        let table = read_txn.open_table(EVENTS_BY_SEQ_TABLE)?;
+        let mut iter = table.iter()?;
+
+        let mut seq_to_start: Option<String> = None;
+        for (i, item) in iter.enumerate() {
+            let (key, _value) = item?;
+            if i + 1 == offset {
+                seq_to_start = Some(key.value().to_string());
+                break;
+            }
+        }
+
+        // If we found the sequence key at offset-1, start after it; otherwise start from beginning
+        let after_seq = seq_to_start.map(|s| s);
+        self.list_events_after(after_seq, limit).await
     }
 }
 
@@ -585,7 +668,7 @@ mod tests {
             data: Some(serde_json::json!({"key": "value"})),
         };
 
-        storage.store_event(&event).await.unwrap();
+        let _seq = storage.store_event(&event).await.unwrap();
 
         let retrieved = storage.get_event("test-event-1").await.unwrap();
         assert!(retrieved.is_some());

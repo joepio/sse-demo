@@ -220,12 +220,19 @@ async fn initialize_demo_data(state: &AppState) {
     let (initial_events, _) = issues::generate_initial_data();
 
     for event_json in initial_events {
-        if let Some(cloud_event) = issues::json_to_cloudevent(&event_json) {
-            // Store the event (persist to the DB)
-            if let Err(e) = state.storage.store_event(&cloud_event).await {
-                eprintln!("Failed to store initial event: {}", e);
-                continue;
-            }
+        if let Some(mut cloud_event) = issues::json_to_cloudevent(&event_json) {
+            // Store the event (persist to the DB) and obtain assigned sequence key
+            let seq_key = match state.storage.store_event(&cloud_event).await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to store initial event: {}", e);
+                    continue;
+                }
+            };
+
+            // Attach the assigned sequence to the CloudEvent so downstream processing and clients
+            // can rely on the server-assigned ordering.
+            cloud_event.sequence = Some(seq_key.clone());
 
             // Build a handlers::AppState to reuse the same processing logic
             // This ensures resources are created/updated using the same code path
