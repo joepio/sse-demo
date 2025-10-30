@@ -64,7 +64,7 @@ fn default_offset() -> usize {
 }
 
 fn default_limit() -> usize {
-    50
+    10000
 }
 
 /// Query parameters for search
@@ -116,7 +116,8 @@ pub async fn get_or_stream_events(
                 StatusCode::INTERNAL_SERVER_ERROR
             })?;
 
-        let filtered: Vec<CloudEvent> = if let Some(topic) = params.topic.as_deref() {
+        // Filter events by topic if provided
+        let mut filtered: Vec<CloudEvent> = if let Some(topic) = params.topic.as_deref() {
             events
                 .into_iter()
                 .filter(|e| {
@@ -131,6 +132,8 @@ pub async fn get_or_stream_events(
             events
         };
 
+        // Keep the order as provided by storage (earliest-first). No reversal applied here.
+
         return Ok(Json(filtered).into_response());
     }
 
@@ -138,7 +141,7 @@ pub async fn get_or_stream_events(
     let rx = state.tx.subscribe();
 
     // Use storage to build a snapshot (paginated)
-    let snapshot_events = state
+    let mut snapshot_events = state
         .storage
         .list_events(params.offset, params.limit)
         .await
@@ -146,6 +149,8 @@ pub async fn get_or_stream_events(
             eprintln!("Failed to build snapshot events: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+
+    // Keep snapshot order as provided by storage (earliest-first). No reversal applied here.
 
     let snapshot = serde_json::to_string(&snapshot_events).unwrap_or_else(|_| "[]".to_string());
 

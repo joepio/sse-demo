@@ -35,7 +35,6 @@ use tower_http::services::ServeDir;
 use tower_http::{cors::CorsLayer, services::ServeFile};
 
 use sse_delta_snapshot::storage::Storage;
-use sse_delta_snapshot::PushSubscription;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -47,7 +46,7 @@ pub struct AppState {
     #[allow(dead_code)]
     pub base_url: String,
     // Push notification subscriptions
-    pub push_subscriptions: Arc<RwLock<Vec<PushSubscription>>>,
+    pub push_subscriptions: Arc<RwLock<Vec<sse_delta_snapshot::PushSubscription>>>,
 }
 
 /// CloudEvent following the CloudEvents specification v1.0

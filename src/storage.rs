@@ -1,5 +1,8 @@
 //! Storage module for persisting events and resources using redb K/V store
 //! and providing search capabilities via Tantivy.
+//!
+//! Dead helpers and per-document commits were removed in favor of background indexing
+//! with periodic commits to improve throughput and startup performance.
 
 use redb::{Database, ReadableTable, TableDefinition};
 use serde::{Deserialize, Serialize};
@@ -10,7 +13,7 @@ use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 // Import Tantivy's `Value` trait under an alias so it does not conflict with serde_json::Value.
 // The alias brings the trait into scope for `as_str()` calls on Tantivy document values.
-use tantivy::schema::Value as TantivyValue;
+use tantivy::schema::Value;
 use tantivy::schema::*;
 use tantivy::{doc, Index, IndexWriter, ReloadPolicy};
 use tokio::sync::RwLock;
@@ -397,11 +400,7 @@ impl Storage {
         Ok(())
     }
 
-    // index_event removed: indexing is now performed asynchronously by background tasks.
-    // This helper was kept during development but is no longer used.
-
-    // index_resource removed: resource indexing is performed asynchronously by background tasks.
-    // The per-document commit pattern was replaced by batched periodic commits to improve throughput.
+    // Note: indexing is performed asynchronously by background tasks and commits are batched periodically.
 
     /// Search using Tantivy
     pub async fn search(
@@ -528,8 +527,8 @@ impl Storage {
             all_events.push(event);
         }
 
-        // Sort by timestamp descending (newest first). If parsing fails or time missing,
-        // treat as epoch 0 so they appear last.
+        // Sort by timestamp ascending (earliest first). If parsing fails or time missing,
+        // treat as epoch 0 so they appear first.
         all_events.sort_by(|a, b| {
             let a_ts = a
                 .time
@@ -543,7 +542,7 @@ impl Storage {
                 .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
                 .map(|dt| dt.with_timezone(&Utc).timestamp())
                 .unwrap_or(0);
-            b_ts.cmp(&a_ts)
+            a_ts.cmp(&b_ts)
         });
 
         // Apply pagination (offset, limit)
